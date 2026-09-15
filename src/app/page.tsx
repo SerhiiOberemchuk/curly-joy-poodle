@@ -1,23 +1,37 @@
-import { BrandValues } from "@/features/home/components/brand-values";
-import { CollectionShowcase } from "@/features/home/components/collection-showcase";
-import { Community } from "@/features/home/components/community";
-import { Hero } from "@/features/home/components/hero";
-import { SizeTeaser } from "@/features/home/components/size-teaser";
-import { SummerEdit } from "@/features/home/components/summer-edit";
-import { Team } from "@/features/home/components/team";
-import { ValueProps } from "@/features/home/components/value-props";
+import type { Metadata } from "next";
+
+import { BrandStory } from "@/features/home/components/brand-story";
+import { LifestyleCollections } from "@/features/home/components/lifestyle-collections";
+import { LifestyleHero } from "@/features/home/components/lifestyle-hero";
+import { Recommendations } from "@/features/home/components/recommendations";
+import { SocialJournal } from "@/features/home/components/social-journal";
+
+export const metadata: Metadata = {
+  title: { absolute: "Curly Joy — для життя разом із собакою" },
+  description:
+    "Речі для прогулянок, подорожей і затишних днів удома. Знайдіть свою добірку в Curly Joy — магазині для собак та їхніх людей.",
+  openGraph: {
+    title: "Curly Joy — для життя разом із собакою",
+    description:
+      "Речі, історії та маленькі відкриття для собак та їхніх людей.",
+    images: [
+      {
+        url: "/images/reference/8c922cf1-57f1-44c3-812b-073416497db8.webp",
+        width: 1440,
+        height: 600,
+      },
+    ],
+  },
+};
 
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <CollectionShowcase />
-      <SummerEdit />
-      <SizeTeaser />
-      <Team />
-      <BrandValues />
-      <Community />
-      <ValueProps />
+      <LifestyleHero />
+      <LifestyleCollections />
+      <Recommendations />
+      <BrandStory />
+      <SocialJournal />
     </>
   );
 }

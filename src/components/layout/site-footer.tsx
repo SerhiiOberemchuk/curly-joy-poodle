@@ -1,6 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
-import { cacheLife } from "next/cache";
+import Link from "next/link";
 
 import { getCategories } from "@/features/catalog/queries";
 import { infoNav } from "@/lib/navigation";
@@ -9,11 +8,6 @@ import { site } from "@/lib/site";
 import styles from "./site-footer.module.css";
 
 export async function SiteFooter() {
-  // Identical for every visitor, and the copyright year needs a shared timestamp
-  // rather than a per-request one.
-  "use cache";
-  cacheLife("days");
-
   const categories = await getCategories();
 
   return (
@@ -31,8 +25,8 @@ export async function SiteFooter() {
               />
             </Link>
             <p className={styles.brandText}>
-              Curly Joy — місце щасливих собак. Одяг та аксесуари для вашого
-              улюбленця.
+              Речі, історії та маленькі відкриття для щасливого життя разом із
+              собакою.
             </p>
             <div className={styles.socials}>
               {site.socials.map((social) => (
@@ -104,9 +98,7 @@ export async function SiteFooter() {
         </div>
 
         <div className={styles.bottom}>
-          <span>
-            © {site.legalName}, {new Date().getFullYear()}
-          </span>
+          <span>© {site.legalName}, 2026</span>
           <span>Оплата карткою Visa / Mastercard та накладений платіж</span>
         </div>
       </div>

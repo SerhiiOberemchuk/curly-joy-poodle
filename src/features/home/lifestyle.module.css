@@ -1,0 +1,1114 @@
+.wrap {
+  width: min(1344px, calc(100% - 96px));
+  margin-inline: auto;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  line-height: 1.7;
+  text-transform: uppercase;
+}
+
+.handwritten {
+  font-family: var(--font-caveat), cursive;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: #97634f;
+}
+
+.hero {
+  width: min(1440px, calc(100% - 32px));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  align-items: center;
+  min-height: 670px;
+  background: #edc2c1;
+  border-radius: 5px;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  padding: 65px 0 55px clamp(28px, 5vw, 78px);
+}
+
+.heroTitle {
+  margin-top: 32px;
+  font-family: var(--font-sans);
+  font-size: clamp(46px, 4.5vw, 68px);
+  font-weight: 650;
+  letter-spacing: -0.065em;
+  line-height: 1.22;
+  text-wrap: initial;
+}
+
+.heroTitle em {
+  position: relative;
+  display: inline-block;
+  padding-right: 12px;
+  font-family: var(--font-caveat), cursive;
+  font-size: 1.65em;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+  transform: rotate(-5deg);
+}
+
+.heroTitle em::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 0;
+  bottom: -10px;
+  height: 12px;
+  border-bottom: 5px solid #f6df98;
+  border-radius: 50%;
+  transform: rotate(-3deg);
+}
+
+.heroDescription {
+  max-width: 395px;
+  margin-top: 36px;
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 27px;
+  margin-top: 30px;
+}
+
+.button,
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    background 180ms,
+    color 180ms;
+}
+
+.button {
+  min-height: 54px;
+  padding: 15px 23px;
+  background: var(--color-ink);
+  color: #fffaf4;
+  border-radius: 8px;
+}
+
+.button:hover {
+  background: #694437;
+}
+
+.textLink {
+  border-bottom: 1px solid currentColor;
+}
+
+.textLink:hover {
+  color: var(--color-accent);
+}
+
+.button svg,
+.textLink svg {
+  flex-shrink: 0;
+  width: 19px;
+  transition: transform 180ms;
+}
+
+.button:hover svg,
+.textLink:hover svg {
+  transform: translateX(3px);
+}
+
+.heroNote {
+  margin-top: 34px;
+  font-family: var(--font-caveat), cursive;
+  font-size: 26px;
+  transform: rotate(-2deg);
+}
+
+.heroCollage {
+  position: relative;
+  min-width: 0;
+  height: 530px;
+  margin: 42px 65px 62px 48px;
+}
+
+.heroPhoto {
+  position: absolute;
+  inset: 0 0 35px 0;
+  overflow: hidden;
+  border: 8px solid #fffaf2;
+  border-radius: 5px;
+  transform: rotate(4deg);
+}
+
+.heroPhoto img {
+  object-fit: cover;
+  object-position: center top;
+}
+
+.picnicPhoto {
+  position: absolute;
+  width: 235px;
+  left: -90px;
+  bottom: -4px;
+  padding: 7px 7px 0;
+  background: #fffaf2;
+  transform: rotate(-8deg);
+}
+
+.picnicPhoto > div {
+  position: relative;
+  height: 157px;
+  overflow: hidden;
+}
+
+.picnicPhoto img {
+  object-fit: cover;
+  object-position: center top;
+  height: 130% !important;
+}
+
+.picnicPhoto > span {
+  display: block;
+  padding: 5px 4px 8px;
+  text-align: center;
+  font-family: var(--font-caveat), cursive;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.photoNote {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  font-family: var(--font-caveat), cursive;
+  font-size: 31px;
+  transform: rotate(5deg);
+}
+
+.curl {
+  position: absolute;
+  width: 140px;
+  top: -28px;
+  left: -100px;
+  color: #764637;
+  transform: rotate(17deg);
+}
+
+.promiseStrip {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 28px;
+  padding: 27px 30px;
+  border-bottom: 1px solid var(--color-line);
+  font-family: var(--font-caveat), cursive;
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.promiseStrip span + span::before {
+  content: "·";
+  margin-right: 65px;
+  color: #b77966;
+}
+
+.section {
+  padding-block: 92px 72px;
+  scroll-margin-top: 110px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 42px;
+}
+
+.sectionTitle {
+  margin-top: 14px;
+  font-family: var(--font-sans);
+  font-size: clamp(34px, 3.5vw, 51px);
+  font-weight: 600;
+  line-height: 1.13;
+  letter-spacing: -0.065em;
+}
+
+.headingNote,
+.sectionDescription {
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--color-ink-soft);
+}
+
+.headingNote {
+  padding-bottom: 4px;
+}
+
+.sectionDescription {
+  margin-top: 16px;
+}
+
+.momentsGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 40px;
+  row-gap: 45px;
+}
+
+.moment {
+  min-width: 0;
+}
+
+.walk,
+.dress {
+  grid-column: span 7;
+}
+
+.travel,
+.home {
+  grid-column: span 5;
+}
+
+.travel {
+  margin-top: 90px;
+}
+
+.home {
+  margin-right: 25px;
+}
+
+.dress {
+  margin-top: 65px;
+}
+
+.momentPhoto {
+  position: relative;
+  height: 425px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--color-sand);
+}
+
+.walk .momentPhoto {
+  height: 510px;
+}
+
+.travel .momentPhoto {
+  height: 380px;
+}
+
+.dress .momentPhoto {
+  height: 455px;
+}
+
+.momentPhoto img {
+  object-fit: cover;
+  transition: scale 600ms ease;
+}
+
+.moment:hover .momentPhoto img {
+  scale: 1.035;
+}
+
+.walk .momentPhoto img {
+  object-position: 86% center;
+}
+
+.travel .momentPhoto img {
+  object-position: center top;
+  height: 125% !important;
+}
+
+.home .momentPhoto img {
+  object-position: 83% center;
+}
+
+.dress .momentPhoto img {
+  object-position: center top;
+}
+
+.dressNote {
+  display: none;
+}
+
+@media (width >= 900px) {
+  .dress .momentPhoto {
+    background: #edc2c1;
+  }
+
+  .dress .momentPhoto img {
+    left: auto !important;
+    width: 64% !important;
+  }
+
+  .dressNote {
+    position: absolute;
+    left: 5%;
+    top: 38%;
+    display: block;
+    font-family: var(--font-caveat), cursive;
+    font-size: clamp(29px, 2.8vw, 42px);
+    line-height: 1.15;
+    transform: rotate(-6deg);
+  }
+}
+
+.momentIndex {
+  position: absolute;
+  top: 19px;
+  left: 21px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 48% 52% 45% 55%;
+  background: #f5dea4;
+  color: #44352d;
+  font-family: var(--font-caveat), cursive;
+  font-size: 23px;
+  transform: rotate(-8deg);
+}
+
+.momentCta {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 44px;
+  padding: 9px 14px 9px 18px;
+  border-radius: 6px;
+  background: #fffaf2;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 180ms;
+}
+
+.moment:hover .momentCta {
+  background: #edc2c1;
+}
+
+.momentCaption {
+  padding-top: 20px;
+}
+
+.momentCaption h3 {
+  font-size: clamp(22px, 2.1vw, 31px);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+}
+
+.momentCaption p {
+  margin-top: 9px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--color-ink-soft);
+}
+
+.catalogPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 25px;
+  margin-top: 58px;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-line);
+  font-size: 14px;
+}
+
+.recommendations {
+  padding-block: 74px 85px;
+  background: #f3e8d7;
+  scroll-margin-top: 110px;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 25px;
+}
+
+.productPhoto {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #fffaf3;
+}
+
+.productPhoto img {
+  object-fit: contain;
+  padding: 25px;
+  mix-blend-mode: multiply;
+  transition: scale 400ms ease;
+}
+
+.productLink:hover img {
+  scale: 1.045;
+}
+
+.productArrow {
+  position: absolute;
+  right: 13px;
+  bottom: 13px;
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #edc2c1;
+  transition: rotate 180ms;
+}
+
+.productLink:hover .productArrow {
+  rotate: 45deg;
+}
+
+.productArrow svg {
+  width: 18px;
+}
+
+.productLine {
+  margin-top: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-ink-soft);
+  letter-spacing: 0.08em;
+}
+
+.product h3 {
+  margin-top: 7px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.03em;
+}
+
+.productPrice {
+  margin-top: 9px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.productPlaceholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 20px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.storyBand {
+  background: #49372c;
+  color: #fbf2e6;
+  scroll-margin-top: 100px;
+}
+
+.story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10%;
+  align-items: center;
+  padding-block: 90px 95px;
+}
+
+.storyPhoto {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1 / 1.1;
+  background: var(--color-sand);
+  border-radius: 45% 45% 3px 3px;
+}
+
+.storyPhoto img {
+  object-fit: cover;
+  object-position: center 55%;
+  border-radius: inherit;
+}
+
+.storyPhotoNote {
+  position: absolute;
+  right: -25px;
+  bottom: 28px;
+  padding: 11px 20px 13px;
+  background: #edc2c1;
+  color: #44352d;
+  font-family: var(--font-caveat), cursive;
+  font-size: 27px;
+  line-height: 1.2;
+  transform: rotate(-5deg);
+}
+
+.storyCopy {
+  padding-right: 3%;
+}
+
+.storyCopy .handwritten {
+  color: #e6bab0;
+}
+
+.storyTitle {
+  margin-top: 21px;
+  margin-bottom: 30px;
+  font-family: var(--font-sans);
+  font-size: clamp(43px, 4.6vw, 68px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.06em;
+  text-wrap: initial;
+}
+
+.storyTitle em {
+  display: inline-block;
+  color: #f3d997;
+  font-family: var(--font-caveat), cursive;
+  font-size: 1.8em;
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  transform: rotate(-5deg);
+}
+
+.storyCopy > p:not(.handwritten) {
+  max-width: 410px;
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.95;
+  color: #e4d4c7;
+}
+
+.storyCopy .textLink {
+  margin-top: 24px;
+}
+
+.storyCopy .textLink:hover {
+  color: #edc2c1;
+}
+
+.storySignature {
+  display: block;
+  margin-top: 26px;
+  color: #e6bab0;
+  font-family: var(--font-caveat), cursive;
+  font-size: 29px;
+}
+
+.journal {
+  padding-block: 80px 45px;
+  overflow: hidden;
+}
+
+.journal .sectionTitle {
+  max-width: 760px;
+  font-size: clamp(31px, 3.2vw, 46px);
+}
+
+.journalGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  padding-block: 10px 25px;
+}
+
+.journalPhoto {
+  position: relative;
+  aspect-ratio: 1;
+  border: 6px solid #fff;
+  box-shadow: 0 3px 12px #44352d12;
+  transform: rotate(-2deg);
+  transition: transform 300ms;
+}
+
+.journalPhoto:nth-child(even) {
+  transform: translateY(15px) rotate(2deg);
+}
+
+.journalPhoto:hover {
+  transform: rotate(0);
+}
+
+.journalPhoto img {
+  object-fit: cover;
+}
+
+.journalArrow {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fbf8f3e6;
+}
+
+.journalArrow svg {
+  width: 15px;
+}
+
+.journalCaption {
+  margin-top: 25px;
+  text-align: center;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+@media (width < 1100px) {
+  .wrap {
+    width: calc(100% - 56px);
+  }
+  .hero {
+    min-height: 615px;
+    grid-template-columns: 1.05fr 1fr;
+  }
+  .heroCopy {
+    padding-left: 35px;
+  }
+  .heroTitle {
+    font-size: 49px;
+  }
+  .heroDescription {
+    max-width: 325px;
+    font-size: 13px;
+  }
+  .heroActions {
+    gap: 15px;
+  }
+  .heroActions .button {
+    padding-inline: 17px;
+    font-size: 11px;
+    gap: 12px;
+  }
+  .heroActions .textLink {
+    font-size: 11px;
+    gap: 12px;
+  }
+  .heroCollage {
+    margin: 35px 38px 55px 40px;
+    height: 445px;
+  }
+  .heroPhoto {
+    bottom: 30px;
+    border-width: 6px;
+  }
+  .picnicPhoto {
+    width: 180px;
+    left: -50px;
+  }
+  .picnicPhoto > div {
+    height: 120px;
+  }
+  .picnicPhoto > span {
+    font-size: 19px;
+  }
+  .photoNote {
+    font-size: 26px;
+    right: -8px;
+    bottom: -22px;
+  }
+  .curl {
+    width: 100px;
+    left: -75px;
+  }
+  .promiseStrip {
+    gap: 24px;
+    font-size: 27px;
+  }
+  .promiseStrip span + span::before {
+    margin-right: 30px;
+  }
+  .momentsGrid {
+    gap: 35px 25px;
+  }
+  .walk .momentPhoto {
+    height: 420px;
+  }
+  .travel .momentPhoto {
+    height: 340px;
+  }
+  .home {
+    margin-right: 0;
+  }
+  .home .momentPhoto {
+    height: 370px;
+  }
+  .dress .momentPhoto {
+    height: 390px;
+  }
+  .story {
+    gap: 8%;
+  }
+  .storyCopy {
+    padding-right: 0;
+  }
+  .storyPhoto {
+    aspect-ratio: 1 / 1.4;
+  }
+}
+
+@media (width < 900px) and (width >= 641px) {
+  .heroCopy {
+    padding: 45px 0 55px 28px;
+  }
+  .heroTitle {
+    font-size: 39px;
+  }
+  .heroCopy .eyebrow {
+    font-size: 8px;
+    max-width: 240px;
+  }
+  .heroCollage {
+    margin-right: 30px;
+    margin-left: 25px;
+    height: 390px;
+  }
+  .heroDescription {
+    max-width: 275px;
+  }
+  .heroActions {
+    max-width: 300px;
+  }
+  .heroNote {
+    font-size: 21px;
+    max-width: 230px;
+  }
+  .picnicPhoto {
+    left: -35px;
+    width: 160px;
+    bottom: 0;
+  }
+  .picnicPhoto > div {
+    height: 100px;
+  }
+  .photoNote {
+    bottom: -34px;
+    font-size: 24px;
+  }
+  .curl {
+    display: none;
+  }
+  .promiseStrip {
+    gap: 12px;
+    font-size: 24px;
+    padding-inline: 20px;
+  }
+  .promiseStrip span + span::before {
+    margin-right: 15px;
+  }
+  .sectionHeading {
+    align-items: start;
+  }
+  .headingNote {
+    max-width: 230px;
+  }
+  .sectionTitle {
+    font-size: 36px;
+  }
+  .handwritten {
+    font-size: 25px;
+  }
+}
+
+@media (width < 761px) {
+  .section {
+    padding-block: 62px 50px;
+  }
+  .sectionHeading {
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .momentsGrid {
+    gap: 35px 20px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .moment {
+    grid-column: auto;
+  }
+  .travel {
+    margin-top: 45px;
+  }
+  .dress {
+    margin-top: 35px;
+  }
+  .moment .momentPhoto {
+    height: 315px;
+  }
+  .momentCaption h3 {
+    font-size: 22px;
+  }
+  .momentCaption p {
+    font-size: 12px;
+  }
+  .momentIndex {
+    top: 12px;
+    left: 12px;
+    width: 32px;
+    height: 32px;
+  }
+  .momentCta {
+    right: 12px;
+    bottom: 12px;
+    padding-inline: 12px;
+  }
+  .recommendations {
+    padding-block: 50px;
+  }
+  .productGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px 18px;
+  }
+  .story {
+    grid-template-columns: 1fr;
+    gap: 50px;
+    padding-block: 65px;
+  }
+  .storyPhoto {
+    width: 85%;
+    margin-inline: auto;
+    aspect-ratio: 1.05;
+  }
+  .storyCopy {
+    padding-inline: 20px;
+  }
+  .storyTitle {
+    font-size: 54px;
+  }
+}
+
+@media (width < 641px) {
+  .wrap {
+    width: calc(100% - 40px);
+  }
+  .hero {
+    width: calc(100% - 20px);
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .heroCopy {
+    padding: 34px 24px 10px;
+  }
+  .heroCopy .eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.09em;
+  }
+  .heroTitle {
+    font-size: clamp(35px, 10vw, 57px);
+    margin-top: 24px;
+  }
+  .heroTitle em::after {
+    border-width: 4px;
+    bottom: -5px;
+  }
+  .heroDescription {
+    max-width: 390px;
+    margin-top: 27px;
+    font-size: 13px;
+    line-height: 1.75;
+  }
+  .heroActions {
+    margin-top: 23px;
+    gap: 17px;
+  }
+  .heroActions .button {
+    padding-inline: 15px;
+    min-height: 48px;
+    font-size: 10px;
+    gap: 9px;
+  }
+  .heroActions .textLink {
+    font-size: 10px;
+    gap: 8px;
+  }
+  .heroNote {
+    font-size: 23px;
+    margin-top: 20px;
+  }
+  .heroCollage {
+    height: auto;
+    aspect-ratio: 1 / 1.14;
+    margin: 24px 30px 60px 64px;
+  }
+  .heroPhoto {
+    inset: 0 0 25px 0;
+    border-width: 5px;
+  }
+  .picnicPhoto {
+    left: -43px;
+    bottom: -12px;
+    width: clamp(130px, 40vw, 155px);
+    padding: 5px 5px 0;
+  }
+  .picnicPhoto > div {
+    height: 101px;
+  }
+  .picnicPhoto > span {
+    font-size: 18px;
+    padding: 4px 0 6px;
+  }
+  .photoNote {
+    right: -12px;
+    bottom: -39px;
+    font-size: 25px;
+  }
+  .curl {
+    width: 80px;
+    left: -52px;
+    top: -18px;
+    transform: rotate(45deg);
+  }
+  .promiseStrip {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px 20px;
+    gap: 3px 23px;
+    font-size: 25px;
+  }
+  .promiseStrip span + span::before {
+    content: none;
+  }
+  .handwritten {
+    font-size: 26px;
+  }
+  .sectionTitle {
+    font-size: 34px;
+    margin-top: 12px;
+  }
+  .headingNote {
+    font-size: 12px;
+  }
+  .headingNote br {
+    display: none;
+  }
+  .momentsGrid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .moment {
+    margin: 0;
+  }
+  .moment .momentPhoto {
+    height: auto;
+    aspect-ratio: 1.08;
+  }
+  .travel .momentPhoto,
+  .dress .momentPhoto {
+    aspect-ratio: 1.1;
+  }
+  .momentCaption {
+    padding-top: 17px;
+  }
+  .momentCaption h3 {
+    font-size: 26px;
+  }
+  .momentCaption p {
+    font-size: 12px;
+    margin-top: 7px;
+  }
+  .catalogPrompt {
+    margin-top: 36px;
+    padding-top: 22px;
+    gap: 4px;
+    flex-direction: column;
+    font-size: 12px;
+  }
+  .productGrid {
+    gap: 28px 14px;
+  }
+  .productPhoto img {
+    padding: 14px;
+  }
+  .productArrow {
+    width: 29px;
+    height: 29px;
+    right: 8px;
+    bottom: 8px;
+  }
+  .productLine {
+    margin-top: 15px;
+    font-size: 9px;
+  }
+  .product h3,
+  .productPrice {
+    font-size: 12px;
+  }
+  .storyPhoto {
+    width: 92%;
+  }
+  .storyPhotoNote {
+    right: -9px;
+    bottom: 17px;
+    font-size: 23px;
+    padding: 9px 12px;
+  }
+  .storyCopy {
+    padding-inline: 8px;
+  }
+  .storyCopy .textLink {
+    font-size: 11px;
+    gap: 10px;
+  }
+  .storyCopy > p:not(.handwritten) {
+    font-size: 13px;
+  }
+  .storyTitle {
+    font-size: 48px;
+  }
+  .journal {
+    padding-block: 55px 35px;
+  }
+  .journalGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 14px;
+  }
+  .journalPhoto {
+    border-width: 4px;
+  }
+  .journalCaption {
+    max-width: 295px;
+    margin-inline: auto;
+    font-size: 11px;
+  }
+}
+
+@media (width < 381px) {
+  .heroTitle {
+    font-size: 30px;
+  }
+  .heroDescription {
+    font-size: 12px;
+  }
+  .heroActions {
+    gap: 12px;
+  }
+  .heroActions .button {
+    padding-inline: 12px;
+  }
+  .heroActions .textLink svg,
+  .heroNote {
+    display: none;
+  }
+}

@@ -88,6 +88,80 @@ export const categories: readonly Category[] = [
 
 export const collections: readonly CollectionInfo[] = [
   {
+    slug: "walks",
+    title: "Гуляємо",
+    tagline: "Ваші моменти разом",
+    description:
+      "Одяг та аксесуари для знайомих стежок, довгих маршрутів і щоденних маленьких відкриттів.",
+    accent: "mint",
+    glyph: "",
+    productSlugs: [
+      "graphic-tee",
+      "reversible-raincoat",
+      "reflective-harness",
+      "all-weather-boots",
+      "ice-band-bandana",
+    ],
+  },
+  {
+    slug: "travel",
+    title: "Подорожуємо разом",
+    tagline: "Найкращий попутник уже зібрався",
+    description:
+      "Добірка для спільних виїздів за місто, відпочинку біля води та нових пригод із собакою.",
+    accent: "sky",
+    glyph: "",
+    productSlugs: [
+      "life-vest",
+      "ice-mat-cooling",
+      "ice-band-bandana",
+      "ice-toy-cooling",
+      "reversible-raincoat",
+    ],
+  },
+  {
+    slug: "at-home",
+    title: "Відпочиваємо вдома",
+    tagline: "Щастя — коли можна просто бути поруч",
+    description: "Речі для домашніх ігор та відпочинку в улюбленому куточку.",
+    accent: "accent",
+    glyph: "",
+    productSlugs: ["ice-mat-cooling", "ice-toy-cooling"],
+  },
+  {
+    slug: "dress-up",
+    title: "Одягаємось",
+    tagline: "Для будь-якої погоди. І власного настрою",
+    description:
+      "Футболки, дощовики та теплий одяг для комфортних прогулянок у різні пори року.",
+    accent: "accent",
+    glyph: "",
+    productSlugs: [
+      "graphic-tee",
+      "reversible-raincoat",
+      "winter-parka",
+      "elasto-fit-sweater",
+      "insulated-bodysuit",
+      "neck-warmer-snood",
+      "all-weather-boots",
+    ],
+  },
+  {
+    slug: "curly-joy-recommends",
+    title: "Curly Joy рекомендує",
+    tagline: "З любов’ю до деталей",
+    description:
+      "Наш вибір речей для спільних прогулянок, ігор та подорожей із собакою.",
+    accent: "accent",
+    glyph: "",
+    productSlugs: [
+      "ice-band-bandana",
+      "ice-toy-cooling",
+      "graphic-tee",
+      "life-vest",
+    ],
+  },
+  {
     slug: "summer",
     title: "Літня колекція",
     tagline: "Тепер мені завжди буде комфортно",

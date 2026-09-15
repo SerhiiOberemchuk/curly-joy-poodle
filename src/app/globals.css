@@ -4,17 +4,17 @@
 
 :root {
   /* Brand palette */
-  --color-cream: #ffffff;
-  --color-sand: #ece6e4;
-  --color-ink: #282828;
-  --color-ink-soft: #595655;
-  --color-ink-muted: #747071;
-  --color-line: #e7e3e1;
+  --color-cream: #fbf8f3;
+  --color-sand: #eee6dd;
+  --color-ink: #44352d;
+  --color-ink-soft: #6b5b51;
+  --color-ink-muted: #7e6d63;
+  --color-line: #e6ddd3;
   --color-surface: #ffffff;
 
-  --color-accent: #ff4259;
-  --color-accent-dark: #d92943;
-  --color-accent-soft: #fff0f2;
+  --color-accent: #89594d;
+  --color-accent-dark: #684137;
+  --color-accent-soft: #f1e1dc;
   --color-mint: #2f8f7f;
   --color-mint-soft: #ddf0ea;
   --color-sky: #3f7ea8;

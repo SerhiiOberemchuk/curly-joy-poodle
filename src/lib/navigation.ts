@@ -5,8 +5,9 @@ export interface NavLink {
 
 export const primaryNav: readonly NavLink[] = [
   { href: "/catalog", label: "Каталог" },
-  { href: "/collection/summer", label: "Літня колекція" },
-  { href: "/collection/winter", label: "Зимова колекція" },
+  { href: "/#moments", label: "Добірки для життя" },
+  { href: "/#recommendations", label: "Curly Joy рекомендує" },
+  { href: "/#story", label: "Про Curly Joy" },
   { href: "/info/sizes", label: "Як виміряти" },
 ];
 

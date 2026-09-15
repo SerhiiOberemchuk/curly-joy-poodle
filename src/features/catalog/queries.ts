@@ -34,7 +34,9 @@ export interface ProductFilter {
 function toListItem(product: Product): ProductListItem {
   const available = product.variants.filter((variant) => variant.stock > 0);
   const priced = available.length > 0 ? available : product.variants;
-  const cheapest = priced.reduce((min, variant) => (variant.price < min.price ? variant : min));
+  const cheapest = priced.reduce((min, variant) =>
+    variant.price < min.price ? variant : min,
+  );
 
   return {
     id: product.id,
@@ -52,7 +54,10 @@ function toListItem(product: Product): ProductListItem {
   };
 }
 
-function sortProducts(items: ProductListItem[], sort: SortOption): ProductListItem[] {
+function sortProducts(
+  items: ProductListItem[],
+  sort: SortOption,
+): ProductListItem[] {
   switch (sort) {
     case "price-asc":
       return items.sort((a, b) => a.priceFrom - b.priceFrom);
@@ -90,7 +95,9 @@ export async function getCollections(): Promise<readonly CollectionInfo[]> {
   return collections;
 }
 
-export async function getCollection(slug: string): Promise<CollectionInfo | null> {
+export async function getCollection(
+  slug: string,
+): Promise<CollectionInfo | null> {
   "use cache";
   cacheLife("days");
   cacheTag(catalogTags.all);
@@ -98,7 +105,9 @@ export async function getCollection(slug: string): Promise<CollectionInfo | null
   return collections.find((collection) => collection.slug === slug) ?? null;
 }
 
-export async function getProducts(filter: ProductFilter = {}): Promise<ProductListItem[]> {
+export async function getProducts(
+  filter: ProductFilter = {},
+): Promise<ProductListItem[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(
@@ -106,11 +115,27 @@ export async function getProducts(filter: ProductFilter = {}): Promise<ProductLi
     ...(filter.category ? [catalogTags.category(filter.category)] : []),
   );
 
+  const collection = filter.collection
+    ? collections.find((item) => item.slug === filter.collection)
+    : undefined;
+  const selection = collection?.productSlugs;
+
   const matched = products.filter((product) => {
-    if (filter.category && product.categorySlug !== filter.category) return false;
-    if (filter.collection && product.collection !== filter.collection) return false;
+    if (filter.category && product.categorySlug !== filter.category)
+      return false;
+    if (filter.collection) {
+      if (selection) return selection.includes(product.slug);
+      return product.collection === filter.collection;
+    }
     return true;
   });
+
+  // Preserve the editor's sequence when the customer chooses recommendations.
+  if (selection && (!filter.sort || filter.sort === "featured")) {
+    matched.sort(
+      (a, b) => selection.indexOf(a.slug) - selection.indexOf(b.slug),
+    );
+  }
 
   return sortProducts(matched.map(toListItem), filter.sort ?? "featured");
 }
@@ -140,7 +165,10 @@ export async function getCategorySlugs(): Promise<string[]> {
   return categories.map((category) => category.slug);
 }
 
-export async function getRelatedProducts(slug: string, limit = 4): Promise<ProductListItem[]> {
+export async function getRelatedProducts(
+  slug: string,
+  limit = 4,
+): Promise<ProductListItem[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(catalogTags.all, catalogTags.product(slug));
@@ -149,7 +177,8 @@ export async function getRelatedProducts(slug: string, limit = 4): Promise<Produ
   if (!current) return [];
 
   const sameCategory = products.filter(
-    (product) => product.slug !== slug && product.categorySlug === current.categorySlug,
+    (product) =>
+      product.slug !== slug && product.categorySlug === current.categorySlug,
   );
   const sameCollection = products.filter(
     (product) =>

@@ -13,10 +13,10 @@ export default function NotFound() {
   return (
     <Section
       title="Такої сторінки немає"
-      description="Можливо, товар більше не продається або в посиланні є помилка. Почніть із каталогу — там усе, що зараз у наявності."
+      description="Зараз для перегляду доступна лише головна сторінка Curly Joy. Інші розділи ми відкриємо пізніше."
     >
-      <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
-        Перейти до каталогу
+      <Link href="/" className={buttonStyles({ size: "lg" })}>
+        Повернутися на головну
       </Link>
     </Section>
   );

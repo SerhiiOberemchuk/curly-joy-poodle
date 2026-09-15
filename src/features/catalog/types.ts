@@ -1,4 +1,12 @@
-export type Collection = "summer" | "winter" | "all-season";
+export type SeasonalCollection = "summer" | "winter" | "all-season";
+
+export type Collection =
+  | SeasonalCollection
+  | "walks"
+  | "travel"
+  | "at-home"
+  | "dress-up"
+  | "curly-joy-recommends";
 
 export type SizeCode = "XXS" | "XS" | "S" | "M" | "L" | "XL" | "XXL";
 
@@ -42,7 +50,7 @@ export interface Product {
   line?: string;
   brand: string;
   categorySlug: string;
-  collection: Collection;
+  collection: SeasonalCollection;
   summary: string;
   description: string;
   features: readonly string[];
@@ -64,7 +72,7 @@ export interface Category {
   glyph: string;
 }
 
-/** Seasonal merchandising grouping, cross-cutting the type-based categories. */
+/** Seasonal or editorial grouping, independent of product categories. */
 export interface CollectionInfo {
   slug: Collection;
   title: string;
@@ -72,6 +80,8 @@ export interface CollectionInfo {
   description: string;
   accent: Accent;
   glyph: string;
+  /** Explicit membership lets one product appear in several lifestyle edits. */
+  productSlugs?: readonly string[];
 }
 
 export interface ProductListItem {

@@ -1,0 +1,35 @@
+.price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.prefix {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-ink-muted);
+}
+
+.compare {
+  font-family: var(--font-sans);
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  text-decoration: line-through;
+}
+
+.sm {
+  font-size: var(--text-lg);
+}
+
+.md {
+  font-size: var(--text-xl);
+}
+
+.lg {
+  font-size: var(--text-3xl);
+}

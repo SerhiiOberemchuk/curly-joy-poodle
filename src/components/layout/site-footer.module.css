@@ -1,0 +1,111 @@
+.footer {
+  margin-block-start: auto;
+  padding-block: var(--space-8) var(--space-5);
+  background: #242424;
+  color: var(--color-sand);
+}
+
+.brandLogo {
+  width: 92px;
+  height: auto;
+  border-radius: 50%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: #fff;
+}
+
+.brandText {
+  margin-block-start: var(--space-3);
+  max-width: 34ch;
+  font-size: var(--text-sm);
+  color: rgb(244 235 221 / 70%);
+}
+
+.socials {
+  display: flex;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+
+.social {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgb(244 235 221 / 25%);
+  border-radius: 4px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition:
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.social:hover {
+  background: rgb(244 235 221 / 10%);
+  border-color: rgb(244 235 221 / 55%);
+}
+
+.columnTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(244 235 221 / 55%);
+  margin-block-end: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.list a:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contactItem {
+  color: rgb(244 235 221 / 70%);
+}
+
+.contactItem strong {
+  display: block;
+  color: #fff;
+  font-weight: 600;
+}
+
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-start: var(--space-7);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid rgb(244 235 221 / 15%);
+  font-size: var(--text-xs);
+  color: rgb(244 235 221 / 55%);
+}
+
+@media (width >= 720px) {
+  .grid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+  }
+}
+
+@media (width >= 1000px) {
+  .grid {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  }
+}

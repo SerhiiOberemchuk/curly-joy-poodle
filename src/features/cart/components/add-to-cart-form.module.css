@@ -1,0 +1,133 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.fieldLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.sizeHint {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.size {
+  min-width: 56px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  transition: border-color var(--transition), background var(--transition),
+    color var(--transition);
+}
+
+.size:hover:not(:disabled) {
+  border-color: var(--color-ink);
+}
+
+.sizeActive {
+  composes: size;
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-cream);
+}
+
+.sizeDisabled {
+  composes: size;
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.stepperButton {
+  width: 44px;
+  align-self: stretch;
+  font-size: var(--text-lg);
+  color: var(--color-ink-soft);
+  transition: background var(--transition);
+}
+
+.stepperButton:hover:not(:disabled) {
+  background: var(--color-sand);
+}
+
+.stepperButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stepperValue {
+  min-width: 2.5ch;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.submit {
+  flex: 1;
+  min-width: 200px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.statusSuccess {
+  composes: status;
+  color: var(--color-mint);
+}
+
+.statusError {
+  composes: status;
+  color: var(--color-danger);
+}
+
+.statusLink {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.stock {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}

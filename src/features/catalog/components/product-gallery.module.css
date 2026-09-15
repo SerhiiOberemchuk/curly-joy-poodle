@@ -1,0 +1,31 @@
+.gallery {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.thumbs {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color var(--transition), opacity var(--transition);
+  opacity: 0.7;
+}
+
+.thumb:hover {
+  opacity: 1;
+}
+
+.thumbActive {
+  composes: thumb;
+  border-color: var(--color-ink);
+  opacity: 1;
+}

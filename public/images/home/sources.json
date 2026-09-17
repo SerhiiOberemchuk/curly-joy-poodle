@@ -1,0 +1,12 @@
+{
+  "client-reference.jpg": {
+    "source": "example_1page.jpg",
+    "description": "Client-provided generated design. Used as an artwork atlas for the logo, lifestyle photography, reference products and promotional banners. Cropping is implemented in ReferenceArtwork; all interface text and controls are HTML."
+  },
+  "hero.webp": {
+    "source": "Built-in image_gen, based on example_1page.jpg",
+    "date": "2026-09-17",
+    "description": "Clean reconstruction of the reference hero photograph without embedded UI or lettering. Converted to WebP for delivery.",
+    "prompt": "Use case: precise-object-edit. Input image is a client's full website reference. Produce ONLY the clean wide hero photograph occupying x=0..1024 y=98..453 of that reference. Reproduce the EXACT same four toy poodles grouped in the beige oval plush dog bed on the RIGHT: white cream poodle left front, chocolate poodle behind in middle, apricot poodle on right, small apricot puppy in front. Warm beige sunlit home interior and soft sheer curtains. LEFT 40 percent is softly blurred empty cream living room with sofa and curtains for website text overlay. Output a panoramic photograph about 3:1 aspect ratio. Remove all UI, headings, buttons, handwritten slogans, hearts, logos and letters including the dog bed lettering. Maintain original colors, photo mood, dogs, placement and lighting as closely as possible. No other sections of the website. No typography anywhere. This is a website project asset; save the result."
+  }
+}

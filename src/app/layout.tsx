@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Montserrat } from "next/font/google";
+import { Caveat, Montserrat, Pangolin } from "next/font/google";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import styles from "@/components/layout/site-layout.module.css";
+import { HomeSelectionProvider } from "@/features/home/components/home-interactions";
 import { site } from "@/lib/site";
 
 import "./globals.css";
@@ -17,6 +19,13 @@ const caveat = Caveat({
   variable: "--font-caveat",
   subsets: ["latin", "cyrillic"],
   display: "swap",
+});
+
+const handwriting = Pangolin({
+  weight: "400",
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-home-handwriting",
 });
 
 export const metadata: Metadata = {
@@ -44,16 +53,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="uk"
-      className={`${montserrat.variable} ${caveat.variable}`}
+      className={`${montserrat.variable} ${caveat.variable} ${handwriting.variable}`}
       data-scroll-behavior="smooth"
     >
       <body>
         <a href="#main-content" className="skip-link">
           Перейти до вмісту
         </a>
-        <SiteHeader />
-        <main id="main-content">{children}</main>
-        <SiteFooter />
+        <div className={styles.shell}>
+          <HomeSelectionProvider>
+            <SiteHeader />
+            <main id="main-content" className={styles.main}>
+              {children}
+            </main>
+            <SiteFooter />
+          </HomeSelectionProvider>
+        </div>
       </body>
     </html>
   );

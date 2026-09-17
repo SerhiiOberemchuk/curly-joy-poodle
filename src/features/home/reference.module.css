@@ -1,0 +1,851 @@
+.page {
+  --home-brown: #694638;
+  --home-pink: #f1ddd5;
+  --home-paper: #fcf7f1;
+  --home-script: var(--font-caveat), cursive;
+  container-type: inline-size;
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  background: var(--home-paper);
+  color: #38271f;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.4;
+}
+
+.page h1,
+.page h2,
+.page h3 {
+  font-family: inherit;
+}
+.page a,
+.page button {
+  -webkit-tap-highlight-color: transparent;
+}
+.page a:focus-visible,
+.page button:focus-visible,
+.page input:focus-visible,
+.page summary:focus-visible {
+  outline: 2px solid var(--home-brown);
+  outline-offset: 4px;
+}
+.artwork {
+  display: block;
+  background-image: url("/images/home/client-reference.jpg");
+  background-repeat: no-repeat;
+}
+.heart,
+.smallDogs b,
+.dogNote b {
+  color: #c5867b;
+  font-weight: 600;
+}
+.button,
+.lightButton,
+.promoButton {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.7em;
+  border-radius: 999px;
+  font-weight: 500;
+  transition:
+    background-color 180ms,
+    transform 180ms;
+}
+.button:hover,
+.promoButton:hover {
+  background: #58382d;
+}
+.productFavorite[aria-pressed="true"] svg {
+  fill: #c5867b;
+  stroke: #9a5d51;
+}
+.hero {
+  position: relative;
+  aspect-ratio: 1024 / 355;
+  isolation: isolate;
+  overflow: hidden;
+  background: #f1e4d9;
+}
+.heroImage {
+  object-fit: cover;
+  z-index: -1;
+}
+.heroCopy {
+  padding: 4.3cqw 0 1.1cqw 6.25cqw;
+  width: 48%;
+}
+.hero h1 {
+  font:
+    400 4.2cqw/1.03 var(--font-home-handwriting),
+    cursive;
+  letter-spacing: -0.035em;
+  color: #603b2c;
+  text-wrap: initial;
+}
+.hero h1 .heart {
+  font-family: var(--home-script);
+  font-size: 0.9em;
+}
+.heroCopy > p {
+  margin-top: 1.4cqw;
+  font-size: 1.5cqw;
+  line-height: 1.45;
+}
+.heroButtons {
+  display: flex;
+  gap: 1cqw;
+  margin-top: 1.65cqw;
+  white-space: nowrap;
+}
+.button,
+.lightButton {
+  min-height: 3.8cqw;
+  padding: 0.85cqw 2.1cqw;
+  font-size: 1.17cqw;
+}
+.button {
+  background: #795042;
+  color: #fffaf5;
+}
+.button svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+.lightButton {
+  background: #fff9f0d9;
+  color: #694638;
+}
+.lightButton:hover {
+  background: #fffaf7;
+}
+.smallDogs {
+  display: block;
+  margin: 1.1cqw 0 0 -2.2cqw;
+  font: 400 2cqw/0.95 var(--home-script);
+  transform: rotate(-8deg);
+  width: fit-content;
+}
+.smallDogs > span {
+  margin-left: 1.6cqw;
+}
+.happyTogether {
+  position: absolute;
+  top: 4cqw;
+  right: 3.8cqw;
+  font: 400 3.1cqw/0.95 var(--home-script);
+  color: #785346;
+  transform: rotate(-5deg);
+  text-align: center;
+}
+.happyTogether b {
+  display: inline-block;
+  font: 400 2.8cqw/1.1 var(--home-script);
+  margin-top: 0.4cqw;
+}
+.bedBrand {
+  position: absolute;
+  bottom: 0.5cqw;
+  right: 18.7%;
+  font-size: 1.3cqw;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  transform: rotate(2deg);
+  color: #654c41;
+}
+.benefits {
+  min-height: 7.4cqw;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2cqw;
+  padding: 2.1cqw 7%;
+  background: #faf2e9;
+}
+.benefits li {
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+}
+.benefits svg {
+  width: 3.2cqw;
+  height: 3.2cqw;
+  flex-shrink: 0;
+  color: #714a3b;
+}
+.benefits strong,
+.benefits span {
+  display: block;
+}
+.benefits strong {
+  font-size: 1.1cqw;
+}
+.benefits span {
+  font-size: 1cqw;
+  margin-top: 0.35cqw;
+}
+.moments {
+  padding: 0 1.9cqw;
+  scroll-margin-top: 20px;
+}
+.momentsHeading {
+  min-height: 10cqw;
+  display: grid;
+  grid-template-columns: 48% 1fr 11%;
+  gap: 1cqw;
+  align-items: center;
+}
+.momentsHeading h2 {
+  font:
+    400 4.5cqw/1 var(--font-home-handwriting),
+    cursive;
+  letter-spacing: -0.04em;
+  color: #634031;
+  white-space: nowrap;
+  padding-left: 1.5cqw;
+}
+.momentsHeading .heart {
+  display: inline-block;
+  margin-left: 1cqw;
+  font-size: 0.85em;
+}
+.momentsHeading > div p {
+  font-size: 1.6cqw;
+  margin-bottom: 0.6cqw;
+}
+.momentsHeading > div > span {
+  font-size: 1.2cqw;
+  white-space: nowrap;
+}
+.dogNote {
+  justify-self: end;
+  padding: 1cqw 1.9cqw;
+  font: 400 2.2cqw/1.05 var(--home-script);
+  background: #f3dcd6;
+  border-radius: 70% 23% 43% 42%;
+  transform: rotate(7deg);
+  text-align: center;
+}
+.momentGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8cqw;
+}
+.momentCard {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 241 / 198;
+  overflow: hidden;
+  border-radius: 1cqw;
+  background: #f1e0d6;
+}
+.momentImage {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 76%;
+  transition: transform 300ms ease;
+}
+.momentCard:hover .momentImage {
+  transform: scale(1.025);
+}
+.momentCaption {
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 0;
+  min-height: 43%;
+  padding: 1.1cqw 5cqw 1cqw 1.7cqw;
+  background: linear-gradient(110deg, #f5e7dd, #f0d9cf);
+}
+.momentCaption::before {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  left: -10%;
+  top: -1.5cqw;
+  width: 120%;
+  height: 3cqw;
+  background: inherit;
+  border-radius: 50% 60% 0 0;
+  transform: rotate(7deg);
+}
+.momentCard:nth-child(3n) .momentCaption::before {
+  transform: rotate(-5deg);
+}
+.momentCard:nth-child(1) h3 {
+  max-width: 14cqw;
+}
+.momentCard:nth-child(3) .momentCaption,
+.momentCard:nth-child(7) .momentCaption,
+.momentCard:nth-child(8) .momentCaption {
+  min-height: 30%;
+  padding-top: 0.5cqw;
+}
+.momentCaption h3 {
+  font-size: 1.6cqw;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  text-wrap: initial;
+}
+.momentCaption p {
+  margin-top: 0.7cqw;
+  font-size: 1cqw;
+  line-height: 1.3;
+}
+.roundArrow {
+  position: absolute;
+  z-index: 2;
+  right: 1cqw;
+  bottom: 1.1cqw;
+  display: grid;
+  place-items: center;
+  width: 3.5cqw;
+  height: 3.5cqw;
+  background: #fffaf6;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px #6e4b3526;
+  transition: transform 180ms;
+}
+.roundArrow svg {
+  width: 1.8cqw;
+  height: 1.8cqw;
+}
+.momentCard:hover .roundArrow {
+  transform: translateX(3px);
+}
+.recommendations {
+  display: grid;
+  grid-template-columns: 22.5% minmax(0, 1fr);
+  gap: 1cqw;
+  margin: 1.8cqw 1.8cqw 1cqw;
+  padding: 1.25cqw;
+  min-height: 20.3cqw;
+  border-radius: 1.2cqw;
+  background:
+    radial-gradient(ellipse at 31% 51%, #faf3e9 0 13%, transparent 13.2%),
+    linear-gradient(100deg, #f1dcd4, #f4e6de);
+  scroll-margin-top: 24px;
+}
+.recommendationCopy {
+  align-self: center;
+  padding: 0.2cqw 0.5cqw;
+}
+.recommendationCopy h2 {
+  width: fit-content;
+  font:
+    400 3cqw/1.05 var(--font-home-handwriting),
+    cursive;
+  color: #644131;
+  position: relative;
+}
+.recommendationCopy .heart {
+  position: absolute;
+  right: -3cqw;
+  bottom: 1.4cqw;
+  font: 400 3.2cqw/1 var(--home-script);
+}
+.recommendationCopy p {
+  margin: 1.2cqw 0 1.6cqw;
+  font-size: 1.18cqw;
+  line-height: 1.45;
+}
+.recommendationCopy .button {
+  padding-inline: 1.7cqw;
+  min-height: 3.45cqw;
+  font-size: 1.08cqw;
+}
+.productResults {
+  min-width: 0;
+}
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6cqw;
+  height: 100%;
+}
+.productCard {
+  position: relative;
+  background: #fcf8f4;
+  border: 1px solid #eee2d9;
+  border-radius: 1cqw;
+  overflow: hidden;
+}
+.productFavorite {
+  position: absolute;
+  z-index: 1;
+  top: 0.3cqw;
+  right: 0.3cqw;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.productFavorite svg {
+  width: 1.5cqw;
+  min-width: 17px;
+  height: 1.5cqw;
+  min-height: 17px;
+}
+.productLink {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1cqw 1.1cqw 0.75cqw;
+}
+.productImage {
+  height: 10.7cqw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.65cqw;
+}
+.productImage .artwork {
+  height: 100%;
+  max-width: 100%;
+  mix-blend-mode: multiply;
+}
+.productLink h3 {
+  font-size: 0.97cqw;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-wrap: initial;
+}
+.productLink p {
+  font-size: 0.95cqw;
+  line-height: 1.35;
+}
+.productLink strong {
+  margin-top: auto;
+  padding-top: 0.6cqw;
+  font-size: 1.35cqw;
+  color: #191512;
+}
+.productLink:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.emptyResults {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+.emptyResults button {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.promotions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75cqw;
+  padding: 0 1.8cqw;
+}
+.promo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 327 / 171;
+  border-radius: 1cqw;
+}
+.promoImage {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  z-index: -2;
+}
+.promo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.newPromo::before {
+  background: linear-gradient(90deg, #d9c2b3 0%, #ddc8b9 36%, transparent 50%);
+}
+.seasonPromo::before {
+  background: linear-gradient(90deg, #737775 0%, #737775 42%, transparent 60%);
+}
+.dressPromo::before {
+  background: linear-gradient(90deg, #e2cbbb 0%, #e2cbbb 38%, transparent 59%);
+}
+.promoCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+  padding: 2.2cqw 2cqw 1.5cqw;
+}
+.promoCopy h2 {
+  font:
+    400 2.2cqw/1.1 var(--font-home-handwriting),
+    cursive;
+  text-wrap: initial;
+}
+.promoCopy p {
+  font-size: 1cqw;
+  line-height: 1.4;
+  margin-top: 0.9cqw;
+}
+.newPromo h2 {
+  font: 400 4.7cqw/0.8 var(--home-script);
+  transform: rotate(-8deg);
+}
+.newPromo h2 span {
+  padding-left: 2.5cqw;
+}
+.seasonPromo {
+  color: #fffaf4;
+}
+.seasonPromo h2 {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.9cqw;
+  font-weight: 400;
+}
+.promoButton {
+  margin-top: auto;
+  padding: 0.65cqw 1.25cqw;
+  background: #795042;
+  color: #fffaf4;
+  font-size: 0.95cqw;
+}
+.promoButton svg {
+  width: 1em;
+  height: 1em;
+}
+.seasonPromo .promoButton {
+  color: #593d31;
+  background: #eacbb8;
+}
+
+@media (width <= 900px) {
+  .hero {
+    aspect-ratio: auto;
+    min-height: 590px;
+    display: flex;
+    flex-direction: column;
+  }
+  .heroImage {
+    top: auto !important;
+    height: 280px !important;
+    object-position: 78% center;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 230px;
+    background: linear-gradient(#f3e7dc 0%, #f3e7dc 86%, transparent);
+  }
+  .heroCopy {
+    width: 100%;
+    padding: 27px 24px 260px;
+  }
+  .hero h1 {
+    font-size: clamp(43px, 9.7cqw, 64px);
+    line-height: 0.95;
+  }
+  .heroCopy > p {
+    margin-top: 14px;
+    font-size: 14px;
+    max-width: 340px;
+  }
+  .heroButtons {
+    margin-top: 19px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .button,
+  .lightButton {
+    min-height: 40px;
+    padding: 11px 17px;
+    font-size: 12px;
+  }
+  .smallDogs {
+    position: absolute;
+    bottom: 16px;
+    left: 18px;
+    margin: 0;
+    font-size: 21px;
+    z-index: 1;
+  }
+  .smallDogs > span {
+    margin-left: 8px;
+  }
+  .happyTogether {
+    top: auto;
+    bottom: 187px;
+    right: 18px;
+    font-size: 25px;
+  }
+  .happyTogether b {
+    font-size: 21px;
+  }
+  .bedBrand {
+    bottom: 8px;
+    right: 21%;
+    font-size: 10px;
+  }
+  .benefits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 12px;
+    padding: 22px 20px;
+  }
+  .benefits li {
+    gap: 10px;
+  }
+  .benefits svg {
+    width: 28px;
+    height: 28px;
+  }
+  .benefits strong {
+    font-size: 12px;
+  }
+  .benefits span {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+  .moments {
+    padding: 0 14px;
+  }
+  .momentsHeading {
+    position: relative;
+    display: block;
+    padding: 25px 0 20px;
+  }
+  .momentsHeading h2 {
+    font-size: clamp(34px, 9.5cqw, 64px);
+    padding-left: 0;
+  }
+  .momentsHeading .heart {
+    margin-left: 5px;
+  }
+  .momentsHeading > div {
+    margin-top: 16px;
+    max-width: 82%;
+  }
+  .momentsHeading > div p {
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  .momentsHeading > div > span {
+    display: block;
+    font-size: 12px;
+    white-space: normal;
+  }
+  .dogNote {
+    position: absolute;
+    right: 0;
+    bottom: 16px;
+    padding: 10px;
+    font-size: 17px;
+  }
+  .momentGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .momentCard {
+    border-radius: 10px;
+    aspect-ratio: 1 / 1.07;
+  }
+  .momentImage {
+    height: 68%;
+  }
+  .momentCaption {
+    min-height: 44%;
+    padding: 8px 29px 10px 12px;
+  }
+  .momentCaption::before {
+    top: -10px;
+    height: 22px;
+  }
+  .momentCaption h3 {
+    font-size: clamp(14px, 3.6cqw, 23px);
+    line-height: 1.2;
+  }
+  .momentCard:nth-child(1) h3 {
+    max-width: none;
+  }
+  .momentCard:nth-child(3) .momentCaption,
+  .momentCard:nth-child(7) .momentCaption,
+  .momentCard:nth-child(8) .momentCaption {
+    min-height: 44%;
+    padding-top: 8px;
+  }
+  .momentCaption p {
+    font-size: clamp(10px, 2.55cqw, 15px);
+    margin-top: 7px;
+  }
+  .roundArrow {
+    right: 7px;
+    bottom: 11px;
+    width: 28px;
+    height: 28px;
+  }
+  .roundArrow svg {
+    width: 17px;
+    height: 17px;
+  }
+  .recommendations {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin: 20px 14px 12px;
+    padding: 20px 12px 12px;
+    border-radius: 12px;
+  }
+  .recommendationCopy {
+    padding: 0 4px;
+  }
+  .recommendationCopy h2 {
+    font-size: 38px;
+  }
+  .recommendationCopy .heart {
+    right: -34px;
+    left: auto;
+    bottom: 5px;
+    font-size: 38px;
+  }
+  .recommendationCopy p {
+    font-size: 13px;
+    margin: 12px 0 16px;
+  }
+  .recommendationCopy .button {
+    font-size: 12px;
+    min-height: 38px;
+    padding: 10px 16px;
+  }
+  .productGrid {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    scrollbar-color: #b89584 transparent;
+    scrollbar-width: thin;
+  }
+  .productCard {
+    flex: 0 0 44%;
+    border-radius: 10px;
+    scroll-snap-align: start;
+  }
+  .productLink {
+    padding: 12px;
+  }
+  .productImage {
+    height: 112px;
+    margin-bottom: 10px;
+  }
+  .productLink h3,
+  .productLink p {
+    font-size: 11px;
+  }
+  .productLink strong {
+    font-size: 16px;
+    padding-top: 9px;
+  }
+  .productFavorite {
+    top: 3px;
+    right: 3px;
+  }
+  .promotions {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 14px;
+  }
+  .promo {
+    border-radius: 12px;
+  }
+  .promoCopy {
+    padding: 24px 22px 19px;
+  }
+  .promoCopy h2 {
+    font-size: 30px;
+  }
+  .promoCopy p {
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .newPromo h2 {
+    font-size: 52px;
+  }
+  .newPromo h2 span {
+    padding-left: 25px;
+  }
+  .seasonPromo h2 {
+    font-size: 23px;
+  }
+  .promoButton {
+    padding: 9px 14px;
+    font-size: 11px;
+  }
+}
+
+@media (width <= 360px) {
+  .heroCopy {
+    padding-inline: 19px;
+  }
+  .hero h1 {
+    font-size: 42px;
+  }
+  .heroCopy > p {
+    font-size: 13px;
+  }
+  .heroButtons {
+    gap: 6px;
+  }
+  .button,
+  .lightButton {
+    font-size: 11px;
+    padding-inline: 12px;
+  }
+  .benefits {
+    padding-inline: 14px;
+  }
+  .benefits strong {
+    font-size: 11px;
+  }
+  .benefits svg {
+    width: 24px;
+    height: 24px;
+  }
+  .momentCard {
+    aspect-ratio: 1 / 1.23;
+  }
+  .momentCaption {
+    padding-left: 9px;
+  }
+  .momentCaption h3 {
+    font-size: 13px;
+  }
+  .roundArrow {
+    width: 24px;
+    height: 24px;
+    right: 5px;
+  }
+  .promoCopy {
+    padding: 18px 17px;
+  }
+  .promoCopy h2 {
+    font-size: 26px;
+  }
+  .newPromo h2 {
+    font-size: 43px;
+  }
+  .seasonPromo h2 {
+    font-size: 19px;
+  }
+  .promoCopy p {
+    font-size: 10px;
+  }
+  .promoButton {
+    padding: 7px 11px;
+    font-size: 10px;
+  }
+}

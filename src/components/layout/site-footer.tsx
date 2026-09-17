@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { getCategories } from "@/features/catalog/queries";
+import { HomeIcon } from "@/features/home/components/home-icon";
+import { ReferenceArtwork } from "@/features/home/components/reference-artwork";
 import { infoNav } from "@/lib/navigation";
 import { site } from "@/lib/site";
 
@@ -12,17 +13,47 @@ export async function SiteFooter() {
 
   return (
     <footer className={styles.footer}>
-      <div className="container">
+      <svg
+        className={styles.wave}
+        viewBox="0 0 1440 48"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0 28C150 12 225 0 350 15S555 46 720 24 910 4 1060 18 1310 0 1440 15V48H0Z"
+          fill="currentColor"
+        />
+      </svg>
+      <div className={styles.container}>
+        <div className={styles.signature}>
+          <p className={styles.note} lang="en">
+            Happy dogs.
+            <br />
+            <span>
+              Happier people. <b>♡</b>
+            </span>
+          </p>
+          <Link
+            href="/"
+            className={styles.wordmark}
+            aria-label="Curly Joy — головна"
+          >
+            CURLY JOY
+          </Link>
+          <div className={styles.pawTrail} aria-hidden="true">
+            <HomeIcon name="paw" />
+            <HomeIcon name="paw" />
+            <HomeIcon name="paw" />
+          </div>
+        </div>
         <div className={styles.grid}>
-          <div>
-            <Link href="/" aria-label="Curly Joy — головна">
-              <Image
-                src="/images/reference/6a1aff045a3e6e89b6f86151.webp"
-                alt="Curly Joy"
-                width={92}
-                height={92}
-                className={styles.brandLogo}
-              />
+          <div className={styles.brand}>
+            <Link
+              href="/"
+              aria-label="Curly Joy — головна"
+              className={styles.brandLogo}
+            >
+              <ReferenceArtwork window={[467, 15, 95, 83]} />
             </Link>
             <p className={styles.brandText}>
               Речі, історії та маленькі відкриття для щасливого життя разом із

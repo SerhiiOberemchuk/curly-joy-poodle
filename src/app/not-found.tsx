@@ -1,8 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
-import { buttonStyles } from "@/components/ui/button";
-import { Section } from "@/components/ui/section";
+import { NotFoundContent } from "@/components/layout/not-found-content";
 
 export const metadata: Metadata = {
   title: "Сторінку не знайдено",
@@ -10,14 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function NotFound() {
-  return (
-    <Section
-      title="Такої сторінки немає"
-      description="Зараз для перегляду доступна лише головна сторінка Curly Joy. Інші розділи ми відкриємо пізніше."
-    >
-      <Link href="/" className={buttonStyles({ size: "lg" })}>
-        Повернутися на головну
-      </Link>
-    </Section>
-  );
+  return <NotFoundContent />;
 }

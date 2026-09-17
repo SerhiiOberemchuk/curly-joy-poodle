@@ -1,53 +1,96 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { MobileNav } from "@/components/layout/mobile-nav";
 import {
   CartIndicator,
   CartIndicatorFallback,
 } from "@/features/cart/components/cart-indicator";
-import { primaryNav } from "@/lib/navigation";
+import { site } from "@/lib/site";
 
-import { MobileNav } from "./mobile-nav";
 import styles from "./site-header.module.css";
+import {
+  HomeFavorites,
+  HomeSearch,
+} from "@/features/home/components/home-interactions";
+import { HomeIcon } from "@/features/home/components/home-icon";
+import { ReferenceArtwork } from "@/features/home/components/reference-artwork";
+
+const navigation = [
+  { href: "/#story", label: "Про нас" },
+  { href: "/#recommendations", label: "Curly Joy рекомендує" },
+  { href: "/info/blog", label: "Блог" },
+  { href: "/info/events", label: "Події" },
+  {
+    href: `mailto:${site.email}?subject=Співпраця%20B2B`,
+    label: "Для бізнесу (B2B)",
+  },
+] as const;
 
 export function SiteHeader() {
   return (
     <header className={styles.header}>
-      <div className={styles.announcement}>
-        Для собак. Для їхніх людей. Для життя разом.
-      </div>
-      <div className={styles.bar}>
-        <Link href="/" className={styles.logo} aria-label="Curly Joy — головна">
-          <Image
-            src="/images/reference/6a1aff045a3e6e89b6f86151.webp"
-            alt="Curly Joy"
-            width={58}
-            height={58}
-          />
-          <span className={styles.wordmark}>
-            Curly Joy<span>щасливі бути разом</span>
+      <div className={styles.topbar}>
+        <span className={styles.languages}>
+          <span aria-label="Українська мова">UA</span>
+          <span aria-hidden="true">|</span>
+          <span
+            className={styles.futureLanguage}
+            title="Англійська версія з’явиться пізніше"
+            lang="en"
+          >
+            EN
           </span>
-        </Link>
-        <nav className={styles.nav} aria-label="Головне меню">
-          <Link href="/catalog" className={styles.navLink}>
+        </span>
+        <span className={styles.goodDay} lang="en">
+          Good day <span>♡</span>
+        </span>
+      </div>
+      <div className={styles.headerBar}>
+        <nav className={styles.navigation} aria-label="Головне меню">
+          <Link className={styles.catalogButton} href="/catalog">
+            <HomeIcon name="menu" />
             Каталог
           </Link>
-          <Link href="/#moments" className={styles.navLink}>
-            Добірки для життя
-          </Link>
-          <Link href="/#recommendations" className={styles.navLink}>
-            Curly Joy рекомендує
-          </Link>
-          <Link href="/#story" className={styles.navLink}>
-            Про нас
-          </Link>
+          {navigation.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
         </nav>
-        <div className={styles.actions}>
+        <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
+          <ReferenceArtwork
+            window={[467, 15, 95, 83]}
+            className={styles.logoArtwork}
+          />
+          <span lang="en">Happy dogs. Happier people.</span>
+        </Link>
+        <div className={styles.headerActions}>
+          <HomeSearch />
+          <details className={styles.account}>
+            <summary
+              className={styles.iconButton}
+              aria-label="Особистий кабінет"
+            >
+              <HomeIcon name="user" />
+            </summary>
+            <div className={styles.accountPanel}>
+              <strong>Раді знайомству!</strong>
+              <p>Особистий кабінет з’явиться пізніше.</p>
+              <Link href="/cart">
+                Перейти до кошика <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </details>
+          <HomeFavorites />
           <Suspense fallback={<CartIndicatorFallback />}>
             <CartIndicator />
           </Suspense>
-          <MobileNav links={primaryNav} />
+          <div className={styles.mobileMenu}>
+            <MobileNav
+              links={[{ href: "/catalog", label: "Каталог" }, ...navigation]}
+            />
+          </div>
         </div>
       </div>
     </header>

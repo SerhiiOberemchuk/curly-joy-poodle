@@ -1,0 +1,22 @@
+.shell {
+  --home-brown: #694638;
+  --home-pink: #f1ddd5;
+  --home-paper: #fcf7f1;
+  --home-script: var(--font-caveat), cursive;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1600px;
+  min-height: 100dvh;
+  margin-inline: auto;
+  background: var(--home-paper);
+  color: #38271f;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.4;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}

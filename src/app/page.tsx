@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import styles from "@/features/home/reference.module.css";
 
-import { BrandStory } from "@/features/home/components/brand-story";
-import { LifestyleCollections } from "@/features/home/components/lifestyle-collections";
-import { LifestyleHero } from "@/features/home/components/lifestyle-hero";
-import { Recommendations } from "@/features/home/components/recommendations";
-import { SocialJournal } from "@/features/home/components/social-journal";
+import {
+  ReferenceBenefits,
+  ReferenceHero,
+  ReferenceMoments,
+  ReferencePromotions,
+  ReferenceRecommendations,
+} from "@/features/home/components/reference-home";
 
 export const metadata: Metadata = {
-  title: { absolute: "Curly Joy — для життя разом із собакою" },
+  title: { absolute: "Curly Joy — усе для щасливого життя із собакою" },
   description:
     "Речі для прогулянок, подорожей і затишних днів удома. Знайдіть свою добірку в Curly Joy — магазині для собак та їхніх людей.",
   openGraph: {
@@ -16,9 +19,9 @@ export const metadata: Metadata = {
       "Речі, історії та маленькі відкриття для собак та їхніх людей.",
     images: [
       {
-        url: "/images/reference/8c922cf1-57f1-44c3-812b-073416497db8.webp",
-        width: 1440,
-        height: 600,
+        url: "/images/home/hero.webp",
+        width: 2167,
+        height: 725,
       },
     ],
   },
@@ -26,12 +29,12 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <>
-      <LifestyleHero />
-      <LifestyleCollections />
-      <Recommendations />
-      <BrandStory />
-      <SocialJournal />
-    </>
+    <div className={styles.page}>
+      <ReferenceHero />
+      <ReferenceBenefits />
+      <ReferenceMoments />
+      <ReferenceRecommendations />
+      <ReferencePromotions />
+    </div>
   );
 }

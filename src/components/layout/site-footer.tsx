@@ -1,8 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { getCategories } from "@/features/catalog/queries";
 import { HomeIcon } from "@/features/home/components/home-icon";
-import { ReferenceArtwork } from "@/features/home/components/reference-artwork";
 import { infoNav } from "@/lib/navigation";
 import { site } from "@/lib/site";
 
@@ -53,7 +53,12 @@ export async function SiteFooter() {
               aria-label="Curly Joy — головна"
               className={styles.brandLogo}
             >
-              <ReferenceArtwork window={[467, 15, 95, 83]} />
+              <Image
+                src="/images/brand/curly-joy-logo.png"
+                alt=""
+                width={1342}
+                height={1172}
+              />
             </Link>
             <p className={styles.brandText}>
               Речі, історії та маленькі відкриття для щасливого життя разом із

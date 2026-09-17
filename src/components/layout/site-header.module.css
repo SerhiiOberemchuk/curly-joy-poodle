@@ -54,9 +54,10 @@
 .navigation {
   display: flex;
   align-items: center;
-  gap: 1.25cqw;
+  gap: 0.9cqw;
+  max-width: calc(50% - 8.5cqw);
   white-space: nowrap;
-  font-size: clamp(10px, 0.97cqw, 15px);
+  font-size: clamp(10px, 0.9cqw, 14px);
 }
 .navigation a:not(.catalogButton):hover {
   color: #9b6250;
@@ -100,8 +101,8 @@
 }
 .logoArtwork {
   width: 9.2cqw;
-  mix-blend-mode: multiply;
-  border-radius: 45% 45% 0 0;
+  height: auto;
+  object-fit: contain;
 }
 .logo > span:last-child {
   margin-top: 0.7cqw;
@@ -178,27 +179,30 @@
   min-width: 16px;
   font-size: 10px;
 }
-.account {
+.businessAction {
   position: relative;
 }
-.accountPanel {
+.actionTooltip {
   position: absolute;
-  top: 100%;
-  right: 0;
-  padding: 24px;
-  width: 260px;
-  border: 1px solid #ead7cc;
-  border-radius: 12px;
-  background: var(--home-paper);
-  box-shadow: 0 10px 30px #69463820;
-  font-size: 14px;
+  top: calc(100% + 7px);
+  left: 50%;
+  z-index: 20;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #5b3d32;
+  color: #fffaf6;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -3px);
+  transition: opacity 150ms ease, transform 150ms ease;
 }
-.accountPanel p {
-  margin: 8px 0 16px;
-}
-.accountPanel a {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.businessAction:hover .actionTooltip,
+.businessAction:focus-visible .actionTooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 .mobileMenu {
   display: none;
@@ -287,7 +291,7 @@
     width: 20px;
     height: 20px;
   }
-  .account {
+  .businessAction {
     display: none;
   }
   .mobileMenu {

@@ -94,10 +94,10 @@
   display: block;
   width: 94px;
 }
-.brandLogo > span {
+.brandLogo > img {
+  display: block;
   width: 100%;
-  mix-blend-mode: multiply;
-  border-radius: 45% 45% 0 0;
+  height: auto;
 }
 .brandText {
   max-width: 30ch;

@@ -126,6 +126,14 @@ export function ReferenceMoments() {
               className={styles.momentImage}
             />
             <div className={styles.momentCaption}>
+              <svg
+                className={styles.momentCaptionShape}
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path d="M0 14C18 4 42 1 64 5C83 8 100 11 100 22V76C100 91 91 100 76 100H0Z" />
+              </svg>
               <h3>{moment.title}</h3>
               <p>{moment.description}</p>
             </div>

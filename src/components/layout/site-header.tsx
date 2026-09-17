@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -14,18 +15,18 @@ import {
   HomeSearch,
 } from "@/features/home/components/home-interactions";
 import { HomeIcon } from "@/features/home/components/home-icon";
-import { ReferenceArtwork } from "@/features/home/components/reference-artwork";
 
 const navigation = [
   { href: "/#story", label: "Про нас" },
   { href: "/#recommendations", label: "Curly Joy рекомендує" },
   { href: "/info/blog", label: "Блог" },
   { href: "/info/events", label: "Події" },
-  {
-    href: `mailto:${site.email}?subject=Співпраця%20B2B`,
-    label: "Для бізнесу (B2B)",
-  },
 ] as const;
+
+const businessLink = {
+  href: `mailto:${site.email}?subject=Співпраця%20B2B`,
+  label: "Для бізнесу (B2B)",
+} as const;
 
 export function SiteHeader() {
   return (
@@ -59,36 +60,37 @@ export function SiteHeader() {
           ))}
         </nav>
         <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
-          <ReferenceArtwork
-            window={[467, 15, 95, 83]}
+          <Image
+            src="/images/brand/curly-joy-logo.png"
+            alt=""
+            width={1342}
+            height={1172}
             className={styles.logoArtwork}
+            priority
           />
           <span lang="en">Happy dogs. Happier people.</span>
         </Link>
         <div className={styles.headerActions}>
           <HomeSearch />
-          <details className={styles.account}>
-            <summary
-              className={styles.iconButton}
-              aria-label="Особистий кабінет"
-            >
-              <HomeIcon name="user" />
-            </summary>
-            <div className={styles.accountPanel}>
-              <strong>Раді знайомству!</strong>
-              <p>Особистий кабінет з’явиться пізніше.</p>
-              <Link href="/cart">
-                Перейти до кошика <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </details>
+          <Link
+            className={`${styles.iconButton} ${styles.businessAction}`}
+            href={businessLink.href}
+            aria-label={businessLink.label}
+          >
+            <HomeIcon name="briefcase" />
+            <span className={styles.actionTooltip}>{businessLink.label}</span>
+          </Link>
           <HomeFavorites />
           <Suspense fallback={<CartIndicatorFallback />}>
             <CartIndicator />
           </Suspense>
           <div className={styles.mobileMenu}>
             <MobileNav
-              links={[{ href: "/catalog", label: "Каталог" }, ...navigation]}
+              links={[
+                { href: "/catalog", label: "Каталог" },
+                ...navigation,
+                businessLink,
+              ]}
             />
           </div>
         </div>

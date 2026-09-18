@@ -95,12 +95,51 @@
 
 .option {
   display: flex;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition);
+}
+
+.option input[type="radio"] {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  border: 2px solid var(--color-ink-muted);
+  border-radius: 50%;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.option input[type="radio"]::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #89594d;
+  content: "";
+  transform: scale(0);
+  transition: transform var(--transition);
+}
+
+.option input[type="radio"]:checked {
+  border-color: #89594d;
+}
+
+.option input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+.option input[type="radio"]:focus-visible {
+  outline: 3px solid rgb(137 89 77 / 22%);
+  outline-offset: 3px;
 }
 
 .option:hover {

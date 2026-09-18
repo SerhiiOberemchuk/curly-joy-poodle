@@ -1,3 +1,9 @@
+.page {
+  min-height: 620px;
+  padding: clamp(42px, 7vw, 90px) clamp(16px, 4vw, 60px) 84px;
+  background: #fcf7f1;
+}
+
 .card {
   display: flex;
   flex-direction: column;
@@ -7,9 +13,10 @@
   margin-inline: auto;
   padding: var(--space-8) var(--space-6);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  background: linear-gradient(145deg, #f1ddd5, #fffaf6);
+  border: 1px solid #ead9cf;
   text-align: center;
+  box-shadow: 0 22px 54px rgb(96 59 44 / 8%);
 }
 
 .glyph {
@@ -18,8 +25,22 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-pill);
-  background: var(--color-mint-soft);
+  background: #fffaf6;
+  color: #89594d;
   font-size: 2rem;
+}
+
+.eyebrow {
+  color: #89594d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  font: 400 clamp(42px, 6vw, 64px)/1 var(--font-home-handwriting), cursive;
+  color: #603b2c;
 }
 
 .number {
@@ -71,4 +92,14 @@
   justify-content: center;
   gap: var(--space-3);
   margin-block-start: var(--space-5);
+}
+
+.loading {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 64px 24px;
+  border-radius: 30px;
+  background: #f1ddd5;
+  text-align: center;
+  color: #6b554a;
 }

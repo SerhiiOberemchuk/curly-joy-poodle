@@ -100,8 +100,9 @@
   align-items: center;
 }
 .logoArtwork {
-  width: 9.2cqw;
+  width: 8.5cqw;
   height: auto;
+  border-radius: 50%;
   object-fit: contain;
 }
 .logo > span:last-child {
@@ -258,7 +259,7 @@
     border-radius: 50% 50% 16% 16%;
   }
   .logoArtwork {
-    width: 71px;
+    width: 74px;
   }
   .logo > span:last-child {
     font-size: 5.5px;
@@ -326,7 +327,7 @@
     width: 90px;
   }
   .logoArtwork {
-    width: 64px;
+    width: 66px;
   }
   .logo > span:last-child {
     font-size: 5px;

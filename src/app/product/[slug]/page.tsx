@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
 import { ProductGallery } from "@/features/catalog/components/product-gallery";
 import { ProductGrid } from "@/features/catalog/components/product-grid";
-import { getCategory, getProduct, getProductSlugs, getRelatedProducts } from "@/features/catalog/queries";
+import { getProduct, getProductCategory, getProductSlugs, getRelatedProducts } from "@/features/catalog/queries";
 import styles from "./product.module.css";
 
 export async function generateStaticParams() {
@@ -22,7 +22,7 @@ export default async function Page({ params }: PageProps<"/product/[slug]">) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
   const [category, related] = await Promise.all([
-    getCategory(product.categorySlug),
+    getProductCategory(product.slug),
     getRelatedProducts(product.slug),
   ]);
 

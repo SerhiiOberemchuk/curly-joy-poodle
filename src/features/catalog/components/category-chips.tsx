@@ -3,12 +3,18 @@ import Link from "next/link";
 import { getCategories } from "../queries";
 import styles from "./catalog-toolbar.module.css";
 
-export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
+export async function CategoryChips({
+  activeSlug,
+  filtered = false,
+}: {
+  activeSlug?: string;
+  filtered?: boolean;
+}) {
   const categories = await getCategories();
 
   return (
     <nav className={`${styles.chipsRow} ${styles.chips}`} aria-label="Категорії">
-      <Link href="/catalog" className={activeSlug ? styles.chip : styles.chipActive}>
+      <Link href="/catalog" className={activeSlug || filtered ? styles.chip : styles.chipActive}>
         Усі товари
       </Link>
       {categories.map((category) => (

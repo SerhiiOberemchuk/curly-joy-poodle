@@ -27,7 +27,7 @@ export async function Recommendations() {
               Речі, які ми обираємо для життя з нашими собаками.
             </p>
           </div>
-          <EditorialLink href="/collection/curly-joy-recommends">
+          <EditorialLink href="/catalog?collection=curly-joy-recommends">
             Уся добірка
           </EditorialLink>
         </div>

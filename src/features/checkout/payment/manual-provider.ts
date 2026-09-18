@@ -30,7 +30,7 @@ export const manualPaymentProvider: PaymentProvider = {
         return {
           redirectUrl: null,
           status: "pending",
-          note: "Рахунок для ФОП або ТОВ надішлемо на email протягом робочого дня.",
+          note: "Рахунок від ФОП 3 групи без ПДВ надішлемо на email протягом робочого дня.",
         };
     }
   },

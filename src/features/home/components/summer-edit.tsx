@@ -15,7 +15,7 @@ export function SummerEdit() {
           <p className={styles.eyebrow}>Сонце. Прогулянки. Ви разом.</p>
           <h2 id="summer-title">Все для щасливого літа</h2>
         </div>
-        <Link href="/collection/summer" className={styles.textLink}>
+        <Link href="/catalog?collection=summer" className={styles.textLink}>
           Літня колекція <span aria-hidden="true">↗</span>
         </Link>
       </div>

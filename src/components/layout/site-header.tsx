@@ -61,10 +61,10 @@ export function SiteHeader() {
         </nav>
         <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
           <Image
-            src="/images/brand/curly-joy-logo.png"
+            src="/logo_brand.jpg"
             alt=""
-            width={1342}
-            height={1172}
+            width={1024}
+            height={1024}
             className={styles.logoArtwork}
             priority
           />

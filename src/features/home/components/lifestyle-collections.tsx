@@ -29,7 +29,7 @@ export function LifestyleCollections() {
         {lifestyleMoments.map((moment, index) => (
           <Link
             key={moment.collection}
-            href={`/collection/${moment.collection}`}
+            href={`/catalog?collection=${moment.collection}`}
             className={`${styles.moment} ${styles[moment.framing]}`}
           >
             <div className={styles.momentPhoto}>

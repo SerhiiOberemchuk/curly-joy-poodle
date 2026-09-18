@@ -1,16 +1,17 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { sortOptions } from "../sorting";
+import { sortOptions, type SortOption } from "../sorting";
 import styles from "./catalog-toolbar.module.css";
 
-export function SortSelect({ value }: { value: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+export function SortSelect({
+  value,
+  onChange,
+}: {
+  value: SortOption;
+  onChange: (value: SortOption) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(() =>
     Math.max(0, sortOptions.findIndex((option) => option.value === value)),
@@ -43,17 +44,9 @@ export function SortSelect({ value }: { value: string }) {
     if (open) optionRefs.current[activeIndex]?.focus();
   }, [activeIndex, open]);
 
-  function handleChange(next: string) {
-    const params = new URLSearchParams(searchParams);
-    if (next === "featured") {
-      params.delete("sort");
-    } else {
-      params.set("sort", next);
-    }
-
-    const query = params.toString();
+  function handleChange(next: SortOption) {
     setOpen(false);
-    startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname));
+    onChange(next);
   }
 
   function openMenu() {
@@ -101,7 +94,6 @@ export function SortSelect({ value }: { value: string }) {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        disabled={isPending}
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleButtonKeyDown}
       >

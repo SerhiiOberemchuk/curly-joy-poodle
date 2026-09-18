@@ -19,13 +19,13 @@ export const homeMoments = [
   {
     title: "Подорожуємо разом",
     description: "Усе для комфортних і безпечних подорожей",
-    href: "/collection/travel",
+    href: "/catalog/travel",
     artwork: [21, 631, 240, 137],
   },
   {
     title: "Гуляємо та досліджуємо",
     description: "Амуніція, одяг, безпека",
-    href: "/collection/walks",
+    href: "/catalog/walks",
     artwork: [271, 632, 236, 137],
   },
   {
@@ -55,13 +55,13 @@ export const homeMoments = [
   {
     title: "Відпочиваємо вдома",
     description: "Лежанки, пледи, затишок",
-    href: "/collection/at-home",
+    href: "/catalog/at-home",
     artwork: [520, 837, 234, 137],
   },
   {
     title: "Ідеї для подарунків",
     description: "Для собак і для pet parents",
-    href: "/collection/gifts",
+    href: "/catalog/gifts",
     artwork: [768, 837, 235, 135],
   },
 ] as const satisfies readonly {

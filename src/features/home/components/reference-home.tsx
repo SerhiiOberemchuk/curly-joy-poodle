@@ -168,7 +168,7 @@ export async function ReferenceRecommendations() {
           <br />
           Точніше — на наших собаках.
         </p>
-        <Link className={styles.button} href="/collection/curly-joy-recommends">
+        <Link className={styles.button} href="/catalog?collection=curly-joy-recommends">
           Дивитися всі товари <HomeIcon name="arrow" />
         </Link>
       </div>
@@ -203,7 +203,7 @@ export function ReferencePromotions() {
         </div>
       </Link>
       <Link
-        href="/collection/all-season"
+        href="/catalog?collection=all-season"
         className={`${styles.promo} ${styles.seasonPromo}`}
       >
         <ReferenceArtwork
@@ -223,7 +223,7 @@ export function ReferencePromotions() {
         </div>
       </Link>
       <Link
-        href="/collection/dress-up"
+        href="/catalog?collection=dress-up"
         className={`${styles.promo} ${styles.dressPromo}`}
       >
         <ReferenceArtwork

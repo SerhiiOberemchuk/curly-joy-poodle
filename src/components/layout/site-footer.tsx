@@ -54,10 +54,10 @@ export async function SiteFooter() {
               className={styles.brandLogo}
             >
               <Image
-                src="/images/brand/curly-joy-logo.png"
+                src="/logo_brand.jpg"
                 alt=""
-                width={1342}
-                height={1172}
+                width={1024}
+                height={1024}
               />
             </Link>
             <p className={styles.brandText}>

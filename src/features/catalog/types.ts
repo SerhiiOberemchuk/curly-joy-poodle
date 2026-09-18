@@ -70,6 +70,8 @@ export interface Category {
   description: string;
   accent: Accent;
   glyph: string;
+  /** Explicit membership supports lifestyle categories with overlapping products. */
+  productSlugs: readonly string[];
 }
 
 /** Seasonal or editorial grouping, independent of product categories. */
@@ -82,18 +84,6 @@ export interface CollectionInfo {
   glyph: string;
   /** Explicit membership lets one product appear in several lifestyle edits. */
   productSlugs?: readonly string[];
-}
-
-/** Editorial groups have their own copy and explicit product membership. */
-export interface CollectionGroup {
-  slug: string;
-  title: string;
-  description: string;
-  productSlugs: readonly string[];
-}
-
-export interface CollectionSection extends Omit<CollectionGroup, "productSlugs"> {
-  products: readonly ProductListItem[];
 }
 
 export interface ProductListItem {

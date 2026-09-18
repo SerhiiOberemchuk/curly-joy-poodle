@@ -3,13 +3,11 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { categories, collections, products, sizeGuide } from "./catalog-source";
-import { collectionGroups } from "./collection-content";
 import type { SortOption } from "./sorting";
 import type {
   Category,
   Collection,
   CollectionInfo,
-  CollectionSection,
   Product,
   ProductListItem,
   ProductVariant,
@@ -61,6 +59,8 @@ function sortProducts(
   sort: SortOption,
 ): ProductListItem[] {
   switch (sort) {
+    case "newest":
+      return items.reverse();
     case "price-asc":
       return items.sort((a, b) => a.priceFrom - b.priceFrom);
     case "price-desc":
@@ -117,14 +117,16 @@ export async function getProducts(
     ...(filter.category ? [catalogTags.category(filter.category)] : []),
   );
 
+  const category = filter.category
+    ? categories.find((item) => item.slug === filter.category)
+    : undefined;
   const collection = filter.collection
     ? collections.find((item) => item.slug === filter.collection)
     : undefined;
   const selection = collection?.productSlugs;
 
   const matched = products.filter((product) => {
-    if (filter.category && product.categorySlug !== filter.category)
-      return false;
+    if (filter.category && !category?.productSlugs.includes(product.slug)) return false;
     if (filter.collection) {
       if (selection) return selection.includes(product.slug);
       return product.collection === filter.collection;
@@ -150,42 +152,12 @@ export async function getProduct(slug: string): Promise<Product | null> {
   return products.find((product) => product.slug === slug) ?? null;
 }
 
-export async function getCollectionSections(
-  collection: Collection,
-  sort: SortOption = "featured",
-): Promise<readonly CollectionSection[]> {
+export async function getProductCategory(slug: string): Promise<Category | null> {
   "use cache";
-  cacheLife("hours");
+  cacheLife("days");
   cacheTag(catalogTags.all);
 
-  const items = await getProducts({ collection, sort });
-  const assigned = new Set<string>();
-  const sections: CollectionSection[] = [];
-
-  for (const group of collectionGroups) {
-    const members = items.filter(
-      (product) => group.productSlugs.includes(product.slug) && !assigned.has(product.slug),
-    );
-    if (!members.length) continue;
-    members.forEach((product) => assigned.add(product.slug));
-    sections.push({
-      slug: group.slug,
-      title: group.title,
-      description: group.description,
-      products: members,
-    });
-  }
-
-  const remaining = items.filter((product) => !assigned.has(product.slug));
-  if (remaining.length) {
-    sections.push({
-      slug: "more",
-      title: "Ще в цій колекції",
-      description: "Інші речі для ваших спільних моментів.",
-      products: remaining,
-    });
-  }
-  return sections;
+  return categories.find((category) => category.productSlugs.includes(slug)) ?? null;
 }
 
 /** Slugs for `generateStaticParams` — prerenders every product at build time. */

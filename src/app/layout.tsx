@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Montserrat, Pangolin } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -57,18 +58,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body>
-        <a href="#main-content" className="skip-link">
-          Перейти до вмісту
-        </a>
-        <div className={styles.shell}>
-          <HomeSelectionProvider>
-            <SiteHeader />
-            <main id="main-content" className={styles.main}>
-              {children}
-            </main>
-            <SiteFooter />
-          </HomeSelectionProvider>
-        </div>
+        <NuqsAdapter>
+          <a href="#main-content" className="skip-link">
+            Перейти до вмісту
+          </a>
+          <div className={styles.shell}>
+            <HomeSelectionProvider>
+              <SiteHeader />
+              <main id="main-content" className={styles.main}>
+                {children}
+              </main>
+              <SiteFooter />
+            </HomeSelectionProvider>
+          </div>
+        </NuqsAdapter>
       </body>
     </html>
   );

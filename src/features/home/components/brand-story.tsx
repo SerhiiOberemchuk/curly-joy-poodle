@@ -39,7 +39,7 @@ export function BrandStory() {
             знахідками. Curly Joy — наш спосіб зробити ваше спільне життя трохи
             зручнішим. І набагато радіснішим.
           </p>
-          <EditorialLink href="/collection/curly-joy-recommends">
+          <EditorialLink href="/catalog?collection=curly-joy-recommends">
             Те, що ми обираємо для своїх
           </EditorialLink>
           <span className={styles.storySignature}>З любов’ю, Curly Joy</span>

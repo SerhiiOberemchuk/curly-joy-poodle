@@ -30,7 +30,7 @@ export function Hero() {
             Стиль і зручність — щодня. Широкий вибір зимового та літнього одягу
             для вашого улюбленця.
           </p>
-          <Link href="/collection/summer" className={styles.primaryLink}>
+          <Link href="/catalog?collection=summer" className={styles.primaryLink}>
             Літня колекція <span aria-hidden="true">↗</span>
           </Link>
         </div>

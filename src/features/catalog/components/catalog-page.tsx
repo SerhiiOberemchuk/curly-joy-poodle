@@ -68,7 +68,7 @@ export function CatalogPage({
           <p>{description}</p>
         </header>
 
-        <CategoryChips activeSlug={activeCategory} />
+        <CategoryChips activeSlug={activeCategory} filtered={Boolean(collection)} />
 
         <Suspense fallback={<ProductGridSkeleton />}>
           <SortedProductList

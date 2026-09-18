@@ -14,14 +14,14 @@ const collections = [
   },
   {
     title: "Літня колекція",
-    href: "/collection/summer",
+    href: "/catalog?collection=summer",
     image: homeImages.summer,
     description:
       "Легкість і прохолода у спекотні дні. Все для довгих прогулянок та подорожей разом.",
   },
   {
     title: "Зимова колекція",
-    href: "/collection/winter",
+    href: "/catalog?collection=winter",
     image: homeImages.winter,
     description:
       "Тепло, комфорт і надійний захист під час кожної прогулянки в холодну пору.",

@@ -1,23 +1,12 @@
-import { ProductGrid } from "./product-grid";
-import { SortSelect } from "./sort-select";
-import styles from "./catalog-toolbar.module.css";
-import { getProducts } from "../queries";
-import { isSortOption } from "../sorting";
+import { getCollection, getProducts } from "../queries";
 import type { Collection } from "../types";
+import { CatalogResults } from "./catalog-results";
 
 export type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-function pluralize(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return "товар";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "товари";
-  return "товарів";
-}
-
 /**
- * Reads `?sort` and renders the listing. Dynamic by nature — every caller keeps
- * it inside a `<Suspense>` boundary so the surrounding page still prerenders.
+ * Resolves the server-owned filters. Sorting is intentionally performed by the
+ * client so changing it never suspends or reloads the catalog route.
  */
 export async function SortedProductList({
   searchParams,
@@ -29,20 +18,15 @@ export async function SortedProductList({
   collection?: Collection;
 }) {
   const params = await searchParams;
-  const requested = Array.isArray(params.sort) ? params.sort[0] : params.sort;
-  const sort = isSortOption(requested) ? requested : "featured";
+  const requestedCollection = Array.isArray(params.collection)
+    ? params.collection[0]
+    : params.collection;
+  const queryCollection = requestedCollection
+    ? await getCollection(requestedCollection)
+    : null;
+  const activeCollection = collection ?? queryCollection?.slug;
 
-  const products = await getProducts({ category, collection, sort });
+  const products = await getProducts({ category, collection: activeCollection });
 
-  return (
-    <>
-      <div className={styles.toolbar}>
-        <p className={styles.count}>
-          {products.length} {pluralize(products.length)}
-        </p>
-        <SortSelect value={sort} />
-      </div>
-      <ProductGrid products={products} />
-    </>
-  );
+  return <CatalogResults products={products} />;
 }

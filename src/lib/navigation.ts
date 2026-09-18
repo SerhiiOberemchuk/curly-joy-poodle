@@ -12,9 +12,11 @@ export const primaryNav: readonly NavLink[] = [
 ];
 
 export const infoNav: readonly NavLink[] = [
+  { href: "/info/about", label: "Про нас" },
   { href: "/info/delivery", label: "Способи доставки" },
   { href: "/info/payment", label: "Умови та способи оплати" },
   { href: "/info/returns", label: "Повернення та обмін" },
+  { href: "/info/contacts", label: "Контакти" },
   { href: "/info/terms", label: "Публічна оферта" },
   { href: "/info/cookies", label: "Політика cookie" },
 ];

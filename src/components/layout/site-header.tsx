@@ -17,7 +17,7 @@ import {
 import { HomeIcon } from "@/features/home/components/home-icon";
 
 const navigation = [
-  { href: "/#story", label: "Про нас" },
+  { href: "/info/about", label: "Про нас" },
   { href: "/#recommendations", label: "Curly Joy рекомендує" },
   { href: "/info/blog", label: "Блог" },
   { href: "/info/events", label: "Події" },

@@ -4,10 +4,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
+  padding: 0;
+  border: 1px solid #eaded5;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fffaf5;
   transition: transform var(--transition), box-shadow var(--transition),
     border-color var(--transition);
 }
@@ -52,8 +53,7 @@
   flex-direction: column;
   gap: var(--space-2);
   flex: 1;
-  padding-inline: var(--space-2);
-  padding-block-end: var(--space-2);
+  padding: 8px 20px 20px;
 }
 
 .line {
@@ -65,7 +65,8 @@
 }
 
 .title {
-  font-size: var(--text-lg);
+  font: 600 20px/1.25 Arial, Helvetica, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Stretches the link over the whole card while keeping the markup semantic. */
@@ -87,7 +88,8 @@
 
 .footer {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
+  flex-direction: column;
   justify-content: space-between;
   gap: var(--space-3);
   margin-block-start: auto;
@@ -105,5 +107,6 @@
 .size {
   padding: 0.15em 0.5em;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
+  background: #f6eae3;
 }

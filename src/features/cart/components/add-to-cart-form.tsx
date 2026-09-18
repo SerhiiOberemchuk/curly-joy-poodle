@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Price } from "@/components/ui/price";
 import type { ProductVariant, SizeCode } from "@/features/catalog/types";
 
 import { initialCartActionState } from "../action-state";
@@ -25,6 +26,7 @@ export function AddToCartForm({
   const [quantity, setQuantity] = useState(1);
 
   const selected = variants.find((variant) => variant.size === size);
+  const pricedVariant = selected ?? variants[0];
   const ceiling = Math.min(selected?.stock ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
   const soldOut = variants.every((variant) => variant.stock === 0);
 
@@ -38,6 +40,13 @@ export function AddToCartForm({
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="size" value={size ?? ""} />
       <input type="hidden" name="quantity" value={quantity} />
+
+      {pricedVariant ? (
+        <div className={styles.priceRow}>
+          <Price amount={pricedVariant.price} compareAtAmount={pricedVariant.compareAtPrice} size="lg" />
+          <span className={styles.stock}>{soldOut ? "Немає в наявності" : "У наявності"}</span>
+        </div>
+      ) : null}
 
       <fieldset>
         <legend className={styles.fieldLabel}>

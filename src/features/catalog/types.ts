@@ -84,6 +84,18 @@ export interface CollectionInfo {
   productSlugs?: readonly string[];
 }
 
+/** Editorial groups have their own copy and explicit product membership. */
+export interface CollectionGroup {
+  slug: string;
+  title: string;
+  description: string;
+  productSlugs: readonly string[];
+}
+
+export interface CollectionSection extends Omit<CollectionGroup, "productSlugs"> {
+  products: readonly ProductListItem[];
+}
+
 export interface ProductListItem {
   id: string;
   slug: string;

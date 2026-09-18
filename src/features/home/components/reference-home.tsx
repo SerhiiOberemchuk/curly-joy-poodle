@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { homeMoments } from "../reference-content";
+import { getHomeRecommendations } from "../queries";
 import styles from "../reference.module.css";
 import { HomeIcon } from "./home-icon";
 import { HomeProductCards } from "./home-interactions";
@@ -147,7 +148,9 @@ export function ReferenceMoments() {
   );
 }
 
-export function ReferenceRecommendations() {
+export async function ReferenceRecommendations() {
+  const recommendations = await getHomeRecommendations();
+
   return (
     <section
       id="recommendations"
@@ -169,7 +172,7 @@ export function ReferenceRecommendations() {
           Дивитися всі товари <HomeIcon name="arrow" />
         </Link>
       </div>
-      <HomeProductCards />
+      <HomeProductCards recommendations={recommendations} />
     </section>
   );
 }

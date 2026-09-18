@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import type { Accent, Collection } from "../types";
 import { CategoryChips } from "./category-chips";
@@ -11,6 +11,7 @@ import {
 import styles from "./catalog-page.module.css";
 
 interface CatalogPageProps {
+  children?: ReactNode;
   title: string;
   eyebrow: string;
   tagline: string;
@@ -22,6 +23,7 @@ interface CatalogPageProps {
 }
 
 export function CatalogPage({
+  children,
   title,
   eyebrow,
   tagline,
@@ -57,10 +59,10 @@ export function CatalogPage({
         </span>
       </section>
 
-      <section className={styles.catalog} id="products" aria-labelledby="products-title">
+      {children ?? <section className={styles.catalog} id="products" aria-labelledby="products-title">
         <header className={styles.intro}>
           <div>
-            <p className={styles.kicker}>Curly Joy edit</p>
+            <p className={styles.kicker}>Для щасливого життя разом</p>
             <h2 id="products-title">Речі, які ми обрали</h2>
           </div>
           <p>{description}</p>
@@ -75,7 +77,7 @@ export function CatalogPage({
             collection={collection}
           />
         </Suspense>
-      </section>
+      </section>}
     </div>
   );
 }

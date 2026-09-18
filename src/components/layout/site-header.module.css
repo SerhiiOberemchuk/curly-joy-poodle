@@ -171,13 +171,20 @@
 }
 .favoriteCount {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 1px;
+  right: -1px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 3px;
   background: #89594d;
   color: white;
   border-radius: 50%;
-  min-width: 16px;
   font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 .businessAction {
   position: relative;

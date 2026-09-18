@@ -3,8 +3,8 @@
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: var(--artwork-ratio, 4 / 5);
-  border-radius: var(--radius-lg);
+  aspect-ratio: var(--artwork-ratio, 1);
+  border-radius: 18px;
   overflow: hidden;
   background-image: linear-gradient(
     145deg,
@@ -32,7 +32,7 @@
 }
 
 .photo {
-  background: #f4f4f3;
+  background: #f5eee7;
 }
 .photo::after {
   display: none;

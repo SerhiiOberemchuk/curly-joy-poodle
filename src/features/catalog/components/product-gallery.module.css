@@ -13,7 +13,7 @@
 .thumb {
   flex: 0 0 auto;
   width: 72px;
-  border-radius: var(--radius-md);
+  border-radius: 16px;
   overflow: hidden;
   border: 2px solid transparent;
   transition: border-color var(--transition), opacity var(--transition);
@@ -26,6 +26,6 @@
 
 .thumbActive {
   composes: thumb;
-  border-color: var(--color-ink);
+  border-color: #795446;
   opacity: 1;
 }

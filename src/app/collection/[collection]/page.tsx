@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { CatalogPage } from "@/features/catalog/components/catalog-page";
+import { CollectionPage } from "@/features/catalog/components/collection-page";
 import { getCollection, getCollections } from "@/features/catalog/queries";
 
 export async function generateStaticParams() {
@@ -25,13 +25,8 @@ export default async function Page({
   if (!collection) notFound();
 
   return (
-    <CatalogPage
-      eyebrow="Добірка Curly Joy"
-      title={collection.title}
-      tagline={collection.tagline}
-      description={collection.description}
-      collection={collection.slug}
-      accent={collection.accent}
+    <CollectionPage
+      collection={collection}
       searchParams={searchParams}
     />
   );

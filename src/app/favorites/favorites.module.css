@@ -1,0 +1,48 @@
+.page {
+  min-height: 620px;
+  padding: clamp(42px, 7vw, 90px) clamp(16px, 4vw, 60px) 80px;
+  background: #fcf7f1;
+}
+.hero {
+  max-width: 760px;
+  margin-inline: auto;
+  text-align: center;
+}
+.eyebrow {
+  color: #89594d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.hero h1 {
+  margin-top: 10px;
+  font: 400 clamp(46px, 6vw, 76px)/1 var(--font-home-handwriting), cursive;
+  color: #603b2c;
+}
+.hero h1 span { color: #c5867b; }
+.hero > p:not(.eyebrow) {
+  max-width: 58ch;
+  margin: 20px auto 0;
+  color: #6b554a;
+}
+.hero > a {
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.products {
+  max-width: 1240px;
+  min-height: 280px;
+  margin: 42px auto 0;
+  padding: clamp(18px, 3vw, 34px);
+  border-radius: 30px;
+  background: linear-gradient(110deg, #f1dcd4, #f4e6de);
+}
+@media (width < 640px) {
+  .page { padding-top: 36px; }
+  .hero { text-align: left; }
+  .hero > p:not(.eyebrow) { margin-inline: 0; }
+  .products { margin-top: 30px; border-radius: 22px; }
+}

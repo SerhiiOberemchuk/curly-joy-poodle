@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 import headerStyles from "@/components/layout/site-header.module.css";
-import { homeRecommendations } from "../reference-content";
+import type { HomeRecommendation } from "../reference-content";
 import styles from "../reference.module.css";
 import { HomeIcon } from "./home-icon";
 import { ReferenceArtwork } from "./reference-artwork";
@@ -15,8 +15,6 @@ interface HomeSelection {
   setQuery: (query: string) => void;
   favorites: string[];
   toggleFavorite: (id: string) => void;
-  favoritesOnly: boolean;
-  setFavoritesOnly: (value: boolean) => void;
 }
 
 const SelectionContext = createContext<HomeSelection | null>(null);
@@ -35,7 +33,28 @@ export function HomeSelectionProvider({
 }) {
   const [query, setQuery] = useState("");
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("curly-joy-favorites");
+    if (saved) {
+      try {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setFavorites(parsed.filter((item): item is string => typeof item === "string"));
+        }
+      } catch {
+        window.localStorage.removeItem("curly-joy-favorites");
+      }
+    }
+    setFavoritesLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (favoritesLoaded) {
+      window.localStorage.setItem("curly-joy-favorites", JSON.stringify(favorites));
+    }
+  }, [favorites, favoritesLoaded]);
 
   function toggleFavorite(id: string) {
     setFavorites((current) =>
@@ -52,8 +71,6 @@ export function HomeSelectionProvider({
         setQuery,
         favorites,
         toggleFavorite,
-        favoritesOnly,
-        setFavoritesOnly,
       }}
     >
       {children}
@@ -77,7 +94,7 @@ function useShowRecommendations() {
 }
 
 export function HomeSearch() {
-  const { query, setQuery, setFavoritesOnly } = useSelection();
+  const { query, setQuery } = useSelection();
   const showRecommendations = useShowRecommendations();
 
   return (
@@ -86,7 +103,6 @@ export function HomeSearch() {
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        setFavoritesOnly(false);
         showRecommendations();
       }}
     >
@@ -100,7 +116,6 @@ export function HomeSearch() {
         value={query}
         onChange={(event) => {
           setQuery(event.target.value);
-          setFavoritesOnly(false);
         }}
       />
     </form>
@@ -108,95 +123,110 @@ export function HomeSearch() {
 }
 
 export function HomeFavorites() {
-  const showRecommendations = useShowRecommendations();
-  const { favoritesOnly, setFavoritesOnly, favorites, setQuery } =
-    useSelection();
+  const { favorites } = useSelection();
   return (
-    <button
-      type="button"
+    <Link
+      href="/favorites"
       className={headerStyles.iconButton}
       aria-label={`Обране: ${favorites.length}`}
-      aria-pressed={favoritesOnly}
-      onClick={() => {
-        setFavoritesOnly(!favoritesOnly);
-        setQuery("");
-        showRecommendations();
-      }}
     >
       <HomeIcon name="heart" />
       {favorites.length > 0 && (
         <span className={headerStyles.favoriteCount}>{favorites.length}</span>
       )}
-    </button>
+    </Link>
   );
 }
 
-export function HomeProductCards() {
-  const {
-    query,
-    setQuery,
-    favorites,
-    toggleFavorite,
-    favoritesOnly,
-    setFavoritesOnly,
-  } = useSelection();
+export function HomeProductCards({
+  recommendations,
+}: {
+  recommendations: readonly HomeRecommendation[];
+}) {
+  const { query, setQuery } = useSelection();
   const normalizedQuery = query.trim().toLocaleLowerCase("uk");
-  const products = homeRecommendations.filter(
+  const products = recommendations.filter(
     (product) =>
       `${product.brand} ${product.title}`
         .toLocaleLowerCase("uk")
-        .includes(normalizedQuery) &&
-      (!favoritesOnly || favorites.includes(product.id)),
+        .includes(normalizedQuery),
   );
 
   return (
     <div className={styles.productResults}>
       <p className="visually-hidden" role="status">
-        {query || favoritesOnly ? `Знайдено товарів: ${products.length}` : ""}
+        {query ? `Знайдено товарів: ${products.length}` : ""}
       </p>
       {products.length ? (
         <div className={styles.productGrid}>
-          {products.map((product) => (
-            <article key={product.id} className={styles.productCard}>
-              <button
-                className={styles.productFavorite}
-                type="button"
-                aria-pressed={favorites.includes(product.id)}
-                aria-label={`${favorites.includes(product.id) ? "Прибрати з обраного" : "Додати до обраного"}: ${product.brand}`}
-                onClick={() => toggleFavorite(product.id)}
-              >
-                <HomeIcon name="heart" />
-              </button>
-              <Link href={product.href} className={styles.productLink}>
-                <div className={styles.productImage}>
-                  <ReferenceArtwork window={product.artwork} />
-                </div>
-                <h3>{product.brand}</h3>
-                <p>{product.title}</p>
-                <strong>{product.price}</strong>
-              </Link>
-            </article>
-          ))}
+          {products.map((product) => <HomeProductCard key={product.id} product={product} />)}
         </div>
       ) : (
         <div className={styles.emptyResults}>
-          <HomeIcon name={favoritesOnly ? "heart" : "search"} />
-          <p>
-            {favoritesOnly
-              ? "Зберігайте те, що сподобалось, натиснувши на сердечко."
-              : "У цій добірці нічого не знайшлося. Спробуйте іншу назву."}
-          </p>
+          <HomeIcon name="search" />
+          <p>У цій добірці нічого не знайшлося. Спробуйте іншу назву.</p>
           <button
             type="button"
             onClick={() => {
               setQuery("");
-              setFavoritesOnly(false);
             }}
           >
             Показати всі рекомендації <span aria-hidden="true">→</span>
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+export function HomeProductCard({ product }: { product: HomeRecommendation }) {
+  const { favorites, toggleFavorite } = useSelection();
+  const selected = favorites.includes(product.id);
+
+  return (
+    <article className={styles.productCard}>
+      <button
+        className={styles.productFavorite}
+        type="button"
+        aria-pressed={selected}
+        aria-label={`${selected ? "Прибрати з обраного" : "Додати до обраного"}: ${product.brand}`}
+        onClick={() => toggleFavorite(product.id)}
+      >
+        <HomeIcon name="heart" />
+      </button>
+      <Link href={product.href} className={styles.productLink}>
+        <div className={styles.productImage}>
+          <ReferenceArtwork window={product.artwork} />
+        </div>
+        <h3>{product.brand}</h3>
+        <p>{product.title}</p>
+        <strong>{product.price}</strong>
+      </Link>
+    </article>
+  );
+}
+
+export function FavoriteProductCards({
+  recommendations,
+}: {
+  recommendations: readonly HomeRecommendation[];
+}) {
+  const { favorites } = useSelection();
+  const products = recommendations.filter((product) => favorites.includes(product.id));
+
+  if (!products.length) {
+    return (
+      <div className={styles.emptyResults}>
+        <HomeIcon name="heart" />
+        <p>Тут з’являться товари, які ви позначите сердечком.</p>
+        <Link href="/#recommendations">Переглянути рекомендації <span aria-hidden="true">→</span></Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.favoriteGrid}>
+      {products.map((product) => <HomeProductCard key={product.id} product={product} />)}
     </div>
   );
 }

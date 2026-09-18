@@ -3,11 +3,13 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { categories, collections, products, sizeGuide } from "./catalog-source";
+import { collectionGroups } from "./collection-content";
 import type { SortOption } from "./sorting";
 import type {
   Category,
   Collection,
   CollectionInfo,
+  CollectionSection,
   Product,
   ProductListItem,
   ProductVariant,
@@ -146,6 +148,44 @@ export async function getProduct(slug: string): Promise<Product | null> {
   cacheTag(catalogTags.all, catalogTags.product(slug));
 
   return products.find((product) => product.slug === slug) ?? null;
+}
+
+export async function getCollectionSections(
+  collection: Collection,
+  sort: SortOption = "featured",
+): Promise<readonly CollectionSection[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(catalogTags.all);
+
+  const items = await getProducts({ collection, sort });
+  const assigned = new Set<string>();
+  const sections: CollectionSection[] = [];
+
+  for (const group of collectionGroups) {
+    const members = items.filter(
+      (product) => group.productSlugs.includes(product.slug) && !assigned.has(product.slug),
+    );
+    if (!members.length) continue;
+    members.forEach((product) => assigned.add(product.slug));
+    sections.push({
+      slug: group.slug,
+      title: group.title,
+      description: group.description,
+      products: members,
+    });
+  }
+
+  const remaining = items.filter((product) => !assigned.has(product.slug));
+  if (remaining.length) {
+    sections.push({
+      slug: "more",
+      title: "Ще в цій колекції",
+      description: "Інші речі для ваших спільних моментів.",
+      products: remaining,
+    });
+  }
+  return sections;
 }
 
 /** Slugs for `generateStaticParams` — prerenders every product at build time. */

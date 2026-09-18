@@ -6,6 +6,15 @@ export type ArtworkWindow = readonly [
   height: number,
 ];
 
+export interface HomeRecommendation {
+  id: string;
+  brand: string;
+  title: string;
+  price: string;
+  href: string;
+  artwork: ArtworkWindow;
+}
+
 export const homeMoments = [
   {
     title: "Подорожуємо разом",
@@ -104,11 +113,4 @@ export const homeRecommendations = [
     href: "/product/pawfect-salmon",
     artwork: [869, 1077, 79, 104],
   },
-] as const satisfies readonly {
-  id: string;
-  brand: string;
-  title: string;
-  price: string;
-  href: string;
-  artwork: ArtworkWindow;
-}[];
+] as const satisfies readonly HomeRecommendation[];

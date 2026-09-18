@@ -8,6 +8,7 @@ export const CURRENCY = "UAH" as const;
 const formatter = new Intl.NumberFormat("uk-UA", {
   style: "currency",
   currency: CURRENCY,
+  currencyDisplay: "narrowSymbol",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });

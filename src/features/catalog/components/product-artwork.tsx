@@ -19,6 +19,7 @@ export function ProductArtwork({
           src={image.src}
           alt={image.alt}
           fill
+          loading={size === "lg" ? "eager" : "lazy"}
           sizes={
             size === "sm"
               ? "80px"

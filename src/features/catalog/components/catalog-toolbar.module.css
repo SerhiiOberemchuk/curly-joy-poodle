@@ -10,7 +10,10 @@
 }
 
 .chipsRow {
-  padding-block: var(--space-5) var(--space-2);
+  padding: 18px;
+  margin-top: 24px;
+  border-radius: 24px;
+  background: #f1ddd5;
 }
 
 .chips {
@@ -38,8 +41,8 @@
 
 .chipActive {
   composes: chip;
-  background: var(--color-ink);
-  border-color: var(--color-ink);
+  background: #795446;
+  border-color: #795446;
   color: var(--color-cream);
 }
 
@@ -69,7 +72,7 @@
   min-height: 46px;
   padding: 0 var(--space-4);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   background: var(--color-surface);
   font-size: var(--text-sm);
   font-weight: 600;

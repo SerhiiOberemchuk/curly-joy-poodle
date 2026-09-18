@@ -2,6 +2,7 @@ import type { SizeCode } from "@/features/catalog/types";
 
 export type DeliveryMethod = "np-branch" | "np-locker" | "np-courier";
 export type PaymentMethod = "card" | "cod" | "invoice";
+export type PaymentStatus = "pending" | "not-required" | "paid" | "failed";
 
 export interface CustomerDetails {
   firstName: string;
@@ -29,6 +30,17 @@ export interface OrderItem {
   lineTotal: number;
 }
 
+/** What the acquirer told us about the money, kept next to the order. */
+export interface PaymentDetails {
+  status: PaymentStatus;
+  /** Acquirer transaction reference, once one has been reported. */
+  reference: string | null;
+  /** Why the payment failed, in the acquirer's words. */
+  failureReason: string | null;
+  /** When the status last changed, ISO 8601. */
+  updatedAt: string;
+}
+
 export interface Order {
   /** Human-readable number shown to the customer and used in the CRM. */
   number: string;
@@ -36,6 +48,8 @@ export interface Order {
   customer: CustomerDetails;
   delivery: DeliveryDetails;
   payment: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  paymentDetails: PaymentDetails;
   items: OrderItem[];
   subtotal: number;
   freeShipping: boolean;

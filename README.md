@@ -5,6 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 - [Технічне завдання для погодження із замовником](./docs/technical-specification.md)
 - [Архітектура](./docs/architecture.md)
 - [Дизайн головної сторінки](./docs/home-design.md)
+- [Підключення LiqPay](./docs/liqpay.md)
 
 ## Getting Started
 

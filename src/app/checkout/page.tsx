@@ -48,7 +48,7 @@ async function CheckoutContent() {
   return (
     <div className={styles.layout}>
       <section className={styles.formPanel} aria-label="Дані замовлення">
-        <CheckoutForm />
+        <CheckoutForm total={cart.subtotal} />
       </section>
       <CartSummary cart={cart} action="none">
         <div className={styles.items}>

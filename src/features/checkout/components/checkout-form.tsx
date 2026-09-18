@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useId } from "react";
+import { startTransition, useActionState, useEffect, useId, useRef } from "react";
 import {
   useForm,
   type FieldError,
@@ -10,12 +10,19 @@ import {
 } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/money";
 
 import { initialCheckoutState } from "../action-state";
 import { placeOrderAction } from "../actions";
-import { deliveryOptions, paymentOptions } from "../options";
+import { deliveryOption, deliveryOptions, paymentOptions } from "../options";
 import type { DeliveryMethod, PaymentMethod } from "../types";
-import { normalizePhone, type FieldErrors } from "../validation";
+import {
+  destinationError,
+  normalizePhone,
+  EMAIL_PATTERN,
+  FIELD_LIMITS,
+  type CheckoutField,
+} from "../validation";
 import styles from "./checkout-form.module.css";
 
 interface CheckoutFormValues {
@@ -39,16 +46,19 @@ const defaultValues: CheckoutFormValues = {
   destination: "",
   comment: "",
   delivery: "np-branch",
-  payment: "cod",
+  payment: "card",
 };
 
-export function CheckoutForm() {
+export function CheckoutForm({ total }: { total: number }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, isPending] = useActionState(placeOrderAction, initialCheckoutState);
   const {
     register,
     handleSubmit,
+    setError,
+    trigger,
     watch,
-    formState: { errors: clientErrors },
+    formState: { errors, isSubmitted },
   } = useForm<CheckoutFormValues>({
     defaultValues,
     mode: "onSubmit",
@@ -57,19 +67,36 @@ export function CheckoutForm() {
   });
 
   const delivery = watch("delivery");
-  const activeDelivery = deliveryOptions.find((option) => option.value === delivery)!;
+  const payment = watch("payment");
+  const activeDelivery = deliveryOption(delivery);
 
-  const submit: SubmitHandler<CheckoutFormValues> = (_values, event) => {
-    const form = event?.currentTarget;
-    if (!(form instanceof HTMLFormElement)) return;
+  // Server-side errors are handed to react-hook-form so they behave like any
+  // other field error: they focus the first offender and clear as it is fixed.
+  useEffect(() => {
+    const entries = Object.entries(state.errors) as [CheckoutField, string][];
+    entries.forEach(([field, message], index) => {
+      setError(field, { type: "server", message }, { shouldFocus: index === 0 });
+    });
+  }, [state, setError]);
+
+  // The destination rule depends on the carrier option, so switching it has to
+  // re-check a value that was already typed in.
+  useEffect(() => {
+    if (isSubmitted) void trigger("destination");
+  }, [delivery, isSubmitted, trigger]);
+
+  const submit: SubmitHandler<CheckoutFormValues> = () => {
+    const form = formRef.current;
+    if (!form) return;
 
     startTransition(() => formAction(new FormData(form)));
   };
 
-  const clientHasErrors = Object.keys(clientErrors).length > 0;
+  const hasErrors = Object.keys(errors).length > 0;
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       className={styles.form}
       noValidate
@@ -78,7 +105,7 @@ export function CheckoutForm() {
         void handleSubmit(submit)(event);
       }}
     >
-      <fieldset className={styles.fieldset}>
+      <fieldset className={styles.fieldset} disabled={isPending}>
         <legend className={styles.legend}>
           <span className={styles.step}>1</span> Контактні дані
         </legend>
@@ -90,9 +117,9 @@ export function CheckoutForm() {
               required: "Вкажіть ім’я",
               minLength: { value: 2, message: "Вкажіть ім’я" },
             })}
-            clientError={clientErrors.firstName}
-            serverError={state.errors.firstName}
+            error={errors.firstName}
             autoComplete="given-name"
+            maxLength={FIELD_LIMITS.firstName}
           />
           <Field
             label="Прізвище"
@@ -100,9 +127,9 @@ export function CheckoutForm() {
               required: "Вкажіть прізвище",
               minLength: { value: 2, message: "Вкажіть прізвище" },
             })}
-            clientError={clientErrors.lastName}
-            serverError={state.errors.lastName}
+            error={errors.lastName}
             autoComplete="family-name"
+            maxLength={FIELD_LIMITS.lastName}
           />
         </div>
 
@@ -114,9 +141,9 @@ export function CheckoutForm() {
               validate: (value) =>
                 Boolean(normalizePhone(value)) || "Вкажіть номер у форматі +380 XX XXX XX XX",
             })}
-            clientError={clientErrors.phone}
-            serverError={state.errors.phone}
+            error={errors.phone}
             type="tel"
+            inputMode="tel"
             placeholder="+380 67 440 43 94"
             autoComplete="tel"
           />
@@ -124,21 +151,19 @@ export function CheckoutForm() {
             label="Email"
             registration={register("email", {
               required: "Вкажіть email",
-              pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-                message: "Вкажіть коректний email",
-              },
+              pattern: { value: EMAIL_PATTERN, message: "Вкажіть коректний email" },
             })}
-            clientError={clientErrors.email}
-            serverError={state.errors.email}
+            error={errors.email}
             type="email"
+            inputMode="email"
             placeholder="name@example.com"
             autoComplete="email"
+            maxLength={FIELD_LIMITS.email}
           />
         </div>
       </fieldset>
 
-      <fieldset className={styles.fieldset}>
+      <fieldset className={styles.fieldset} disabled={isPending}>
         <legend className={styles.legend}>
           <span className={styles.step}>2</span> Доставка
         </legend>
@@ -166,19 +191,22 @@ export function CheckoutForm() {
               required: "Вкажіть населений пункт",
               minLength: { value: 2, message: "Вкажіть населений пункт" },
             })}
-            clientError={clientErrors.city}
-            serverError={state.errors.city}
+            error={errors.city}
             placeholder="Київ"
             autoComplete="address-level2"
+            maxLength={FIELD_LIMITS.city}
           />
           <Field
             label={activeDelivery.destinationLabel}
             registration={register("destination", {
               required: "Вкажіть відділення або адресу",
+              validate: (value) => destinationError(delivery, value) ?? true,
             })}
-            clientError={clientErrors.destination}
-            serverError={state.errors.destination}
+            error={errors.destination}
             placeholder={activeDelivery.destinationPlaceholder}
+            inputMode={activeDelivery.destinationKind === "number" ? "numeric" : undefined}
+            autoComplete={activeDelivery.destinationKind === "address" ? "street-address" : "off"}
+            maxLength={FIELD_LIMITS.destination}
           />
         </div>
 
@@ -190,12 +218,13 @@ export function CheckoutForm() {
             id="checkout-comment"
             className={styles.textarea}
             placeholder="Порода й заміри собаки, побажання до відправлення"
+            maxLength={FIELD_LIMITS.comment}
             {...register("comment")}
           />
         </div>
       </fieldset>
 
-      <fieldset className={styles.fieldset}>
+      <fieldset className={styles.fieldset} disabled={isPending}>
         <legend className={styles.legend}>
           <span className={styles.step}>3</span> Оплата
         </legend>
@@ -215,16 +244,25 @@ export function CheckoutForm() {
             </label>
           ))}
         </div>
+
+        {payment === "card" ? (
+          <p className={styles.paymentNotice}>
+            Після підтвердження відкриється захищена сторінка LiqPay. Дані картки
+            вводяться там — магазин їх не бачить і не зберігає.
+          </p>
+        ) : null}
       </fieldset>
 
-      {state.status === "error" || clientHasErrors ? (
+      {state.status === "error" || hasErrors ? (
         <p className={styles.formError} role="alert">
           {state.status === "error" ? state.message : "Перевірте виділені поля."}
         </p>
       ) : null}
 
       <Button type="submit" size="lg" block disabled={isPending}>
-        {isPending ? "Оформлюємо…" : "Підтвердити замовлення"}
+        {isPending
+          ? "Оформлюємо…"
+          : `${payment === "card" ? "Перейти до оплати" : "Підтвердити замовлення"} · ${formatMoney(total)}`}
       </Button>
 
       <p className={styles.consent}>
@@ -238,20 +276,20 @@ export function CheckoutForm() {
 function Field({
   label,
   registration,
-  clientError,
-  serverError,
+  error,
   ...inputProps
 }: {
   label: string;
   registration: UseFormRegisterReturn;
-  clientError?: FieldError;
-  serverError?: FieldErrors[keyof FieldErrors];
+  error?: FieldError;
   type?: string;
   placeholder?: string;
   autoComplete?: string;
+  inputMode?: "tel" | "email" | "numeric";
+  maxLength?: number;
 }) {
   const id = useId();
-  const error = clientError?.message ?? serverError;
+  const message = error?.message;
 
   return (
     <div className={styles.field}>
@@ -262,13 +300,13 @@ function Field({
         {...inputProps}
         {...registration}
         id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={error ? styles.inputInvalid : styles.input}
+        aria-invalid={message ? true : undefined}
+        aria-describedby={message ? `${id}-error` : undefined}
+        className={message ? styles.inputInvalid : styles.input}
       />
-      {error ? (
+      {message ? (
         <span id={`${id}-error`} className={styles.error}>
-          {error}
+          {message}
         </span>
       ) : null}
     </div>

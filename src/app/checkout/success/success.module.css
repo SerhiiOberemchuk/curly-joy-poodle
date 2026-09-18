@@ -103,3 +103,12 @@
   text-align: center;
   color: #6b554a;
 }
+
+.reason {
+  max-width: 52ch;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: #fffaf6;
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}

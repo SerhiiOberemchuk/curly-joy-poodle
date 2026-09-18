@@ -1,18 +1,23 @@
 import type { DeliveryMethod, PaymentMethod } from "./types";
 
-export const deliveryOptions: ReadonlyArray<{
+export interface DeliveryOption {
   value: DeliveryMethod;
   label: string;
   hint: string;
   destinationLabel: string;
   destinationPlaceholder: string;
-}> = [
+  /** `number` expects a branch/locker number, `address` a street address. */
+  destinationKind: "number" | "address";
+}
+
+export const deliveryOptions: ReadonlyArray<DeliveryOption> = [
   {
     value: "np-branch",
     label: "Відділення Нової Пошти",
     hint: "1–3 дні · за тарифами перевізника",
     destinationLabel: "Номер відділення",
     destinationPlaceholder: "Наприклад, 25",
+    destinationKind: "number",
   },
   {
     value: "np-locker",
@@ -20,6 +25,7 @@ export const deliveryOptions: ReadonlyArray<{
     hint: "1–3 дні · до 20 кг",
     destinationLabel: "Номер поштомату",
     destinationPlaceholder: "Наприклад, 41234",
+    destinationKind: "number",
   },
   {
     value: "np-courier",
@@ -27,6 +33,7 @@ export const deliveryOptions: ReadonlyArray<{
     hint: "1–3 дні · доставка за адресою",
     destinationLabel: "Адреса доставки",
     destinationPlaceholder: "Вулиця, будинок, квартира",
+    destinationKind: "address",
   },
 ];
 
@@ -37,8 +44,8 @@ export const paymentOptions: ReadonlyArray<{
 }> = [
   {
     value: "card",
-    label: "Карткою онлайн",
-    hint: "Visa / Mastercard. Посилання на оплату надійде одразу після оформлення.",
+    label: "Карткою онлайн через LiqPay",
+    hint: "Visa / Mastercard, Apple Pay або Google Pay на захищеній сторінці LiqPay.",
   },
   {
     value: "cod",
@@ -60,8 +67,12 @@ export function isPaymentMethod(value: string): value is PaymentMethod {
   return paymentOptions.some((option) => option.value === value);
 }
 
+export function deliveryOption(method: DeliveryMethod): DeliveryOption {
+  return deliveryOptions.find((option) => option.value === method) ?? deliveryOptions[0];
+}
+
 export function deliveryLabel(method: DeliveryMethod): string {
-  return deliveryOptions.find((option) => option.value === method)?.label ?? method;
+  return deliveryOption(method).label;
 }
 
 export function paymentLabel(method: PaymentMethod): string {

@@ -1,7 +1,7 @@
-import { manualPaymentProvider } from "./manual-provider";
-import type { PaymentIntent, PaymentProvider } from "./types";
+import { liqPayPaymentProvider } from "./liqpay";
+import type { PaymentCheckout, PaymentIntent, PaymentProvider } from "./types";
 
 /** The acquirer currently wired up. */
-export const paymentProvider: PaymentProvider = manualPaymentProvider;
+export const paymentProvider: PaymentProvider = liqPayPaymentProvider;
 
-export type { PaymentIntent, PaymentProvider };
+export type { PaymentCheckout, PaymentIntent, PaymentProvider };

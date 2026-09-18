@@ -50,20 +50,34 @@ export interface Order {
   payment: PaymentMethod;
   paymentStatus: PaymentStatus;
   paymentDetails: PaymentDetails;
+  /** Reference from the CRM once it has accepted the order. */
+  crmReference: string | null;
   items: OrderItem[];
   subtotal: number;
   freeShipping: boolean;
 }
 
-/** What the confirmation screen needs — kept small enough for a cookie. */
+/**
+ * What the confirmation screen needs — kept small enough for a cookie.
+ *
+ * This is display state for one browser, never a basis for fulfilment: it
+ * lives in the customer's cookie jar. What actually ships is decided from the
+ * order log and the acquirer.
+ */
 export interface OrderReceipt {
   number: string;
   total: number;
   payment: PaymentMethod;
+  /** Last known payment status, so the screen renders without the order log. */
+  status: PaymentStatus;
   /** What happens next, as described by the payment provider. */
   note: string;
   email: string;
   phone: string;
   city: string;
   destination: string;
+  /** Present once the CRM has accepted the order. */
+  crmReference?: string | null;
+  /** LiqPay has already been asked to email the receipt for this order. */
+  receiptEmailed?: boolean;
 }

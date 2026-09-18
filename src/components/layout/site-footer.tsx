@@ -1,16 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { getCategories } from "@/features/catalog/queries";
 import { HomeIcon } from "@/features/home/components/home-icon";
 import { infoNav } from "@/lib/navigation";
 import { site } from "@/lib/site";
 
 import styles from "./site-footer.module.css";
 
-export async function SiteFooter() {
-  const categories = await getCategories();
-
+export function SiteFooter() {
   return (
     <footer className={styles.footer}>
       <svg
@@ -78,24 +75,6 @@ export async function SiteFooter() {
               ))}
             </div>
           </div>
-
-          <nav aria-labelledby="footer-catalog">
-            <p className={styles.columnTitle} id="footer-catalog">
-              Каталог
-            </p>
-            <ul className={styles.list}>
-              <li>
-                <Link href="/catalog">Усі товари</Link>
-              </li>
-              {categories.map((category) => (
-                <li key={category.slug}>
-                  <Link href={`/catalog/${category.slug}`}>
-                    {category.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
 
           <nav aria-labelledby="footer-info">
             <p className={styles.columnTitle} id="footer-info">

@@ -7,7 +7,9 @@ import { writeCartCookie } from "@/features/cart/cart-cookie";
 import { getCart } from "@/features/cart/queries";
 
 import type { CheckoutActionState } from "./action-state";
+import { crmProvider } from "./crm";
 import {
+  findOrder,
   reserveOrderNumber,
   saveOrder,
   updateOrderPaymentStatus,
@@ -17,7 +19,7 @@ import {
   clearLiqPayCheckoutCookie,
   writeLiqPayCheckoutCookie,
 } from "./payment/checkout-cookie";
-import { createLiqPayCheckout } from "./payment/liqpay";
+import { createLiqPayCheckout, LIQPAY_PENDING_NOTE } from "./payment/liqpay";
 import { settleCheckoutReturn } from "./payment/settlement";
 import type { PaymentCheckout, PaymentIntent } from "./payment/types";
 import { readReceiptCookie, writeReceiptCookie } from "./receipt-cookie";
@@ -78,11 +80,28 @@ export async function placeOrderAction(
       unitPrice: line.unitPrice,
       lineTotal: line.lineTotal,
     })),
+    crmReference: null,
     subtotal: cart.subtotal,
     freeShipping: cart.freeShipping,
   };
 
   await saveOrder(order);
+
+  // A CRM that is down must not lose the customer their order: the hand-off is
+  // recorded when it works and reported when it does not, and either way the
+  // order is already saved and the customer continues to payment.
+  const crm = crmProvider();
+  if (crm) {
+    try {
+      const submission = await crm.createOrder(order);
+      if (submission) {
+        order.crmReference = submission.reference;
+        await saveOrder(order);
+      }
+    } catch (error) {
+      reportPaymentFailure(`CRM did not accept order ${order.number}`, error);
+    }
+  }
 
   // Missing or rejected acquirer credentials must surface as a form error, not
   // as a crash on a page where the customer has just typed in their address.
@@ -111,6 +130,8 @@ export async function placeOrderAction(
     number: order.number,
     total: order.subtotal,
     payment: order.payment,
+    status: order.paymentStatus,
+    crmReference: order.crmReference,
     note: intent.note,
     email: order.customer.email,
     phone: order.customer.phone,
@@ -143,25 +164,32 @@ export async function retryPaymentAction(): Promise<void> {
   const receipt = await readReceiptCookie();
   if (!receipt) redirect("/checkout");
 
-  const order = await settleCheckoutReturn(receipt.number);
-  if (!order || order.payment !== "card") redirect("/checkout");
-  if (order.paymentStatus === "paid") redirect("/checkout/success");
+  const settled = await settleCheckoutReturn(receipt.number);
+  if (!settled || settled.payment !== "card") redirect("/checkout");
+  if (settled.status === "paid") redirect("/checkout/success");
 
   let checkout: PaymentCheckout;
   try {
-    checkout = createLiqPayCheckout(order);
+    const logged = await findOrder(settled.number);
+    checkout = createLiqPayCheckout({
+      number: settled.number,
+      subtotal: settled.total,
+      email: settled.email,
+      items: logged?.items,
+    });
   } catch (error) {
     reportPaymentFailure("could not restart the payment", error);
     await clearLiqPayCheckoutCookie();
-    await writeReceiptCookie({ ...receipt, note: PAYMENT_SETUP_FAILED });
+    await writeReceiptCookie({ ...settled, note: PAYMENT_SETUP_FAILED });
     redirect("/checkout/success");
   }
 
   // Back to square one for this attempt, so a stale failure is not shown again.
-  await updateOrderPaymentStatus(order.number, { status: "pending", failureReason: null });
+  await updateOrderPaymentStatus(settled.number, { status: "pending", failureReason: null });
+  await writeReceiptCookie({ ...settled, status: "pending", note: LIQPAY_PENDING_NOTE });
   await writeLiqPayCheckoutCookie({
-    orderId: order.number,
-    amount: order.subtotal,
+    orderId: settled.number,
+    amount: settled.total,
     mock: checkout.mock,
     data: checkout.data,
     signature: checkout.signature,

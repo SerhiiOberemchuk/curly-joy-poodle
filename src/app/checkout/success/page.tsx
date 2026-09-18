@@ -5,6 +5,8 @@ import { Suspense } from "react";
 
 import { Button, buttonStyles } from "@/components/ui/button";
 import { checkPaymentStatusAction, retryPaymentAction } from "@/features/checkout/actions";
+import { PaymentStatusPoller } from "@/features/checkout/components/payment-status-poller";
+import { crmMode } from "@/features/checkout/crm";
 import { paymentLabel } from "@/features/checkout/options";
 import { findOrder } from "@/features/checkout/order-repository";
 import { readReceiptCookie } from "@/features/checkout/receipt-cookie";
@@ -32,11 +34,11 @@ async function Receipt() {
   const receipt = await readReceiptCookie();
   if (!receipt) notFound();
 
-  // The order log is the source of truth for the money; the cookie only carries
-  // what to show. If the order has aged out, fall back to what was ordered.
+  // The order log wins when this instance can see it; otherwise the receipt
+  // carries the last status that `settleCheckoutReturn` established, including
+  // anything it learned by asking LiqPay directly.
   const order = await findOrder(receipt.number);
-  const status: PaymentStatus =
-    order?.paymentStatus ?? (receipt.payment === "cod" ? "not-required" : "pending");
+  const status: PaymentStatus = order?.paymentStatus ?? receipt.status;
   const awaitingCard = receipt.payment === "card" && status === "pending";
   const cardFailed = receipt.payment === "card" && status === "failed";
 
@@ -62,6 +64,15 @@ async function Receipt() {
         <p className={styles.reason}>Відповідь банку: {order.paymentDetails.failureReason}</p>
       ) : null}
 
+      {receipt.crmReference ? (
+        <p className={styles.crm}>
+          {crmMode() === "mock" ? (
+            <span className={styles.crmBadge}>Демо · CRM не підключена</span>
+          ) : null}
+          Замовлення передано менеджеру, номер у CRM: <strong>{receipt.crmReference}</strong>
+        </p>
+      ) : null}
+
       <Details receipt={receipt} status={status} />
 
       {cardFailed ? (
@@ -85,16 +96,19 @@ async function Receipt() {
 /** Ordinary forms, so both work with JavaScript switched off. */
 function PendingActions() {
   return (
-    <div className={styles.actions}>
-      <form action={checkPaymentStatusAction}>
-        <Button type="submit" size="lg">
-          Оновити статус
-        </Button>
-      </form>
-      <Link href="/catalog" className={buttonStyles({ variant: "outline", size: "lg" })}>
-        До каталогу
-      </Link>
-    </div>
+    <>
+      <PaymentStatusPoller />
+      <div className={styles.actions}>
+        <form action={checkPaymentStatusAction}>
+          <Button type="submit" size="lg">
+            Оновити статус
+          </Button>
+        </form>
+        <Link href="/catalog" className={buttonStyles({ variant: "outline", size: "lg" })}>
+          До каталогу
+        </Link>
+      </div>
+    </>
   );
 }
 

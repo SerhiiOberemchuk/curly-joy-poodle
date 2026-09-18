@@ -1,9 +1,10 @@
+import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import styles from "./section.module.css";
 
-export function Section({
+export function Section<HrefType extends string>({
   eyebrow,
   title,
   description,
@@ -14,7 +15,7 @@ export function Section({
   eyebrow?: string;
   title?: string;
   description?: string;
-  action?: { href: string; label: string };
+  action?: { href: Route<HrefType>; label: string };
   tight?: boolean;
   children?: ReactNode;
 }) {

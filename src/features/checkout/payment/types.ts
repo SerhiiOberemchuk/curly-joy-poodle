@@ -9,9 +9,12 @@ export interface PaymentCheckout {
   signature: string;
 }
 
+/** The pages a payment intent may hand the customer over to. */
+export type CheckoutRoute = "/checkout/pay" | "/checkout/success";
+
 export interface PaymentIntent {
   /** Where the customer continues payment; `null` when nothing else is needed now. */
-  redirectUrl: string | null;
+  redirectUrl: CheckoutRoute | null;
   status: "pending" | "not-required" | "paid";
   /** Customer-facing explanation of the next step. */
   note: string;

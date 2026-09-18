@@ -7,6 +7,7 @@ import {
   CartIndicator,
   CartIndicatorFallback,
 } from "@/features/cart/components/cart-indicator";
+import { headerNav, type NavLink } from "@/lib/navigation";
 import { site } from "@/lib/site";
 
 import styles from "./site-header.module.css";
@@ -16,17 +17,10 @@ import {
 } from "@/features/home/components/home-interactions";
 import { HomeIcon } from "@/features/home/components/home-icon";
 
-const navigation = [
-  { href: "/info/about", label: "Про нас" },
-  { href: "/#recommendations", label: "Curly Joy рекомендує" },
-  { href: "/info/blog", label: "Блог" },
-  { href: "/info/events", label: "Події" },
-] as const;
-
-const businessLink = {
+const businessLink: NavLink = {
   href: `mailto:${site.email}?subject=Співпраця%20B2B`,
   label: "Для бізнесу (B2B)",
-} as const;
+};
 
 export function SiteHeader() {
   return (
@@ -53,7 +47,7 @@ export function SiteHeader() {
             <HomeIcon name="menu" />
             Каталог
           </Link>
-          {navigation.map((item) => (
+          {headerNav.map((item) => (
             <Link key={item.href} href={item.href}>
               {item.label}
             </Link>
@@ -88,7 +82,7 @@ export function SiteHeader() {
             <MobileNav
               links={[
                 { href: "/catalog", label: "Каталог" },
-                ...navigation,
+                ...headerNav,
                 businessLink,
               ]}
             />

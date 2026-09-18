@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -23,12 +24,12 @@ export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   );
 }
 
-export function EditorialLink({
+export function EditorialLink<HrefType extends string>({
   href,
   children,
   filled = false,
 }: {
-  href: string;
+  href: Route<HrefType>;
   children: ReactNode;
   filled?: boolean;
 }) {

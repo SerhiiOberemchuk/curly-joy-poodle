@@ -1,17 +1,34 @@
+import type { InfoRoute } from "@/content/info-pages";
+
+/**
+ * Every destination the site chrome may point at. Typed rather than `string`,
+ * so a menu entry for a page that does not exist fails the build instead of
+ * turning up as a 404 in someone's console.
+ */
+export type NavHref =
+  | "/"
+  | "/catalog"
+  | "/cart"
+  | "/favorites"
+  | "/#recommendations"
+  | InfoRoute
+  | `mailto:${string}`;
+
 export interface NavLink {
-  href: string;
+  href: NavHref;
   label: string;
 }
 
-export const primaryNav: readonly NavLink[] = [
-  { href: "/catalog", label: "Каталог" },
-  { href: "/#moments", label: "Добірки для життя" },
+/** Main menu. One source for the desktop header and the mobile sheet. */
+export const headerNav = [
+  { href: "/info/about", label: "Про нас" },
   { href: "/#recommendations", label: "Curly Joy рекомендує" },
-  { href: "/#story", label: "Про Curly Joy" },
-  { href: "/info/sizes", label: "Як виміряти" },
-];
+  { href: "/info/blog", label: "Блог" },
+  { href: "/info/events", label: "Події" },
+] as const satisfies readonly NavLink[];
 
-export const infoNav: readonly NavLink[] = [
+/** Service pages, listed in the footer. */
+export const infoNav = [
   { href: "/info/about", label: "Про нас" },
   { href: "/info/delivery", label: "Способи доставки" },
   { href: "/info/payment", label: "Умови та способи оплати" },
@@ -19,4 +36,4 @@ export const infoNav: readonly NavLink[] = [
   { href: "/info/contacts", label: "Контакти" },
   { href: "/info/terms", label: "Публічна оферта" },
   { href: "/info/cookies", label: "Політика cookie" },
-];
+] as const satisfies readonly NavLink[];

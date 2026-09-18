@@ -47,7 +47,16 @@ const EXTENDED_SIZES: readonly SizeCode[] = [
 ];
 const ONE_SIZE: readonly SizeCode[] = ["S", "M", "L"];
 
-export const categories: readonly Category[] = [
+/** Membership is checked against `products`, so a typo cannot ship. */
+type CategorySeed = Omit<Category, "productSlugs"> & {
+  productSlugs: readonly ProductSlug[];
+};
+
+type CollectionSeed = Omit<CollectionInfo, "productSlugs"> & {
+  productSlugs?: readonly ProductSlug[];
+};
+
+const categorySeeds = [
   {
     slug: "travel",
     title: "Подорожуємо разом",
@@ -66,7 +75,7 @@ export const categories: readonly Category[] = [
       "Амуніція, одяг і захист для щоденних прогулянок та маленьких відкриттів разом.",
     accent: "mint",
     glyph: "🐕",
-    productSlugs: ["graphic-tee", "reversible-raincoat", "reflective-harness", "all-weather-boots", "ice-band-bandana"],
+    productSlugs: ["graphic-tee", "reversible-raincoat", "reflective-harness", "all-weather-boots", "ice-band-bandana", "harry-barker-classic"],
   },
   {
     slug: "feeding",
@@ -75,7 +84,7 @@ export const categories: readonly Category[] = [
     description: "Корм, смаколики, миски та корисні дрібниці для приємних щоденних ритуалів.",
     accent: "accent",
     glyph: "🥣",
-    productSlugs: [],
+    productSlugs: ["liewood-bowl", "pawfect-salmon"],
   },
   {
     slug: "grooming",
@@ -84,7 +93,7 @@ export const categories: readonly Category[] = [
     description: "Краса, гігієна та доглядові засоби для собак і затишних домашніх процедур.",
     accent: "accent",
     glyph: "🫧",
-    productSlugs: [],
+    productSlugs: ["emmy-lili-perfume"],
   },
   {
     slug: "health",
@@ -102,7 +111,7 @@ export const categories: readonly Category[] = [
     description: "Іграшки та речі для активності, тренувань і спільних веселих моментів.",
     accent: "sky",
     glyph: "🧸",
-    productSlugs: ["ice-toy-cooling"],
+    productSlugs: ["ice-toy-cooling", "jellycat-puppy"],
   },
   {
     slug: "at-home",
@@ -120,11 +129,13 @@ export const categories: readonly Category[] = [
     description: "Речі, якими приємно порадувати собаку, її людину або обох одразу.",
     accent: "accent",
     glyph: "🎁",
-    productSlugs: ["graphic-tee", "ice-toy-cooling", "ice-band-bandana", "neck-warmer-snood"],
+    productSlugs: ["graphic-tee", "ice-toy-cooling", "ice-band-bandana", "neck-warmer-snood", "jellycat-puppy", "emmy-lili-perfume"],
   },
-];
+] as const satisfies readonly CategorySeed[];
 
-export const collections: readonly CollectionInfo[] = [
+export const categories: readonly Category[] = categorySeeds;
+
+const collectionSeeds = [
   {
     slug: "walks",
     title: "Гуляємо",
@@ -193,6 +204,11 @@ export const collections: readonly CollectionInfo[] = [
     accent: "accent",
     glyph: "",
     productSlugs: [
+      "emmy-lili-perfume",
+      "harry-barker-classic",
+      "liewood-bowl",
+      "jellycat-puppy",
+      "pawfect-salmon",
       "ice-band-bandana",
       "ice-toy-cooling",
       "graphic-tee",
@@ -226,7 +242,9 @@ export const collections: readonly CollectionInfo[] = [
     accent: "mint",
     glyph: "🌦️",
   },
-];
+] as const satisfies readonly CollectionSeed[];
+
+export const collections: readonly CollectionInfo[] = collectionSeeds;
 
 export const sizeGuide: readonly SizeGuideRow[] = [
   {
@@ -273,7 +291,7 @@ export const sizeGuide: readonly SizeGuideRow[] = [
   },
 ];
 
-export const products: readonly Product[] = [
+const productSeeds = [
   {
     id: "p-ice-vest",
     slug: "ice-vest-coolfresh",
@@ -696,4 +714,158 @@ export const products: readonly Product[] = [
     ],
     variants: buildVariants("HARN", 99000, APPAREL_SIZES),
   },
-];
+  {
+    id: "p-emmy-lili-perfume",
+    slug: "emmy-lili-perfume",
+    title: "Парфум для собак",
+    brand: "Emmy and Lili",
+    categorySlug: "grooming",
+    collection: "all-season",
+    summary:
+      "Легкий аромат після купання — тримається кілька годин і не перебиває запах шерсті.",
+    description:
+      "Спиртова основа в парфумах для людей сушить шкіру собаки, тому тут її немає. Формула розрахована на шерсть: розпилюється з відстані 20 см, вбирається за хвилину й не лишає жирних слідів на лежанці.",
+    features: [
+      "Без спирту та барвників",
+      "Флакон 100 мл із розпилювачем",
+      "Не тестується на тваринах",
+    ],
+    care: ["Зберігати за температури до 25 °C, подалі від прямого сонця"],
+    badges: ["Без спирту"],
+    images: [
+      {
+        from: "#fce7f3",
+        to: "#f9a8d4",
+        glyph: "🧴",
+        alt: "Флакон парфуму для собак Emmy and Lili",
+      },
+    ],
+    variants: buildVariants("PERF", 149000, ["S"]),
+  },
+  {
+    id: "p-harry-barker-classic",
+    slug: "harry-barker-classic",
+    title: "Шлейка Classic",
+    brand: "Harry Barker",
+    categorySlug: "safety",
+    collection: "all-season",
+    summary:
+      "Класична H-подібна шлея з бавовняної стрічки — не тисне на горло й не збивається набік.",
+    description:
+      "Навантаження розподіляється по грудях, а не по шиї, тому шлея підходить і для собак, які тягнуть повідець. Стрічка з органічної бавовни м’якша за нейлон і не натирає під пахвами на довгих маршрутах.",
+    features: [
+      "Чотири точки регулювання",
+      "Металева пряжка з подвійним замком",
+      "Кільце для повідця з тильного боку",
+    ],
+    care: ["Прання при 30 °C", "Не відбілювати"],
+    badges: ["Органічна бавовна"],
+    images: [
+      {
+        from: "#fef3c7",
+        to: "#fbbf24",
+        glyph: "🦮",
+        alt: "Бавовняна шлейка Harry Barker Classic",
+      },
+    ],
+    variants: buildVariants("HBC", 189000, APPAREL_SIZES),
+  },
+  {
+    id: "p-liewood-bowl",
+    slug: "liewood-bowl",
+    title: "Миска керамічна",
+    brand: "Liewood",
+    categorySlug: "feeding",
+    collection: "all-season",
+    summary:
+      "Важка кераміка, яка не їздить підлогою, поки собака їсть.",
+    description:
+      "Глазур без свинцю й кадмію, тому миска не вбирає запахи й не темніє від вологого корму. Силіконове кільце на дні гасить стукіт і тримає миску на місці навіть на плитці.",
+    features: [
+      "Підходить для посудомийної машини",
+      "Силіконове кільце проти ковзання",
+      "Глазур без свинцю та кадмію",
+    ],
+    care: ["Мити в посудомийній машині або вручну", "Уникати різких перепадів температури"],
+    badges: [],
+    images: [
+      {
+        from: "#ecfccb",
+        to: "#a3e635",
+        glyph: "🥣",
+        alt: "Керамічна миска Liewood",
+      },
+    ],
+    variants: buildVariants("BOWL", 119000, ONE_SIZE),
+  },
+  {
+    id: "p-jellycat-puppy",
+    slug: "jellycat-puppy",
+    title: "Іграшка Puppy",
+    brand: "Jellycat",
+    categorySlug: "toys",
+    collection: "all-season",
+    summary:
+      "М’яка іграшка-компаньйон для гри вдома та сну поруч.",
+    description:
+      "Без твердих деталей, очей-ґудзиків і пищалок, які собака вигризає за перший вечір. Шви прошиті вдвічі, наповнювач не збивається після прання, тому іграшка переживає не один сезон.",
+    features: [
+      "Подвійні шви",
+      "Без твердих деталей і дрібних елементів",
+      "Наповнювач не збивається після прання",
+    ],
+    care: ["Прання при 30 °C у мішку", "Сушити природно"],
+    badges: [],
+    images: [
+      {
+        from: "#fef9c3",
+        to: "#fde047",
+        glyph: "🧸",
+        alt: "М’яка іграшка Jellycat Puppy",
+      },
+    ],
+    variants: buildVariants("JELLY", 125000, ["S", "M"]),
+  },
+  {
+    id: "p-pawfect-salmon",
+    slug: "pawfect-salmon",
+    title: "Смаколики з лосося",
+    brand: "Pawfect",
+    categorySlug: "feeding",
+    collection: "all-season",
+    summary:
+      "Один інгредієнт — сушений лосось. Зручний розмір для заохочення на тренуванні.",
+    description:
+      "Сушка при низькій температурі зберігає омега-3, які працюють на шерсть і шкіру. Без злаків і ароматизаторів, тому смаколики підходять собакам із харчовою чутливістю.",
+    features: [
+      "Склад: 100 % лосось",
+      "Без злаків, цукру та ароматизаторів",
+      "Пакет 100 г",
+    ],
+    care: ["Зберігати в закритому пакеті", "Після відкриття вжити протягом 30 днів"],
+    badges: ["Один інгредієнт"],
+    images: [
+      {
+        from: "#ffedd5",
+        to: "#fdba74",
+        glyph: "🐟",
+        alt: "Сушені смаколики з лосося Pawfect",
+      },
+    ],
+    variants: buildVariants("SALM", 35000, ["S"]),
+  },
+] as const satisfies readonly Product[];
+
+export const products: readonly Product[] = productSeeds;
+
+/**
+ * The slugs that actually exist, derived from the catalogue itself. A link or a
+ * membership list that names a product we do not sell is then a type error.
+ *
+ * The `*Seeds` bindings carry the literal types; the exports keep the wide
+ * interface so that readers are not coupled to the shape of the seed data.
+ */
+export type ProductSlug = (typeof productSeeds)[number]["slug"];
+export type ProductRoute = `/product/${ProductSlug}`;
+export type CategorySlug = (typeof categorySeeds)[number]["slug"];
+export type CategoryRoute = `/catalog/${CategorySlug}`;

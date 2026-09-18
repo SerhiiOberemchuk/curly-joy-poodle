@@ -13,7 +13,7 @@ export interface InfoPage {
   showSizeTable?: boolean;
 }
 
-export const infoPages: readonly InfoPage[] = [
+export const infoPages = [
   {
     slug: "about",
     title: "Про нас",
@@ -234,8 +234,66 @@ export const infoPages: readonly InfoPage[] = [
       },
     ],
   },
-];
+  {
+    slug: "blog",
+    title: "Блог",
+    intro:
+      "Розділ готуємо. Тут з’являться наші тексти про життя з собакою — про догляд, спорядження та дрібниці, які справді працюють.",
+    blocks: [
+      {
+        heading: "Про що писатимемо",
+        list: [
+          "Як підібрати розмір і не помилитися з посадкою — на прикладах конкретних порід.",
+          "Сезонний догляд: спека, реагенти, мокрий сніг — і що з цим робити.",
+          "Розбори спорядження: що ми залишили собі після тестів, а що повернули й чому.",
+        ],
+      },
+      {
+        heading: "Що вже можна почитати",
+        paragraphs: [
+          "Найкорисніше ми зібрали на сторінці «Як виміряти собаку» — там три заміри, таблиця розмірів GF Pet і поради, коли заміри потрапляють між двома розмірами.",
+          "Короткі нотатки й новини магазину виходять у нашому Instagram.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "events",
+    title: "Події",
+    intro:
+      "Зустрічі, ярмарки та спільні прогулянки Curly Joy. Найближчі дати з’являться тут, щойно узгодимо майданчики.",
+    blocks: [
+      {
+        heading: "Що плануємо",
+        list: [
+          "Спільні прогулянки з примірками — можна прийти й підібрати розмір на місці.",
+          "Участь у зоо-ярмарках та благодійних заходах на підтримку притулків.",
+          "Короткі практичні зустрічі з ветеринарами й грумерами.",
+        ],
+      },
+      {
+        heading: "Як дізнатися першими",
+        paragraphs: [
+          "Анонси публікуємо в Instagram і Facebook. Якщо хочете запросити нас на подію або провести зустріч разом — напишіть на пошту, ми відповідаємо протягом робочого дня.",
+        ],
+      },
+    ],
+  },
+] as const satisfies readonly InfoPage[];
 
+/**
+ * The slugs that actually exist, derived from the content itself. Linking to
+ * `/info/blog` before the page exists is then a type error, not a 404 that
+ * only shows up in the browser console.
+ */
+export type InfoSlug = (typeof infoPages)[number]["slug"];
+export type InfoRoute = `/info/${InfoSlug}`;
+
+export function infoRoute(slug: InfoSlug): InfoRoute {
+  return `/info/${slug}`;
+}
+
+/** Takes an untrusted route param, so the argument stays a plain string. */
 export function findInfoPage(slug: string): InfoPage | undefined {
   return infoPages.find((page) => page.slug === slug);
 }

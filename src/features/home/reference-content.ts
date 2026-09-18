@@ -1,3 +1,5 @@
+import type { CategoryRoute, ProductRoute } from "@/features/catalog/catalog-source";
+
 /** Artwork windows in the client's 1024 × 1536 reference, without UI captions. */
 export type ArtworkWindow = readonly [
   x: number,
@@ -11,7 +13,8 @@ export interface HomeRecommendation {
   brand: string;
   title: string;
   price: string;
-  href: string;
+  /** Checked against the catalogue: a card cannot point at a product we lack. */
+  href: ProductRoute;
   artwork: ArtworkWindow;
 }
 
@@ -67,11 +70,11 @@ export const homeMoments = [
 ] as const satisfies readonly {
   title: string;
   description: string;
-  href: string;
+  href: CategoryRoute;
   artwork: ArtworkWindow;
 }[];
 
-/** Reference-only merchandising; these cards do not create catalog inventory. */
+/** Editorial order of the cards; the products themselves live in the catalogue. */
 export const homeRecommendations = [
   {
     id: "emmy-lili",

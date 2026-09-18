@@ -48,36 +48,40 @@ export function AddToCartForm({
         </div>
       ) : null}
 
-      <fieldset>
-        <legend className={styles.fieldLabel}>
-          <span>Розмір</span>
-          <Link href="/info/sizes" className={styles.sizeHint}>
-            Як виміряти?
-          </Link>
-        </legend>
+      {/* Accessories come in a single variant — a size picker with one option,
+          next to a "how to measure" link, would only be noise. */}
+      {variants.length > 1 ? (
+        <fieldset>
+          <legend className={styles.fieldLabel}>
+            <span>Розмір</span>
+            <Link href="/info/sizes" className={styles.sizeHint}>
+              Як виміряти?
+            </Link>
+          </legend>
 
-        <div className={styles.sizes}>
-          {variants.map((variant) => {
-            const unavailable = variant.stock === 0;
-            const active = variant.size === size;
+          <div className={styles.sizes}>
+            {variants.map((variant) => {
+              const unavailable = variant.stock === 0;
+              const active = variant.size === size;
 
-            return (
-              <button
-                key={variant.sku}
-                type="button"
-                disabled={unavailable}
-                aria-pressed={active}
-                className={
-                  unavailable ? styles.sizeDisabled : active ? styles.sizeActive : styles.size
-                }
-                onClick={() => handleSizeChange(variant.size)}
-              >
-                {variant.size}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+              return (
+                <button
+                  key={variant.sku}
+                  type="button"
+                  disabled={unavailable}
+                  aria-pressed={active}
+                  className={
+                    unavailable ? styles.sizeDisabled : active ? styles.sizeActive : styles.size
+                  }
+                  onClick={() => handleSizeChange(variant.size)}
+                >
+                  {variant.size}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      ) : null}
 
       <div className={styles.row}>
         <div className={styles.stepper}>

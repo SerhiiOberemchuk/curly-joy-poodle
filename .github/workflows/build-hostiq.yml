@@ -1,0 +1,32 @@
+# Builds the standalone server on Linux and publishes it as a downloadable
+# artifact for upload to HostiQ. A build from Windows would carry the win32
+# `sharp` binary and the local .env — see docs/deploy.md.
+name: Build for HostiQ
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # Runtime settings come from the hosting panel, never from the bundle.
+      - run: rm -f .next/standalone/.env .next/standalone/.env.*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: curly-joy-standalone
+          path: .next/standalone/
+          # .next/ inside the bundle is a dot-directory and holds the build itself.
+          include-hidden-files: true
+          retention-days: 14

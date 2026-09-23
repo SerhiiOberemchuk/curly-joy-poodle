@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { HomeIcon } from "@/features/home/components/home-icon";
 import { infoNav } from "@/lib/navigation";
-import { site } from "@/lib/site";
+import { paymentMarks, site } from "@/lib/site";
 
 import styles from "./site-footer.module.css";
 
@@ -113,8 +113,33 @@ export function SiteFooter() {
         </div>
 
         <div className={styles.bottom}>
-          <span>© {site.legalName}, 2026</span>
-          <span>Оплата карткою Visa / Mastercard та накладений платіж</span>
+          <div className={styles.legal}>
+            <span>© {site.legalName}, 2026</span>
+            <span>
+              {site.legal.short} · РНОКПП {site.legal.taxId} ·{" "}
+              <Link href="/info/terms">реквізити</Link>
+            </span>
+          </div>
+          <ul className={styles.payments} aria-label="Способи оплати">
+            {paymentMarks.map((mark) => (
+              <li key={mark.label} className={styles.payment}>
+                {mark.src ? (
+                  <Image
+                    src={mark.src}
+                    alt={mark.label}
+                    width={mark.width ?? 72}
+                    height={mark.height ?? 24}
+                  />
+                ) : mark.href ? (
+                  <a href={mark.href} target="_blank" rel="noreferrer noopener">
+                    {mark.label}
+                  </a>
+                ) : (
+                  mark.label
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

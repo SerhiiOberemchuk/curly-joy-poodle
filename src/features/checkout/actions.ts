@@ -174,7 +174,6 @@ export async function retryPaymentAction(): Promise<void> {
     checkout = createLiqPayCheckout({
       number: settled.number,
       subtotal: settled.total,
-      email: settled.email,
       items: logged?.items,
     });
   } catch (error) {

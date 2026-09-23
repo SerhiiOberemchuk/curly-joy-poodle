@@ -31,23 +31,6 @@ interface LiqPayCheckoutPayload {
   server_url: string;
   language: "uk";
   sandbox?: 1;
-  rro_info?: LiqPayRroInfo;
-}
-
-/**
- * Fiscalisation data. LiqPay only acts on it when the shop has ПРРО enabled in
- * its account, which is why it is opt-in: sending it to an account without
- * fiscalisation buys nothing and risks a rejected payment.
- */
-interface LiqPayRroInfo {
-  items: {
-    id: string;
-    amount: number;
-    /** Hryvnia, not kopiyky — LiqPay works in major units here. */
-    price: number;
-    cost: number;
-  }[];
-  delivery_emails?: string[];
 }
 
 /**
@@ -253,13 +236,7 @@ export interface LiqPayPayable {
   number: string;
   /** Minor units. */
   subtotal: number;
-  /** Prefills LiqPay's receipt field and receives the fiscal receipt with ПРРО on. */
-  email?: string;
   items?: readonly LiqPayLineItem[];
-}
-
-function rroEnabled(): boolean {
-  return process.env.LIQPAY_RRO === "true";
 }
 
 /** Long enough to list a normal basket, short enough to stay one readable line. */
@@ -292,22 +269,6 @@ function buildDescription(order: LiqPayPayable): string {
   return `${head} · ${parts.join(", ")}`;
 }
 
-function buildRroInfo(order: LiqPayPayable): LiqPayRroInfo | undefined {
-  if (!rroEnabled()) return undefined;
-  const items = order.items ?? [];
-  if (items.length === 0) return undefined;
-
-  return {
-    items: items.map((item) => ({
-      id: item.sku,
-      amount: item.quantity,
-      price: item.unitPrice / 100,
-      cost: item.lineTotal / 100,
-    })),
-    ...(order.email ? { delivery_emails: [order.email] } : {}),
-  };
-}
-
 export function createLiqPayCheckout(order: LiqPayPayable): PaymentCheckout {
   const mode = readMode();
   if (mode === "mock") {
@@ -315,7 +276,6 @@ export function createLiqPayCheckout(order: LiqPayPayable): PaymentCheckout {
   }
 
   const { publicKey, privateKey } = credentials();
-  const rroInfo = buildRroInfo(order);
   const payload: LiqPayCheckoutPayload = {
     version: 3,
     public_key: publicKey,
@@ -328,7 +288,6 @@ export function createLiqPayCheckout(order: LiqPayPayable): PaymentCheckout {
     server_url: `${siteOrigin()}/api/payments/liqpay/callback`,
     language: "uk",
     ...(mode === "sandbox" ? { sandbox: 1 as const } : {}),
-    ...(rroInfo ? { rro_info: rroInfo } : {}),
   };
   const data = encode(payload);
 
@@ -417,7 +376,6 @@ export const liqPayPaymentProvider: PaymentProvider = {
           checkout: createLiqPayCheckout({
             number: order.number,
             subtotal: order.subtotal,
-            email: order.customer.email,
             items: order.items,
           }),
         };

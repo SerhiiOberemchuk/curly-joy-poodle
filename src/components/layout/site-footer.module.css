@@ -278,3 +278,45 @@
     transition: none;
   }
 }
+
+.legal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/**
+ * Платіжні марки. Логотип LiqPay тут — вимога мерчант-політики LiqPay; доки
+ * офіційний файл не покладено в /public, марка лишається текстовою.
+ */
+.payments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.payment {
+  display: flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 3px 10px;
+  border: 1px solid #d8bca9;
+  border-radius: 6px;
+  background: #fffaf5;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #593b2f;
+}
+.payment a {
+  color: inherit;
+  text-decoration: none;
+}
+.payment a:hover {
+  text-decoration: underline;
+}
+.payment img {
+  display: block;
+  width: auto;
+  height: 18px;
+}

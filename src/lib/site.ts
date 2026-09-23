@@ -21,7 +21,7 @@ export const site = {
   locale: "uk_UA",
   phone: "+38 (067) 440-43-94",
   phoneHref: "tel:+380674404394",
-  email: "hello@curly-joy.com",
+  email: "4404394@gmail.com",
   /**
    * Публічна адреса — без номера квартири. Це житло, і виносити його повністю
    * у футер кожної сторінки зайве. Повна адреса є в реквізитах оферти, як
@@ -31,7 +31,10 @@ export const site = {
   workingHours: "Пн–Пт, 9:00–18:00",
   socials: [
     { label: "Instagram", href: "https://www.instagram.com/curly_joy_poodle" },
-    { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61586958639272" },
+    {
+      label: "Facebook",
+      href: "https://www.facebook.com/profile.php?id=61586958639272",
+    },
   ],
   /**
    * Реквізити продавця. LiqPay вимагає їх на сайті, а оферта без них — це
@@ -43,7 +46,8 @@ export const site = {
     short: "ФОП Новікова Н. В.",
     taxId: "2928115563",
     fullAddress: "Україна, 02005, м. Київ, вул. Каховська, буд. 62, кв. 109",
-    taxStatus: "платник єдиного податку третьої групи за ставкою 5 %, без реєстрації платником ПДВ",
+    taxStatus:
+      "платник єдиного податку третьої групи за ставкою 5 %, без реєстрації платником ПДВ",
     extract: "витяг з реєстру платників єдиного податку № 89237 від 29.06.2026",
   },
 } as const;

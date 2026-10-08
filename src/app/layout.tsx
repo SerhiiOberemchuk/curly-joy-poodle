@@ -5,7 +5,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import styles from "@/components/layout/site-layout.module.css";
-import { HomeSelectionProvider } from "@/features/home/components/home-interactions";
+import { FavoritesProvider } from "@/features/favorites/favorites";
 import { site } from "@/lib/site";
 
 import "./globals.css";
@@ -63,13 +63,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Перейти до вмісту
           </a>
           <div className={styles.shell}>
-            <HomeSelectionProvider>
+            <FavoritesProvider>
               <SiteHeader />
               <main id="main-content" className={styles.main}>
                 {children}
               </main>
               <SiteFooter />
-            </HomeSelectionProvider>
+            </FavoritesProvider>
           </div>
         </NuqsAdapter>
       </body>

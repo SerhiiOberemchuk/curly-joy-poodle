@@ -3,8 +3,8 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { writeCartCookie } from "@/features/cart/cart-cookie";
-import { getCart } from "@/features/cart/queries";
+import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
+import { buildCart } from "@/features/cart/queries";
 
 import type { CheckoutActionState } from "./action-state";
 import { crmProvider } from "./crm";
@@ -38,7 +38,29 @@ export async function placeOrderAction(
   _state: CheckoutActionState,
   formData: FormData,
 ): Promise<CheckoutActionState> {
-  const cart = await getCart();
+  const stored = await readCartCookie();
+  let cart: Awaited<ReturnType<typeof buildCart>>;
+  try {
+    cart = await buildCart(stored);
+  } catch {
+    return {
+      status: "error",
+      message: "Не вдалося перевірити наявність товарів. Спробуйте ще раз.",
+      errors: {},
+    };
+  }
+  const quantitiesChanged = stored.length !== cart.lines.length || stored.some((item) =>
+    !cart.lines.some((line) => line.variantId === item.p && line.quantity === item.q),
+  );
+  if (quantitiesChanged) {
+    await writeCartCookie(cart.lines.map((line) => ({ p: line.variantId, q: line.quantity })));
+    refresh();
+    return {
+      status: "error",
+      message: "Наявність товарів змінилася. Кошик оновлено — перевірте кількість перед оформленням.",
+      errors: {},
+    };
+  }
   if (cart.isEmpty) {
     return {
       status: "error",

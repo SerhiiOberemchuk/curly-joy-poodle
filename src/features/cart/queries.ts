@@ -1,10 +1,11 @@
 import "server-only";
 
-import { findVariant } from "@/features/catalog/queries";
+import { getCurrentProducts } from "@/features/catalog/queries";
 import { sumMoney } from "@/lib/money";
 
 import { readCartCookie } from "./cart-cookie";
-import { FREE_SHIPPING_THRESHOLD, MAX_LINE_QUANTITY } from "./constants";
+import { FREE_SHIPPING_THRESHOLD } from "./constants";
+import { maxQuantityForVariant } from "./quantity";
 import type { Cart, CartLine, StoredCartLine } from "./types";
 
 const EMPTY_CART: Cart = {
@@ -20,34 +21,37 @@ const EMPTY_CART: Cart = {
 /**
  * Resolves stored lines against the live catalog. Lines whose variant no longer
  * exists or is sold out are dropped, and quantities are clamped to what is in
- * stock, so a stale cookie can never produce an unfulfillable order.
+ * stock. Checkout also compares the result with the requested quantities before
+ * saving an order; this read does not reserve inventory in the CRM.
  */
 export async function buildCart(stored: readonly StoredCartLine[]): Promise<Cart> {
-  const resolved = await Promise.all(
-    stored.map(async (item): Promise<CartLine | null> => {
-      const match = await findVariant(item.p);
-      if (!match || !match.variant.inStock) return null;
+  if (stored.length === 0) return EMPTY_CART;
+  const products = await getCurrentProducts();
+  const variants = new Map(products.flatMap((product) =>
+    product.variants.map((variant) => [variant.id, { product, variant }] as const),
+  ));
+  const resolved = stored.map((item): CartLine | null => {
+    const match = variants.get(item.p);
+    if (!match || !match.variant.inStock) return null;
 
-      const { product, variant } = match;
-      // Untracked stock (`null`) is limited only by the per-line cap.
-      const maxQuantity = variant.stock ?? MAX_LINE_QUANTITY;
-      const quantity = Math.min(item.q, maxQuantity);
+    const { product, variant } = match;
+    const maxQuantity = maxQuantityForVariant(variant);
+    const quantity = maxQuantity === null ? item.q : Math.min(item.q, maxQuantity);
 
-      return {
-        variantId: variant.id,
-        slug: product.slug,
-        title: product.title,
-        option: variant.label,
-        sku: variant.sku,
-        image: product.images[0],
-        quantity,
-        unitPrice: variant.price,
-        compareAtPrice: variant.compareAtPrice,
-        lineTotal: variant.price * quantity,
-        maxQuantity,
-      };
-    }),
-  );
+    return {
+      variantId: variant.id,
+      slug: product.slug,
+      title: product.title,
+      option: variant.label,
+      sku: variant.sku,
+      image: product.images[0],
+      quantity,
+      unitPrice: variant.price,
+      compareAtPrice: variant.compareAtPrice,
+      lineTotal: variant.price * quantity,
+      maxQuantity,
+    };
+  });
 
   const lines = resolved.filter((line): line is CartLine => line !== null);
   if (lines.length === 0) return EMPTY_CART;

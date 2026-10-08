@@ -24,9 +24,17 @@ export interface Catalog {
 }
 
 export async function loadCatalog(): Promise<Catalog> {
-  const [crmProducts, crmCategories] = await Promise.all([fetchProducts(), fetchCategories()]);
-  const products = buildProducts(crmProducts);
+  const [products, crmCategories] = await Promise.all([
+    loadProducts(),
+    fetchCategories(),
+  ]);
+
   return { products, categories: buildCategories(crmCategories, products) };
+}
+
+/** Uncached product read for purchase controls, cart changes and checkout. */
+export async function loadProducts(): Promise<Product[]> {
+  return buildProducts(await fetchProducts());
 }
 
 // ---------------------------------------------------------------------------
@@ -38,7 +46,9 @@ function buildProducts(crmProducts: readonly CrmProduct[]): Product[] {
   // Products sharing a `productGroupId` are the sizes or colours of one model.
   const groups = new Map<string, CrmProduct[]>();
   for (const item of crmProducts) {
-    const key = item.productGroupId?.trim() ? `group:${item.productGroupId.trim()}` : item.id;
+    const key = item.productGroupId?.trim()
+      ? `group:${item.productGroupId.trim()}`
+      : item.id;
     groups.set(key, [...(groups.get(key) ?? []), item]);
   }
 
@@ -63,7 +73,17 @@ function buildProduct(
   const variants = orderVariants(
     members.flatMap((item): ProductVariant[] => {
       const price = priceOf(item);
-      return price ? [{ ...price, ...stockOf(item), id: item.id, sku: item.sku ?? item.id, label: labelOf(item, grouped) }] : [];
+      return price
+        ? [
+            {
+              ...price,
+              ...stockOf(item),
+              id: item.id,
+              sku: item.sku ?? item.id,
+              label: labelOf(item, grouped),
+            },
+          ]
+        : [];
     }),
   );
   // A product without a price in the shop's currency cannot be sold here.
@@ -71,10 +91,13 @@ function buildProduct(
 
   const lead = members[0];
   const title = grouped ? modelTitle(members) : lead.name.trim();
-  const descriptionSource = members.find((item) => item.description?.trim()) ?? lead;
+  const descriptionSource =
+    members.find((item) => item.description?.trim()) ?? lead;
   const description = descriptionSource.description?.trim() ?? "";
 
-  let urlKey = slugify(grouped ? id.slice("group:".length) : (lead.sku ?? "")) || lead.id.slice(0, 12);
+  let urlKey =
+    slugify(grouped ? id.slice("group:".length) : (lead.sku ?? "")) ||
+    lead.id.slice(0, 12);
   let slug = joinSlug(slugify(title), urlKey);
   if (usedSlugs.has(slug)) {
     urlKey = `${urlKey}-${lead.id.slice(0, 6)}`;
@@ -90,10 +113,14 @@ function buildProduct(
     brand: lead.brand?.name?.trim() || null,
     categoryId: lead.category?.id ?? null,
     summary: summarize(description),
-    descriptionHtml: sanitizeDescriptionHtml(descriptionSource.descriptionHtml ?? ""),
+    descriptionHtml: sanitizeDescriptionHtml(
+      descriptionSource.descriptionHtml ?? "",
+    ),
     attributes: (descriptionSource.attributes ?? []).map((attribute) => ({
       name: attribute.name,
-      value: attribute.unit ? `${attribute.value} ${attribute.unit}` : attribute.value,
+      value: attribute.unit
+        ? `${attribute.value} ${attribute.unit}`
+        : attribute.value,
     })),
     images: imagesOf(members, title),
     optionName,
@@ -101,7 +128,9 @@ function buildProduct(
   };
 }
 
-function priceOf(item: CrmProduct): Pick<ProductVariant, "price" | "compareAtPrice"> | null {
+function priceOf(
+  item: CrmProduct,
+): Pick<ProductVariant, "price" | "compareAtPrice"> | null {
   const entry =
     item.currency === CURRENCY
       ? { price: item.price, compareAtPrice: item.compareAtPrice }
@@ -110,15 +139,25 @@ function priceOf(item: CrmProduct): Pick<ProductVariant, "price" | "compareAtPri
 
   // The CRM works in hryvnia, the shop in kopiyky.
   const price = Math.round(entry.price * 100);
-  const compareAtPrice = entry.compareAtPrice ? Math.round(entry.compareAtPrice * 100) : 0;
-  return { price, compareAtPrice: compareAtPrice > price ? compareAtPrice : undefined };
+  const compareAtPrice = entry.compareAtPrice
+    ? Math.round(entry.compareAtPrice * 100)
+    : 0;
+  return {
+    price,
+    compareAtPrice: compareAtPrice > price ? compareAtPrice : undefined,
+  };
 }
 
 function stockOf(item: CrmProduct): Pick<ProductVariant, "stock" | "inStock"> {
-  const stock = typeof item.stock === "number" ? Math.max(0, item.stock) : null;
+  const stock = item.stock === null
+    ? null
+    : typeof item.stock === "number" && Number.isFinite(item.stock)
+      ? Math.max(0, Math.floor(item.stock))
+      : 0;
   return {
     stock,
-    inStock: item.availability !== "out_of_stock" && (stock === null || stock > 0),
+    inStock:
+      item.availability !== "out_of_stock" && (stock === null || stock > 0),
   };
 }
 
@@ -137,7 +176,8 @@ function optionNameFor(members: readonly CrmProduct[]): string {
 }
 
 function orderVariants(variants: ProductVariant[]): ProductVariant[] {
-  const rank = (variant: ProductVariant) => SIZE_ORDER.indexOf(variant.label?.toUpperCase() ?? "");
+  const rank = (variant: ProductVariant) =>
+    SIZE_ORDER.indexOf(variant.label?.toUpperCase() ?? "");
   if (!variants.every((variant) => rank(variant) >= 0)) return variants;
   return variants.sort((a, b) => rank(a) - rank(b));
 }
@@ -154,7 +194,10 @@ function modelTitle(members: readonly CrmProduct[]): string {
   return title || members[0].name.trim();
 }
 
-function imagesOf(members: readonly CrmProduct[], title: string): ProductImage[] {
+function imagesOf(
+  members: readonly CrmProduct[],
+  title: string,
+): ProductImage[] {
   const seen = new Set<string>();
   const images: ProductImage[] = [];
   for (const item of members) {
@@ -174,7 +217,9 @@ function buildCategories(
   crmCategories: readonly CrmCategory[],
   products: readonly Product[],
 ): Category[] {
-  const parentOf = new Map(crmCategories.map((category) => [category.id, category.parentId]));
+  const parentOf = new Map(
+    crmCategories.map((category) => [category.id, category.parentId]),
+  );
   const stocked = new Set<string>();
   for (const product of products) {
     // A product makes its own category and every ancestor non-empty.
@@ -189,7 +234,8 @@ function buildCategories(
   return crmCategories
     .filter((category) => stocked.has(category.id))
     .map((category) => {
-      let slug = slugify(category.slug ?? "") || slugify(category.name) || category.id;
+      let slug =
+        slugify(category.slug ?? "") || slugify(category.name) || category.id;
       if (usedSlugs.has(slug)) slug = `${slug}-${category.id.slice(0, 6)}`;
       usedSlugs.add(slug);
 
@@ -209,11 +255,43 @@ function buildCategories(
 
 /** Mirrors obriym-crm's catalog slug rule, so a name yields the same segment in both. */
 const TRANSLITERATION: Record<string, string> = {
-  а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ie", ж: "zh",
-  з: "z", и: "y", і: "i", ї: "i", й: "i", к: "k", л: "l", м: "m", н: "n",
-  о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts",
-  ч: "ch", ш: "sh", щ: "shch", ь: "", ю: "iu", я: "ia", ы: "y", э: "e",
-  ъ: "", ё: "e",
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "h",
+  ґ: "g",
+  д: "d",
+  е: "e",
+  є: "ie",
+  ж: "zh",
+  з: "z",
+  и: "y",
+  і: "i",
+  ї: "i",
+  й: "i",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "kh",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "shch",
+  ь: "",
+  ю: "iu",
+  я: "ia",
+  ы: "y",
+  э: "e",
+  ъ: "",
+  ё: "e",
 };
 
 export function slugify(value: string, maxLength = 80): string {

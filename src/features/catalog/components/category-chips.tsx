@@ -4,13 +4,13 @@ import { getCategories } from "../queries";
 import styles from "./catalog-toolbar.module.css";
 
 export async function CategoryChips({
-  activeSlug,
+  activeSlug: activeSlugPromise,
   filtered = false,
 }: {
-  activeSlug?: string;
+  activeSlug?: Promise<string>;
   filtered?: boolean;
 }) {
-  const categories = await getCategories();
+  const [categories, activeSlug] = await Promise.all([getCategories(), activeSlugPromise]);
 
   return (
     <nav className={`${styles.chipsRow} ${styles.chips}`} aria-label="Категорії">

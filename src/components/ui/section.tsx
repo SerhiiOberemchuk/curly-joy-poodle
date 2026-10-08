@@ -10,6 +10,7 @@ export function Section<HrefType extends string>({
   description,
   action,
   tight = false,
+  headingLevel = 2,
   children,
 }: {
   eyebrow?: string;
@@ -17,8 +18,12 @@ export function Section<HrefType extends string>({
   description?: string;
   action?: { href: Route<HrefType>; label: string };
   tight?: boolean;
+  /** 1 when the section is the page itself, e.g. the 404 page. */
+  headingLevel?: 1 | 2;
   children?: ReactNode;
 }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
+
   return (
     <section className={`${styles.section} ${tight ? styles.tight : ""}`}>
       <div className="container">
@@ -26,7 +31,7 @@ export function Section<HrefType extends string>({
           <header className={styles.head}>
             <div>
               {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
-              <h2 className={styles.title}>{title}</h2>
+              <Heading className={styles.title}>{title}</Heading>
               {description ? <p className={styles.description}>{description}</p> : null}
             </div>
             {action ? (

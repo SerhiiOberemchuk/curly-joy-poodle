@@ -1,8 +1,9 @@
 import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
+import { cache } from "react";
 
-import { loadCatalog, type Catalog } from "./catalog-source";
+import { loadCatalog, loadProducts, type Catalog } from "./catalog-source";
 import { fetchCollection } from "./crm-api";
 import type {
   Category,
@@ -25,9 +26,25 @@ export const catalogTags = {
 export interface ProductFilter {
   category?: string;
   collection?: string;
+  /** Free-text search: every word must occur in the title, brand or a SKU. */
+  query?: string;
 }
 
-/** The whole catalog in one cached read; every query below is derived from it. */
+function normalize(text: string): string {
+  return text.toLocaleLowerCase("uk").replace(/[’'ʼ]/g, "'");
+}
+
+function matchesQuery(product: Product, query: string): boolean {
+  const haystack = normalize(
+    [product.title, product.brand ?? "", ...product.variants.map((variant) => variant.sku)].join(" "),
+  );
+  return normalize(query)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((word) => haystack.includes(word));
+}
+
+/** Cached descriptions, categories and listings; purchase checks bypass this. */
 async function getCatalog(): Promise<Catalog> {
   "use cache";
   cacheLife("minutes");
@@ -35,6 +52,9 @@ async function getCatalog(): Promise<Catalog> {
 
   return loadCatalog();
 }
+
+/** Deduplicated within a render only; never reads the persistent catalog cache. */
+export const getCurrentProducts = cache(loadProducts);
 
 async function getCollectionDetail(slug: string) {
   "use cache";
@@ -124,6 +144,9 @@ export async function getProducts(
     matched = matched.filter((product) => product.categoryId && ids.has(product.categoryId));
   }
 
+  const query = filter.query?.trim();
+  if (query) matched = matched.filter((product) => matchesQuery(product, query));
+
   if (filter.collection) {
     const collection = await getCollectionDetail(filter.collection);
     if (!collection) return [];
@@ -147,6 +170,14 @@ export async function getProducts(
  */
 export async function getProduct(slug: string): Promise<Product | null> {
   const { products } = await getCatalog();
+  return resolveProduct(products, slug);
+}
+
+export async function getCurrentProduct(slug: string): Promise<Product | null> {
+  return resolveProduct(await getCurrentProducts(), slug);
+}
+
+function resolveProduct(products: readonly Product[], slug: string): Product | null {
   const exact = products.find((product) => product.slug === slug);
   if (exact) return exact;
 
@@ -188,12 +219,13 @@ export async function getRelatedProducts(
 
 /**
  * Resolves a variant from an id that came off the wire (cart cookie, form
- * input). Prices are always re-read here — never trusted from the client.
+ * input). Prices and stock are fetched fresh from the CRM, never from the
+ * persistent catalog cache or the client.
  */
 export async function findVariant(
   variantId: string,
 ): Promise<{ product: Product; variant: ProductVariant } | null> {
-  const { products } = await getCatalog();
+  const products = await getCurrentProducts();
 
   for (const product of products) {
     const variant = product.variants.find((item) => item.id === variantId);

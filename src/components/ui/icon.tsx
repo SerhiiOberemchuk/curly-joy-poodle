@@ -16,7 +16,8 @@ const paths = {
     "M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 7h16a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1ZM3 12h18M10 12v2h4v-2",
 } as const;
 
-export function HomeIcon({
+/** Line icons shared by the site chrome and the home page. Decorative: always `aria-hidden`. */
+export function Icon({
   name,
   ...props
 }: SVGProps<SVGSVGElement> & { name: keyof typeof paths }) {

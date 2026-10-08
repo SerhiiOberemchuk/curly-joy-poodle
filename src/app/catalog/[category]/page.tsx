@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { CatalogPage } from "@/features/catalog/components/catalog-page";
 import {
@@ -21,25 +22,46 @@ export async function generateMetadata({
   params,
 }: PageProps<"/catalog/[category]">): Promise<Metadata> {
   const category = await getCategory((await params).category);
-  if (!category) return {};
+  if (!category) notFound();
 
   return { title: category.title, description: category.description ?? undefined };
 }
 
-export default async function Page({
-  params,
-  searchParams,
-}: PageProps<"/catalog/[category]">) {
+type CategoryParams = PageProps<"/catalog/[category]">["params"];
+
+async function CategoryTitle({ params }: { params: CategoryParams }) {
   const category = await getCategory((await params).category);
   if (!category) notFound();
 
+  return category.title;
+}
+
+async function CategoryDescription({ params }: { params: CategoryParams }) {
+  const category = await getCategory((await params).category);
+  if (!category) return null;
+
+  return category.description ?? `Усі товари категорії «${category.title}» в одному місці.`;
+}
+
+export default function Page({
+  params,
+  searchParams,
+}: PageProps<"/catalog/[category]">) {
   return (
     <CatalogPage
       eyebrow="Категорія"
-      title={category.title}
+      title={
+        <Suspense fallback={"\u00a0"}>
+          <CategoryTitle params={params} />
+        </Suspense>
+      }
       tagline={DEFAULT_TAGLINE}
-      description={category.description ?? `Усі товари категорії «${category.title}» в одному місці.`}
-      activeCategory={category.slug}
+      description={
+        <Suspense fallback={"\u00a0"}>
+          <CategoryDescription params={params} />
+        </Suspense>
+      }
+      activeCategory={params.then(({ category }) => category)}
       searchParams={searchParams}
     />
   );

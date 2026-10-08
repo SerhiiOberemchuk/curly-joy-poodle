@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Suspense, type ReactNode } from "react";
 
-type Accent = "accent" | "mint" | "sky";
 import { CategoryChips } from "./category-chips";
 import { ProductGridSkeleton } from "./product-grid-skeleton";
 import {
@@ -10,14 +9,17 @@ import {
 } from "./sorted-product-list";
 import styles from "./catalog-page.module.css";
 
+type Accent = "accent" | "mint" | "sky";
+
 interface CatalogPageProps {
   children?: ReactNode;
-  title: string;
+  title: ReactNode;
   eyebrow: string;
   tagline: string;
-  description: string;
+  description: ReactNode;
   searchParams: SearchParams;
-  activeCategory?: string;
+  /** Slug of the category in the URL, read inside the Suspense boundaries that need it. */
+  activeCategory?: Promise<string>;
   collection?: string;
   accent?: Accent;
 }
@@ -52,7 +54,7 @@ export function CatalogPage({
             Дивитися товари <span aria-hidden="true">↓</span>
           </a>
         </div>
-        <span className={styles.heroNote} lang="en">
+        <span className={styles.heroNote} lang="en" aria-hidden="true">
           Made for
           <br />
           happy walks <b>♡</b>
@@ -68,7 +70,13 @@ export function CatalogPage({
           <p>{description}</p>
         </header>
 
-        <CategoryChips activeSlug={activeCategory} filtered={Boolean(collection)} />
+        {activeCategory ? (
+          <Suspense fallback={<CategoryChips filtered />}>
+            <CategoryChips activeSlug={activeCategory} />
+          </Suspense>
+        ) : (
+          <CategoryChips filtered={Boolean(collection)} />
+        )}
 
         <Suspense fallback={<ProductGridSkeleton />}>
           <SortedProductList

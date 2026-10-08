@@ -92,6 +92,8 @@ async function request<T>(path: string): Promise<T | null> {
   const { baseUrl, apiKey } = config();
   const response = await fetch(`${baseUrl}${path}`, {
     headers: { authorization: `Bearer ${apiKey}`, accept: "application/json" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (response.status === 404) return null;

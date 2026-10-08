@@ -2,7 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-import { CART_COOKIE, MAX_CART_LINES, MAX_LINE_QUANTITY } from "./constants";
+import { CART_COOKIE, MAX_CART_LINES } from "./constants";
 import type { StoredCartLine } from "./types";
 
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -19,14 +19,21 @@ function parse(raw: string | undefined): StoredCartLine[] {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.flatMap((entry): StoredCartLine[] => {
+    const lines = parsed.flatMap((entry): StoredCartLine[] => {
       if (typeof entry !== "object" || entry === null) return [];
       const { p, q } = entry as Record<string, unknown>;
       if (typeof p !== "string") return [];
-      if (typeof q !== "number" || !Number.isInteger(q) || q < 1) return [];
+      if (typeof q !== "number" || !Number.isSafeInteger(q) || q < 1) return [];
 
-      return [{ p, q: Math.min(q, MAX_LINE_QUANTITY) }];
+      return [{ p, q }];
     });
+    const quantities = new Map<string, number>();
+    for (const line of lines) {
+      const quantity = (quantities.get(line.p) ?? 0) + line.q;
+      if (!Number.isSafeInteger(quantity)) return [];
+      quantities.set(line.p, quantity);
+    }
+    return Array.from(quantities, ([p, q]) => ({ p, q }));
   } catch {
     return [];
   }

@@ -7,16 +7,19 @@ import styles from "./product-artwork.module.css";
 export function ProductArtwork({
   image,
   size = "md",
+  decorative = false,
 }: {
   image: ProductImage;
   size?: "sm" | "md" | "lg";
+  /** Set where the product's name is already next to the picture (cards, cart lines, labelled buttons). */
+  decorative?: boolean;
 }) {
   if (image.src) {
     return (
       <div className={`${styles.artwork} ${styles.photo} ${styles[size]}`}>
         <Image
           src={image.src}
-          alt={image.alt}
+          alt={decorative ? "" : image.alt}
           fill
           loading={size === "lg" ? "eager" : "lazy"}
           sizes={
@@ -34,8 +37,7 @@ export function ProductArtwork({
   return (
     <div
       className={`${styles.artwork} ${styles[size]}`}
-      role="img"
-      aria-label={image.alt}
+      {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": image.alt })}
     >
       <span className={styles.glyph} aria-hidden="true">
         🐾

@@ -19,8 +19,11 @@ function pluralize(count: number): string {
 
 export function CatalogResults({
   products,
+  query,
 }: {
   products: readonly ProductListItem[];
+  /** The search the list answers, if any. */
+  query?: string;
 }) {
   const [sort, setSort] = useQueryState(
     "sort",
@@ -36,12 +39,20 @@ export function CatalogResults({
   return (
     <>
       <div className={styles.toolbar}>
-        <p className={styles.count}>
+        <p className={styles.count} role="status">
           {sortedProducts.length} {pluralize(sortedProducts.length)}
+          {query ? ` за запитом «${query}»` : null}
         </p>
         <SortSelect value={sort} onChange={setSort} />
       </div>
-      <ProductGrid products={sortedProducts} />
+      <ProductGrid
+        products={sortedProducts}
+        emptyMessage={
+          query
+            ? `За запитом «${query}» нічого не знайшлося. Спробуйте інше слово або перегляньте весь каталог.`
+            : undefined
+        }
+      />
     </>
   );
 }

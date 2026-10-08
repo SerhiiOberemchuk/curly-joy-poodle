@@ -1,7 +1,14 @@
 import type { CSSProperties } from "react";
 
-import type { ArtworkWindow } from "../reference-content";
-import styles from "../reference.module.css";
+import styles from "../home.module.css";
+
+/** Artwork windows in the client's 1024 × 1536 reference, without UI captions. */
+export type ArtworkWindow = readonly [
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+];
 
 /** Reuses the supplied artwork without baking the page's text or controls into images. */
 export function ReferenceArtwork({

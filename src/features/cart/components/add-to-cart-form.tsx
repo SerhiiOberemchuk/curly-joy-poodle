@@ -9,7 +9,7 @@ import type { ProductVariant } from "@/features/catalog/types";
 
 import { initialCartActionState } from "../action-state";
 import { addToCartAction } from "../actions";
-import { MAX_LINE_QUANTITY } from "../constants";
+import { maxQuantityForVariant } from "../quantity";
 import styles from "./add-to-cart-form.module.css";
 
 export function AddToCartForm({
@@ -24,12 +24,14 @@ export function AddToCartForm({
   const [variantId, setVariantId] = useState<string | null>(
     () => variants.find((variant) => variant.inStock)?.id ?? null,
   );
-  const [quantity, setQuantity] = useState(1);
+  const [requestedQuantity, setQuantity] = useState(1);
 
-  const selected = variants.find((variant) => variant.id === variantId);
+  const selected = variants.find((variant) => variant.id === variantId)
+    ?? variants.find((variant) => variant.inStock);
   const pricedVariant = selected ?? variants[0];
-  const ceiling = Math.min(selected?.stock ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
-  const soldOut = variants.every((variant) => !variant.inStock);
+  const ceiling = selected ? maxQuantityForVariant(selected) : 0;
+  const soldOut = ceiling === 0;
+  const quantity = soldOut ? 0 : ceiling === null ? requestedQuantity : Math.min(requestedQuantity, ceiling);
 
   function handleVariantChange(next: string) {
     setVariantId(next);
@@ -38,13 +40,17 @@ export function AddToCartForm({
 
   return (
     <form action={formAction} className={styles.form}>
-      <input type="hidden" name="variantId" value={variantId ?? ""} />
+      <input type="hidden" name="variantId" value={selected?.id ?? ""} />
       <input type="hidden" name="quantity" value={quantity} />
 
       {pricedVariant ? (
         <div className={styles.priceRow}>
           <Price amount={pricedVariant.price} compareAtAmount={pricedVariant.compareAtPrice} size="lg" />
-          <span className={styles.stock}>{soldOut ? "Немає в наявності" : "У наявності"}</span>
+          <span className={styles.stock}>
+            {soldOut ? "Немає в наявності" : selected && selected.stock !== null
+              ? `У наявності: ${selected.stock} шт.`
+              : "У наявності"}
+          </span>
         </div>
       ) : null}
 
@@ -64,13 +70,13 @@ export function AddToCartForm({
           <div className={styles.sizes}>
             {variants.map((variant) => {
               const unavailable = !variant.inStock;
-              const active = variant.id === variantId;
+              const active = variant.id === selected?.id;
 
               return (
                 <button
                   key={variant.id}
                   type="button"
-                  disabled={unavailable}
+                  disabled={unavailable || isPending}
                   aria-pressed={active}
                   className={
                     unavailable ? styles.sizeDisabled : active ? styles.sizeActive : styles.size
@@ -91,8 +97,8 @@ export function AddToCartForm({
             type="button"
             className={styles.stepperButton}
             aria-label="Зменшити кількість"
-            disabled={quantity <= 1}
-            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+            disabled={soldOut || isPending || quantity <= 1}
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
           >
             −
           </button>
@@ -103,8 +109,8 @@ export function AddToCartForm({
             type="button"
             className={styles.stepperButton}
             aria-label="Збільшити кількість"
-            disabled={quantity >= ceiling}
-            onClick={() => setQuantity((value) => Math.min(ceiling, value + 1))}
+            disabled={soldOut || isPending || (ceiling !== null && quantity >= ceiling)}
+            onClick={() => setQuantity(ceiling === null ? quantity + 1 : Math.min(ceiling, quantity + 1))}
           >
             +
           </button>
@@ -124,10 +130,6 @@ export function AddToCartForm({
             <Link href="/cart" className={styles.statusLink}>
               Перейти до кошика
             </Link>
-          </span>
-        ) : selected && selected.stock !== null && selected.stock <= 3 ? (
-          <span className={styles.stock}>
-            Залишилось {selected.stock} шт.{variants.length > 1 ? " цього варіанта" : ""}
           </span>
         ) : null}
       </p>

@@ -4,7 +4,6 @@ import { Price } from "@/components/ui/price";
 import { ProductArtwork } from "@/features/catalog/components/product-artwork";
 
 import { removeLineAction, setLineQuantityAction } from "../actions";
-import { MAX_LINE_QUANTITY } from "../constants";
 import type { CartLine } from "../types";
 import styles from "./cart-view.module.css";
 
@@ -13,11 +12,11 @@ import styles from "./cart-view.module.css";
  * without JavaScript, and the server stays the only source of truth for stock.
  */
 export function CartLineItem({ line }: { line: CartLine }) {
-  const ceiling = Math.min(line.maxQuantity, MAX_LINE_QUANTITY);
+  const ceiling = line.maxQuantity;
 
   return (
     <article className={styles.line}>
-      <ProductArtwork image={line.image} size="sm" />
+      <ProductArtwork image={line.image} size="sm" decorative />
 
       <div className={styles.lineBody}>
         <div className={styles.lineTop}>
@@ -31,6 +30,10 @@ export function CartLineItem({ line }: { line: CartLine }) {
           </div>
           <Price amount={line.lineTotal} size="sm" />
         </div>
+
+        {line.maxQuantity !== null ? (
+          <p className={styles.lineMeta}>У наявності: {line.maxQuantity} шт.</p>
+        ) : null}
 
         <div className={styles.lineControls}>
           <div className={styles.stepper}>
@@ -47,7 +50,7 @@ export function CartLineItem({ line }: { line: CartLine }) {
               quantity={line.quantity + 1}
               label="Збільшити кількість"
               symbol="+"
-              disabled={line.quantity >= ceiling}
+              disabled={ceiling !== null && line.quantity >= ceiling}
             />
           </div>
 

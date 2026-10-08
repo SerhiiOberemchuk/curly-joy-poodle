@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { HomeIcon } from "@/features/home/components/home-icon";
+import { Icon } from "@/components/ui/icon";
 import { infoNav } from "@/lib/navigation";
 import { paymentMarks, site } from "@/lib/site";
 
@@ -38,9 +38,9 @@ export function SiteFooter() {
             CURLY JOY
           </Link>
           <div className={styles.pawTrail} aria-hidden="true">
-            <HomeIcon name="paw" />
-            <HomeIcon name="paw" />
-            <HomeIcon name="paw" />
+            <Icon name="paw" />
+            <Icon name="paw" />
+            <Icon name="paw" />
           </div>
         </div>
         <div className={styles.grid}>

@@ -7,16 +7,12 @@ import { clamp, readInt, readString } from "@/lib/form";
 
 import type { CartActionState } from "./action-state";
 import { readCartCookie, writeCartCookie } from "./cart-cookie";
-import { MAX_CART_LINES, MAX_LINE_QUANTITY } from "./constants";
+import { MAX_CART_LINES } from "./constants";
+import { maxQuantityForVariant } from "./quantity";
 import type { StoredCartLine } from "./types";
 
 function failure(message: string): CartActionState {
   return { status: "error", message };
-}
-
-/** Untracked stock (`null`) is limited only by the per-line cap. */
-function ceilingFor(stock: number | null): number {
-  return Math.min(stock ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
 }
 
 export async function addToCartAction(
@@ -30,7 +26,16 @@ export async function addToCartAction(
     return failure("Оберіть варіант, щоб додати товар у кошик.");
   }
 
-  const match = await findVariant(variantId);
+  if (!Number.isSafeInteger(requested) || requested < 1) {
+    return failure("Вкажіть коректну кількість товару.");
+  }
+  let match: Awaited<ReturnType<typeof findVariant>>;
+  try {
+    match = await findVariant(variantId);
+  } catch {
+    return failure("Не вдалося перевірити наявність товару. Спробуйте ще раз.");
+  }
+  refresh();
   if (!match) {
     return failure("Цей товар більше недоступний.");
   }
@@ -42,19 +47,20 @@ export async function addToCartAction(
 
   const lines = await readCartCookie();
   const existing = lines.find((item) => item.p === variantId);
-  const ceiling = ceilingFor(variant.stock);
+  const ceiling = maxQuantityForVariant(variant);
+  const nextQuantity = requested + (existing?.q ?? 0);
+  if (!Number.isSafeInteger(nextQuantity)) return failure("Вкажіть коректну кількість товару.");
+  if (ceiling !== null && nextQuantity > ceiling) {
+    return failure(`Максимально доступно до замовлення ${ceiling} шт. цього товару.`);
+  }
 
   if (existing) {
-    const next = clamp(existing.q + requested, 1, ceiling);
-    if (next === existing.q) {
-      return failure(`У кошику вже максимальна доступна кількість (${next} шт.).`);
-    }
-    existing.q = next;
+    existing.q = nextQuantity;
   } else {
     if (lines.length >= MAX_CART_LINES) {
       return failure("У кошику забагато позицій. Оформіть поточне замовлення.");
     }
-    lines.push({ p: variantId, q: clamp(requested, 1, ceiling) });
+    lines.push({ p: variantId, q: requested });
   }
 
   await writeCartCookie(lines);
@@ -66,6 +72,7 @@ export async function addToCartAction(
 export async function setLineQuantityAction(formData: FormData): Promise<void> {
   const variantId = readString(formData, "variantId");
   const quantity = readInt(formData, "quantity", 1);
+  if (!Number.isSafeInteger(quantity)) return;
 
   const lines = await readCartCookie();
   const next = await applyQuantity(lines, variantId, quantity);
@@ -97,12 +104,12 @@ async function applyQuantity(
   }
 
   const match = await findVariant(variantId);
-  if (!match) {
+  if (!match || !match.variant.inStock) {
     return lines.filter((item) => item.p !== variantId);
   }
 
-  const ceiling = ceilingFor(match.variant.stock);
+  const ceiling = maxQuantityForVariant(match.variant);
   return lines.map((item) =>
-    item.p === variantId ? { ...item, q: clamp(quantity, 1, ceiling) } : item,
+    item.p === variantId ? { ...item, q: ceiling === null ? quantity : clamp(quantity, 1, ceiling) } : item,
   );
 }

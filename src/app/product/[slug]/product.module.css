@@ -31,6 +31,16 @@
   color: var(--color-ink-muted);
 }
 
+.breadcrumbs li + li::before {
+  /* Empty alternative text: the separator is drawn, not announced. */
+  content: "/" / "";
+  margin-inline-end: var(--space-2);
+}
+
+.breadcrumbs [aria-current="page"] {
+  color: var(--color-ink);
+}
+
 .breadcrumbs a:hover {
   color: var(--color-ink);
   text-decoration: underline;
@@ -51,6 +61,10 @@
   border-radius: 32px 32px 56px 32px;
   background: #f4e5dc;
   min-width: 0;
+}
+
+.summarySkeleton {
+  min-height: 300px;
 }
 
 .line {

@@ -13,19 +13,19 @@ export async function SortedProductList({
   collection,
 }: {
   searchParams: SearchParams;
-  category?: string;
+  category?: Promise<string>;
   collection?: string;
 }) {
-  const params = await searchParams;
-  const requestedCollection = Array.isArray(params.collection)
-    ? params.collection[0]
-    : params.collection;
+  const [params, categorySlug] = await Promise.all([searchParams, category]);
+  const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+  const requestedCollection = first(params.collection);
   const queryCollection = requestedCollection
     ? await getCollection(requestedCollection)
     : null;
   const activeCollection = collection ?? queryCollection?.slug;
+  const query = first(params.q)?.trim().slice(0, 100) || undefined;
 
-  const products = await getProducts({ category, collection: activeCollection });
+  const products = await getProducts({ category: categorySlug, collection: activeCollection, query });
 
-  return <CatalogResults products={products} />;
+  return <CatalogResults products={products} query={query} />;
 }

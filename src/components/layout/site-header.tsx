@@ -10,12 +10,11 @@ import {
 import { headerNav, type NavLink } from "@/lib/navigation";
 import { site } from "@/lib/site";
 
+import { Icon } from "@/components/ui/icon";
+
+import { FavoritesLink } from "./favorites-link";
 import styles from "./site-header.module.css";
-import {
-  HomeFavorites,
-  HomeSearch,
-} from "@/features/home/components/home-interactions";
-import { HomeIcon } from "@/features/home/components/home-icon";
+import { SiteSearch } from "./site-search";
 
 const businessLink: NavLink = {
   href: `mailto:${site.email}?subject=Співпраця%20B2B`,
@@ -44,7 +43,7 @@ export function SiteHeader() {
       <div className={styles.headerBar}>
         <nav className={styles.navigation} aria-label="Головне меню">
           <Link className={styles.catalogButton} href="/catalog">
-            <HomeIcon name="menu" />
+            <Icon name="menu" />
             Каталог
           </Link>
           {headerNav.map((item) => (
@@ -65,16 +64,16 @@ export function SiteHeader() {
           <span lang="en">Happy dogs. Happier people.</span>
         </Link>
         <div className={styles.headerActions}>
-          <HomeSearch />
+          <SiteSearch />
           <Link
             className={`${styles.iconButton} ${styles.businessAction}`}
             href={businessLink.href}
             aria-label={businessLink.label}
           >
-            <HomeIcon name="briefcase" />
+            <Icon name="briefcase" />
             <span className={styles.actionTooltip}>{businessLink.label}</span>
           </Link>
-          <HomeFavorites />
+          <FavoritesLink />
           <Suspense fallback={<CartIndicatorFallback />}>
             <CartIndicator />
           </Suspense>

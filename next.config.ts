@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  partialPrefetching: true,
   typedRoutes: true,
   images: {
     // Product, category and collection photos uploaded in obriym-crm.

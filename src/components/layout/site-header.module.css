@@ -125,7 +125,12 @@
   border-radius: 999px;
   background: #f1eae4;
 }
+.search:focus-within {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
 .search button {
+  /* The icon leads visually; in the DOM the submit button follows the field. */
+  order: -1;
   display: grid;
   place-items: center;
   width: 28px;

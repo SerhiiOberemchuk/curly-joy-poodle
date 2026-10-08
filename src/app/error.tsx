@@ -6,6 +6,7 @@ import { Section } from "@/components/ui/section";
 export default function AppError({ reset }: { error: Error; reset: () => void }) {
   return (
     <Section
+      headingLevel={1}
       title="Щось пішло не так"
       description="Сталася помилка під час завантаження сторінки. Спробуйте ще раз — якщо не допоможе, зателефонуйте нам."
     >

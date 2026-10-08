@@ -12,7 +12,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
   return (
     <article className={styles.card}>
       <div className={styles.media}>
-        <ProductArtwork image={product.image} />
+        <ProductArtwork image={product.image} decorative />
 
         {product.inStock ? null : <p className={styles.soldOut}>Немає в наявності</p>}
       </div>

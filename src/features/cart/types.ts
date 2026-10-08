@@ -23,8 +23,8 @@ export interface CartLine {
   unitPrice: number;
   compareAtPrice?: number;
   lineTotal: number;
-  /** Upper bound the quantity stepper must respect. */
-  maxQuantity: number;
+  /** CRM stock; null means inventory is not tracked and no upper bound is known. */
+  maxQuantity: number | null;
 }
 
 export interface Cart {

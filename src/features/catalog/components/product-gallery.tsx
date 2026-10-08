@@ -6,6 +6,14 @@ import type { ProductImage } from "../types";
 import { ProductArtwork } from "./product-artwork";
 import styles from "./product-gallery.module.css";
 
+export function ProductGallerySkeleton() {
+  return (
+    <div className={styles.gallery}>
+      <ProductArtwork image={{ src: null, alt: "" }} size="lg" decorative />
+    </div>
+  );
+}
+
 export function ProductGallery({ images }: { images: readonly ProductImage[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = images[activeIndex] ?? images[0];
@@ -25,7 +33,7 @@ export function ProductGallery({ images }: { images: readonly ProductImage[] }) 
               aria-label={`${image.alt} — фото ${index + 1}`}
               onClick={() => setActiveIndex(index)}
             >
-              <ProductArtwork image={image} size="sm" />
+              <ProductArtwork image={image} size="sm" decorative />
             </button>
           ))}
         </div>

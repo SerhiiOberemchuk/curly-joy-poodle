@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import styles from "@/features/home/reference.module.css";
+import styles from "@/features/home/home.module.css";
 
 import {
-  ReferenceBenefits,
-  ReferenceHero,
-  ReferenceMoments,
-  ReferencePromotions,
-  ReferenceRecommendations,
-} from "@/features/home/components/reference-home";
+  HomeBenefits,
+  HomeHero,
+  HomeCategories,
+  HomePromotions,
+  HomeRecommendations,
+} from "@/features/home/components/home-sections";
 
 export const metadata: Metadata = {
   title: { absolute: "Curly Joy — усе для щасливого життя із собакою" },
@@ -30,11 +30,11 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className={styles.page}>
-      <ReferenceHero />
-      <ReferenceBenefits />
-      <ReferenceMoments />
-      <ReferenceRecommendations />
-      <ReferencePromotions />
+      <HomeHero />
+      <HomeBenefits />
+      <HomeCategories />
+      <HomeRecommendations />
+      <HomePromotions />
     </div>
   );
 }

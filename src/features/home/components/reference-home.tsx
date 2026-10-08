@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { homeMoments } from "../reference-content";
-import { getHomeRecommendations } from "../queries";
+import { getHomeCategories, getHomeRecommendations, RECOMMENDATIONS_COLLECTION } from "../queries";
 import styles from "../reference.module.css";
 import { HomeIcon } from "./home-icon";
 import { HomeProductCards } from "./home-interactions";
@@ -92,7 +91,9 @@ export function ReferenceBenefits() {
   );
 }
 
-export function ReferenceMoments() {
+export async function ReferenceMoments() {
+  const categories = await getHomeCategories();
+
   return (
     <section
       id="moments"
@@ -116,16 +117,17 @@ export function ReferenceMoments() {
         </span>
       </div>
       <div className={styles.momentGrid}>
-        {homeMoments.map((moment) => (
+        {categories.map((category) => (
           <Link
-            key={moment.title}
-            href={moment.href}
+            key={category.id}
+            href={`/catalog/${category.slug}`}
             className={styles.momentCard}
           >
-            <ReferenceArtwork
-              window={moment.artwork}
-              className={styles.momentImage}
-            />
+            <span className={styles.momentImage} aria-hidden="true">
+              {category.coverUrl ? (
+                <Image src={category.coverUrl} alt="" fill sizes="(max-width: 768px) 50vw, 400px" />
+              ) : null}
+            </span>
             <div className={styles.momentCaption}>
               <svg
                 className={styles.momentCaptionShape}
@@ -135,8 +137,8 @@ export function ReferenceMoments() {
               >
                 <path d="M0 14C18 4 42 1 64 5C83 8 100 11 100 22V76C100 91 91 100 76 100H0Z" />
               </svg>
-              <h3>{moment.title}</h3>
-              <p>{moment.description}</p>
+              <h3>{category.title}</h3>
+              {category.description ? <p>{category.description}</p> : null}
             </div>
             <span className={styles.roundArrow}>
               <HomeIcon name="arrow" />
@@ -168,11 +170,11 @@ export async function ReferenceRecommendations() {
           <br />
           Точніше — на наших собаках.
         </p>
-        <Link className={styles.button} href="/catalog?collection=curly-joy-recommends">
+        <Link className={styles.button} href={`/catalog?collection=${RECOMMENDATIONS_COLLECTION}`}>
           Дивитися всі товари <HomeIcon name="arrow" />
         </Link>
       </div>
-      <HomeProductCards recommendations={recommendations} />
+      <HomeProductCards products={recommendations} />
     </section>
   );
 }

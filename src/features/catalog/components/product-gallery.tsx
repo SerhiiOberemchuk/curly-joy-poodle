@@ -18,11 +18,11 @@ export function ProductGallery({ images }: { images: readonly ProductImage[] }) 
         <div className={styles.thumbs} role="group" aria-label="Зображення товару">
           {images.map((image, index) => (
             <button
-              key={image.alt}
+              key={image.src ?? index}
               type="button"
               className={index === activeIndex ? styles.thumbActive : styles.thumb}
               aria-pressed={index === activeIndex}
-              aria-label={image.alt}
+              aria-label={`${image.alt} — фото ${index + 1}`}
               onClick={() => setActiveIndex(index)}
             >
               <ProductArtwork image={image} size="sm" />

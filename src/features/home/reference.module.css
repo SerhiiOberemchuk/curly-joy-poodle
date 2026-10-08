@@ -246,6 +246,9 @@
   height: 76%;
   transition: transform 300ms ease;
 }
+.momentImage img {
+  object-fit: cover;
+}
 .momentCard:hover .momentImage {
   transform: scale(1.025);
 }
@@ -413,16 +416,20 @@
   padding: 1cqw 1.1cqw 0.75cqw;
 }
 .productImage {
+  position: relative;
   height: 10.7cqw;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 0.65cqw;
 }
-.productImage .artwork {
-  height: 100%;
-  max-width: 100%;
+.productImage img {
+  object-fit: contain;
   mix-blend-mode: multiply;
+}
+.productPlaceholder {
+  font-size: 2.4em;
+  opacity: 0.5;
 }
 .productLink h3 {
   font-size: 0.97cqw;

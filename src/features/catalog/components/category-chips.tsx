@@ -24,7 +24,7 @@ export async function CategoryChips({
           className={activeSlug === category.slug ? styles.chipActive : styles.chip}
           aria-current={activeSlug === category.slug ? "page" : undefined}
         >
-          {category.glyph} {category.title}
+          {category.title}
         </Link>
       ))}
     </nav>

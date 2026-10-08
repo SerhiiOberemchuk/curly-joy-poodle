@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { findInfoPage, infoPages } from "@/content/info-pages";
-import { getSizeGuide } from "@/features/catalog/queries";
+import { sizeGuide } from "@/content/size-guide";
 import { site } from "@/lib/site";
 
 import styles from "./info.module.css";
@@ -22,7 +22,7 @@ export default async function Page({ params }: PageProps<"/info/[slug]">) {
   const { slug } = await params;
   const page = findInfoPage(slug);
   if (!page) notFound();
-  const sizes = page.showSizeTable ? await getSizeGuide() : [];
+  const sizes = page.showSizeTable ? sizeGuide : [];
 
   return (
     <article className={`container ${styles.article}`}>

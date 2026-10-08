@@ -56,7 +56,7 @@ export async function Recommendations() {
                   </span>
                 </div>
                 <p className={styles.productLine}>
-                  {product.line ?? "Curly Joy Store"}
+                  {product.brand ?? "Curly Joy Store"}
                 </p>
                 <h3>{product.title}</h3>
                 <p className={styles.productPrice}>

@@ -7,9 +7,15 @@ import {
   getCategorySlugs,
 } from "@/features/catalog/queries";
 
+/** Cache Components needs at least one param; an empty catalog prerenders a 404. */
+const EMPTY_CATALOG_SLUG = "__empty__";
+
 export async function generateStaticParams() {
-  return (await getCategorySlugs()).map((category) => ({ category }));
+  const slugs = await getCategorySlugs();
+  return (slugs.length > 0 ? slugs : [EMPTY_CATALOG_SLUG]).map((category) => ({ category }));
 }
+
+const DEFAULT_TAGLINE = "Речі, які ми обрали для щасливого життя разом.";
 
 export async function generateMetadata({
   params,
@@ -17,7 +23,7 @@ export async function generateMetadata({
   const category = await getCategory((await params).category);
   if (!category) return {};
 
-  return { title: category.title, description: category.description };
+  return { title: category.title, description: category.description ?? undefined };
 }
 
 export default async function Page({
@@ -31,10 +37,9 @@ export default async function Page({
     <CatalogPage
       eyebrow="Категорія"
       title={category.title}
-      tagline={category.tagline}
-      description={category.description}
+      tagline={DEFAULT_TAGLINE}
+      description={category.description ?? `Усі товари категорії «${category.title}» в одному місці.`}
       activeCategory={category.slug}
-      accent={category.accent}
       searchParams={searchParams}
     />
   );

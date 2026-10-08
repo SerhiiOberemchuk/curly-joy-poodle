@@ -1,5 +1,3 @@
-import type { SizeCode } from "@/features/catalog/types";
-
 export type DeliveryMethod = "np-branch" | "np-locker" | "np-courier";
 export type PaymentMethod = "card" | "cod" | "invoice";
 export type PaymentStatus = "pending" | "not-required" | "paid" | "failed";
@@ -22,9 +20,11 @@ export interface DeliveryDetails {
 
 export interface OrderItem {
   sku: string;
+  /** CRM product id of the variant. */
   productId: string;
   title: string;
-  size: SizeCode;
+  /** Size, colour… of the variant, when the product has one. */
+  option: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

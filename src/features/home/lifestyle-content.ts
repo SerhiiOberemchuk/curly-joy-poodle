@@ -1,5 +1,3 @@
-import type { Collection } from "@/features/catalog/types";
-
 const photo = (name: string) => `/images/reference/${name}.webp`;
 
 /** Editorial content is separate from layout and catalog inventory. */
@@ -10,7 +8,8 @@ export const lifestyleImages = {
 } as const;
 
 interface LifestyleMoment {
-  collection: Collection;
+  /** CRM collection slug. */
+  collection: string;
   title: string;
   description: string;
   image: string;

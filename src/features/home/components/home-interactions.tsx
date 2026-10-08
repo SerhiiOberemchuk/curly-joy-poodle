@@ -1,14 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
 import headerStyles from "@/components/layout/site-header.module.css";
-import type { HomeRecommendation } from "../reference-content";
+import type { ProductListItem } from "@/features/catalog/types";
+import { formatMoney } from "@/lib/money";
 import styles from "../reference.module.css";
 import { HomeIcon } from "./home-icon";
-import { ReferenceArtwork } from "./reference-artwork";
 
 interface HomeSelection {
   query: string;
@@ -139,15 +140,15 @@ export function HomeFavorites() {
 }
 
 export function HomeProductCards({
-  recommendations,
+  products: recommendations,
 }: {
-  recommendations: readonly HomeRecommendation[];
+  products: readonly ProductListItem[];
 }) {
   const { query, setQuery } = useSelection();
   const normalizedQuery = query.trim().toLocaleLowerCase("uk");
   const products = recommendations.filter(
     (product) =>
-      `${product.brand} ${product.title}`
+      `${product.brand ?? ""} ${product.title}`
         .toLocaleLowerCase("uk")
         .includes(normalizedQuery),
   );
@@ -179,7 +180,7 @@ export function HomeProductCards({
   );
 }
 
-export function HomeProductCard({ product }: { product: HomeRecommendation }) {
+export function HomeProductCard({ product }: { product: ProductListItem }) {
   const { favorites, toggleFavorite } = useSelection();
   const selected = favorites.includes(product.id);
 
@@ -189,30 +190,37 @@ export function HomeProductCard({ product }: { product: HomeRecommendation }) {
         className={styles.productFavorite}
         type="button"
         aria-pressed={selected}
-        aria-label={`${selected ? "Прибрати з обраного" : "Додати до обраного"}: ${product.brand}`}
+        aria-label={`${selected ? "Прибрати з обраного" : "Додати до обраного"}: ${product.title}`}
         onClick={() => toggleFavorite(product.id)}
       >
         <HomeIcon name="heart" />
       </button>
-      <Link href={product.href} className={styles.productLink}>
+      <Link href={`/product/${product.slug}`} className={styles.productLink}>
         <div className={styles.productImage}>
-          <ReferenceArtwork window={product.artwork} />
+          {product.image.src ? (
+            <Image src={product.image.src} alt={product.image.alt} fill sizes="(max-width: 768px) 45vw, 240px" />
+          ) : (
+            <span className={styles.productPlaceholder} aria-hidden="true">🐾</span>
+          )}
         </div>
-        <h3>{product.brand}</h3>
+        {product.brand ? <h3>{product.brand}</h3> : null}
         <p>{product.title}</p>
-        <strong>{product.price}</strong>
+        <strong>
+          {product.options.length > 1 ? "від " : ""}
+          {formatMoney(product.priceFrom)}
+        </strong>
       </Link>
     </article>
   );
 }
 
 export function FavoriteProductCards({
-  recommendations,
+  products: catalog,
 }: {
-  recommendations: readonly HomeRecommendation[];
+  products: readonly ProductListItem[];
 }) {
   const { favorites } = useSelection();
-  const products = recommendations.filter((product) => favorites.includes(product.id));
+  const products = catalog.filter((product) => favorites.includes(product.id));
 
   if (!products.length) {
     return (

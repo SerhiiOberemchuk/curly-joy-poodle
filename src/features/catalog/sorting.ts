@@ -30,9 +30,11 @@ export function sortProductList(
 ): ProductListItem[] {
   const items = [...products];
 
+  // `products` arrive in catalog order: newest first, or the merchant's order
+  // for a collection.
   switch (sort) {
     case "newest":
-      return items.reverse();
+      return items;
     case "price-asc":
       return items.sort((a, b) => a.priceFrom - b.priceFrom);
     case "price-desc":
@@ -40,6 +42,7 @@ export function sortProductList(
     case "title":
       return items.sort((a, b) => a.title.localeCompare(b.title, "uk"));
     case "featured":
-      return items;
+      // Stable sort: in-stock first, otherwise the catalog order is kept.
+      return items.sort((a, b) => Number(b.inStock) - Number(a.inStock));
   }
 }

@@ -6,11 +6,7 @@
   aspect-ratio: var(--artwork-ratio, 1);
   border-radius: 18px;
   overflow: hidden;
-  background-image: linear-gradient(
-    145deg,
-    var(--artwork-from),
-    var(--artwork-to)
-  );
+  background-image: linear-gradient(145deg, #f5eee7, #ead8c8);
 }
 
 .artwork::after {

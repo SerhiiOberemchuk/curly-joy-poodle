@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Suspense, type ReactNode } from "react";
 
-import type { Accent, Collection } from "../types";
+type Accent = "accent" | "mint" | "sky";
 import { CategoryChips } from "./category-chips";
 import { ProductGridSkeleton } from "./product-grid-skeleton";
 import {
@@ -18,7 +18,7 @@ interface CatalogPageProps {
   description: string;
   searchParams: SearchParams;
   activeCategory?: string;
-  collection?: Collection;
+  collection?: string;
   accent?: Accent;
 }
 

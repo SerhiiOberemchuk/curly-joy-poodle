@@ -73,9 +73,9 @@ export async function placeOrderAction(
     },
     items: cart.lines.map((line) => ({
       sku: line.sku,
-      productId: line.productId,
-      title: `${line.title}${line.line ? ` ${line.line}` : ""}`,
-      size: line.size,
+      productId: line.variantId,
+      title: line.title,
+      option: line.option,
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       lineTotal: line.lineTotal,

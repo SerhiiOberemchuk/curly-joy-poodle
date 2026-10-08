@@ -1,24 +1,21 @@
-import type { ProductImage, SizeCode } from "@/features/catalog/types";
+import type { ProductImage } from "@/features/catalog/types";
 
 /** The shape persisted in the cart cookie — kept short on purpose. */
 export interface StoredCartLine {
-  /** Product id. */
+  /** CRM product id of the chosen variant. */
   p: string;
-  /** Size code. */
-  s: SizeCode;
   /** Quantity. */
   q: number;
 }
 
 /** A cart line resolved against the catalog, ready to render. */
 export interface CartLine {
-  /** Stable identifier for a product + size pair. */
-  key: string;
-  productId: string;
+  /** CRM product id of the variant — also the line's stable key. */
+  variantId: string;
   slug: string;
   title: string;
-  line?: string;
-  size: SizeCode;
+  /** Size, colour… of the chosen variant, when the product has one. */
+  option: string | null;
   sku: string;
   image: ProductImage;
   quantity: number;

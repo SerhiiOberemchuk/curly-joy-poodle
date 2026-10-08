@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
-import type { ProductVariant, SizeCode } from "@/features/catalog/types";
+import type { ProductVariant } from "@/features/catalog/types";
 
 import { initialCartActionState } from "../action-state";
 import { addToCartAction } from "../actions";
@@ -13,32 +13,32 @@ import { MAX_LINE_QUANTITY } from "../constants";
 import styles from "./add-to-cart-form.module.css";
 
 export function AddToCartForm({
-  productId,
+  optionName,
   variants,
 }: {
-  productId: string;
+  /** What the variant labels name, e.g. «Розмір». */
+  optionName: string;
   variants: readonly ProductVariant[];
 }) {
   const [state, formAction, isPending] = useActionState(addToCartAction, initialCartActionState);
-  const [size, setSize] = useState<SizeCode | null>(
-    () => variants.find((variant) => variant.stock > 0)?.size ?? null,
+  const [variantId, setVariantId] = useState<string | null>(
+    () => variants.find((variant) => variant.inStock)?.id ?? null,
   );
   const [quantity, setQuantity] = useState(1);
 
-  const selected = variants.find((variant) => variant.size === size);
+  const selected = variants.find((variant) => variant.id === variantId);
   const pricedVariant = selected ?? variants[0];
   const ceiling = Math.min(selected?.stock ?? MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
-  const soldOut = variants.every((variant) => variant.stock === 0);
+  const soldOut = variants.every((variant) => !variant.inStock);
 
-  function handleSizeChange(next: SizeCode) {
-    setSize(next);
+  function handleVariantChange(next: string) {
+    setVariantId(next);
     setQuantity(1);
   }
 
   return (
     <form action={formAction} className={styles.form}>
-      <input type="hidden" name="productId" value={productId} />
-      <input type="hidden" name="size" value={size ?? ""} />
+      <input type="hidden" name="variantId" value={variantId ?? ""} />
       <input type="hidden" name="quantity" value={quantity} />
 
       {pricedVariant ? (
@@ -48,34 +48,36 @@ export function AddToCartForm({
         </div>
       ) : null}
 
-      {/* Accessories come in a single variant — a size picker with one option,
-          next to a "how to measure" link, would only be noise. */}
+      {/* A single variant needs no picker — one option next to a "how to
+          measure" link would only be noise. */}
       {variants.length > 1 ? (
         <fieldset>
           <legend className={styles.fieldLabel}>
-            <span>Розмір</span>
-            <Link href="/info/sizes" className={styles.sizeHint}>
-              Як виміряти?
-            </Link>
+            <span>{optionName}</span>
+            {optionName === "Розмір" ? (
+              <Link href="/info/sizes" className={styles.sizeHint}>
+                Як виміряти?
+              </Link>
+            ) : null}
           </legend>
 
           <div className={styles.sizes}>
             {variants.map((variant) => {
-              const unavailable = variant.stock === 0;
-              const active = variant.size === size;
+              const unavailable = !variant.inStock;
+              const active = variant.id === variantId;
 
               return (
                 <button
-                  key={variant.sku}
+                  key={variant.id}
                   type="button"
                   disabled={unavailable}
                   aria-pressed={active}
                   className={
                     unavailable ? styles.sizeDisabled : active ? styles.sizeActive : styles.size
                   }
-                  onClick={() => handleSizeChange(variant.size)}
+                  onClick={() => handleVariantChange(variant.id)}
                 >
-                  {variant.size}
+                  {variant.label ?? variant.sku}
                 </button>
               );
             })}
@@ -123,8 +125,10 @@ export function AddToCartForm({
               Перейти до кошика
             </Link>
           </span>
-        ) : selected && selected.stock <= 3 ? (
-          <span className={styles.stock}>Залишилось {selected.stock} шт. цього розміру</span>
+        ) : selected && selected.stock !== null && selected.stock <= 3 ? (
+          <span className={styles.stock}>
+            Залишилось {selected.stock} шт.{variants.length > 1 ? " цього варіанта" : ""}
+          </span>
         ) : null}
       </p>
     </form>

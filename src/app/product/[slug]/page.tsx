@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
 import { ProductGallery } from "@/features/catalog/components/product-gallery";
@@ -8,22 +8,34 @@ import { ProductGrid } from "@/features/catalog/components/product-grid";
 import { getProduct, getProductCategory, getProductSlugs, getRelatedProducts } from "@/features/catalog/queries";
 import styles from "./product.module.css";
 
+/** Cache Components needs at least one param; an empty catalog prerenders a 404. */
+const EMPTY_CATALOG_SLUG = "__empty__";
+
 export async function generateStaticParams() {
-  return (await getProductSlugs()).map((slug) => ({ slug }));
+  const slugs = await getProductSlugs();
+  return (slugs.length > 0 ? slugs : [EMPTY_CATALOG_SLUG]).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/product/[slug]">): Promise<Metadata> {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
-  return { title: product.title, description: product.summary };
+  return {
+    title: product.title,
+    description: product.summary || undefined,
+    alternates: { canonical: `/product/${product.slug}` },
+  };
 }
 
 export default async function Page({ params }: PageProps<"/product/[slug]">) {
-  const product = await getProduct((await params).slug);
+  const { slug } = await params;
+  const product = await getProduct(slug);
   if (!product) notFound();
+  // An old link from before the product was renamed in the CRM.
+  if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`);
+
   const [category, related] = await Promise.all([
-    getProductCategory(product.slug),
-    getRelatedProducts(product.slug),
+    getProductCategory(product),
+    getRelatedProducts(product),
   ]);
 
   return (
@@ -39,24 +51,43 @@ export default async function Page({ params }: PageProps<"/product/[slug]">) {
           <p className={styles.note}>Для щасливих хвостиків <span>♡</span></p>
         </div>
         <section className={styles.info} aria-labelledby="product-title">
-          <p className={styles.line}>{product.brand}{product.line ? ` · ${product.line}` : ""}</p>
+          {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
           <h1 className={styles.title} id="product-title">{product.title}</h1>
-          <p className={styles.summary}>{product.summary}</p>
-          <div className={styles.badges}>
-            {product.badges.map((badge) => <span key={badge}>{badge}</span>)}
-          </div>
-          <AddToCartForm productId={product.id} variants={product.variants} />
+          <AddToCartForm optionName={product.optionName} variants={product.variants} />
           <div className={styles.shipping}>
             <Link href="/info/delivery"><strong>Доставка</strong><span>Способи та умови відправлення ↗</span></Link>
-            <Link href="/info/returns"><strong>Не підійшов розмір?</strong><span>Допоможемо з обміном ↗</span></Link>
+            {product.optionName === "Розмір" ? (
+              <Link href="/info/returns"><strong>Не підійшов розмір?</strong><span>Допоможемо з обміном ↗</span></Link>
+            ) : (
+              <Link href="/info/returns"><strong>Повернення та обмін</strong><span>Умови повернення ↗</span></Link>
+            )}
           </div>
         </section>
       </div>
-      <section className={styles.details} aria-label="Деталі товару">
-        <div><h2 className={styles.detailTitle}>Більше про цю річ</h2><p className={styles.description}>{product.description}</p></div>
-        <div><h2 className={styles.detailTitle}>За що любимо</h2><ul className={styles.list}>{product.features.map((item) => <li className={styles.listItem} key={item}>{item}</li>)}</ul></div>
-        <div><h2 className={styles.detailTitle}>Як доглядати</h2><ul className={styles.list}>{product.care.map((item) => <li className={styles.listItem} key={item}>{item}</li>)}</ul></div>
-      </section>
+      {product.descriptionHtml || product.attributes.length > 0 ? (
+        <section className={styles.details} aria-label="Деталі товару">
+          {product.descriptionHtml ? (
+            <div>
+              <h2 className={styles.detailTitle}>Більше про цю річ</h2>
+              {/* Sanitized in catalog-source: p/br/ul/ol/li/strong only, no attributes. */}
+              <div className={styles.description} dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+            </div>
+          ) : null}
+          {product.attributes.length > 0 ? (
+            <div>
+              <h2 className={styles.detailTitle}>Характеристики</h2>
+              <dl className={styles.list}>
+                {product.attributes.map((attribute) => (
+                  <div className={styles.listItem} key={attribute.name}>
+                    <dt>{attribute.name}:</dt>
+                    <dd>{attribute.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       {related.length ? <section className={styles.related}><h2>Ще трохи радості</h2><ProductGrid products={related} /></section> : null}
     </div>
   );

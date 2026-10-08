@@ -34,7 +34,7 @@ export async function CartView() {
     <div className={styles.layout}>
       <div className={styles.lines}>
         {cart.lines.map((line) => (
-          <CartLineItem key={line.key} line={line} />
+          <CartLineItem key={line.variantId} line={line} />
         ))}
       </div>
 

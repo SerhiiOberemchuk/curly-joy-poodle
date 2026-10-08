@@ -1,103 +1,83 @@
-export type SeasonalCollection = "summer" | "winter" | "all-season";
-
-export type Collection =
-  | SeasonalCollection
-  | "walks"
-  | "travel"
-  | "at-home"
-  | "dress-up"
-  | "curly-joy-recommends";
-
-export type SizeCode = "XXS" | "XS" | "S" | "M" | "L" | "XL" | "XXL";
-
-export interface SizeGuideRow {
-  /** Size label shown to the customer. */
-  code: SizeCode;
-  /** Back length (withers to tail base), cm. */
-  backLengthCm: [number, number];
-  /** Chest girth, cm. */
-  chestCm: [number, number];
-  /** Typical breeds for this size — the fastest way for a customer to self-select. */
-  breeds: string;
+export interface ProductImage {
+  /** Product photo from the CRM; `null` until the merchant uploads one. */
+  src: string | null;
+  alt: string;
 }
 
+/**
+ * One purchasable item. In the CRM every variant is a product of its own with
+ * its own SKU, price and stock; products that share a `productGroupId` are the
+ * sizes or colours of one model and are shown here as a single product.
+ */
 export interface ProductVariant {
+  /** CRM product id — what the cart stores. */
+  id: string;
   sku: string;
-  size: SizeCode;
+  /** What tells this variant apart from its siblings (size, colour…); `null` for a single variant. */
+  label: string | null;
   /** Price in minor units (kopiyky). */
   price: number;
   /** Strike-through price in minor units, when the variant is discounted. */
   compareAtPrice?: number;
-  stock: number;
+  /** Units on hand, or `null` when the CRM does not track this item's stock. */
+  stock: number | null;
+  inStock: boolean;
 }
 
-export interface ProductImage {
-  /** Local product photography, when available. */
-  src?: string;
-  /** Two-stop gradient used by the placeholder artwork until real photos land. */
-  from: string;
-  to: string;
-  /** Emoji stand-in for the product silhouette. */
-  glyph: string;
-  alt: string;
+export interface ProductAttribute {
+  name: string;
+  value: string;
 }
 
 export interface Product {
   id: string;
   slug: string;
+  /**
+   * The rename-proof tail of the slug (from the SKU or model code). An old link
+   * that still ends in it resolves to the product and is redirected.
+   */
+  urlKey: string;
   title: string;
-  /** Trademarked product line, e.g. `ICE-VEST®`. */
-  line?: string;
-  brand: string;
-  categorySlug: string;
-  collection: SeasonalCollection;
+  brand: string | null;
+  categoryId: string | null;
+  /** Short plain-text teaser for cards and meta descriptions. */
   summary: string;
-  description: string;
-  features: readonly string[];
-  care: readonly string[];
-  badges: readonly string[];
+  /** Full description as sanitized HTML (p/br/ul/ol/li/strong only). */
+  descriptionHtml: string;
+  attributes: readonly ProductAttribute[];
   images: readonly ProductImage[];
+  /** What the variant labels name, e.g. «Розмір». */
+  optionName: string;
   variants: readonly ProductVariant[];
 }
 
-export type Accent = "accent" | "mint" | "sky";
-
 export interface Category {
+  id: string;
   slug: string;
   title: string;
-  /** Short line used on category cards and as the listing subtitle. */
-  tagline: string;
-  description: string;
-  accent: Accent;
-  glyph: string;
-  /** Explicit membership supports lifestyle categories with overlapping products. */
-  productSlugs: readonly string[];
+  description: string | null;
+  imageUrl: string | null;
+  parentId: string | null;
 }
 
-/** Seasonal or editorial grouping, independent of product categories. */
+/** A merchandising selection curated in the CRM, independent of categories. */
 export interface CollectionInfo {
-  slug: Collection;
+  slug: string;
   title: string;
-  tagline: string;
-  description: string;
-  accent: Accent;
-  glyph: string;
-  /** Explicit membership lets one product appear in several lifestyle edits. */
-  productSlugs?: readonly string[];
+  description: string | null;
 }
 
 export interface ProductListItem {
   id: string;
   slug: string;
   title: string;
-  line?: string;
+  brand: string | null;
   summary: string;
-  categorySlug: string;
-  badges: readonly string[];
   image: ProductImage;
   /** Lowest variant price, in minor units. */
   priceFrom: number;
   compareAtPrice?: number;
-  sizes: readonly SizeCode[];
+  /** Variant labels; empty for a single-variant product. */
+  options: readonly string[];
   inStock: boolean;
 }

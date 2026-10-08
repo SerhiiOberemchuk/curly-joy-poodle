@@ -224,7 +224,8 @@ export function callbackMatchesOrder(order: Order, callback: LiqPayCallback): bo
 export interface LiqPayLineItem {
   sku: string;
   title: string;
-  size: string;
+  /** Size, colour… of the variant, when the product has one. */
+  option: string | null;
   quantity: number;
   /** Minor units. */
   unitPrice: number;
@@ -256,7 +257,7 @@ function buildDescription(order: LiqPayPayable): string {
   let used = head.length + 3;
 
   for (const [index, item] of items.entries()) {
-    const part = `${item.title} (${item.size}) ×${item.quantity}`;
+    const part = `${item.title}${item.option ? ` (${item.option})` : ""} ×${item.quantity}`;
     const remaining = items.length - index;
     if (used + part.length + 2 > MAX_DESCRIPTION_LENGTH) {
       parts.push(`та ще ${remaining} поз.`);

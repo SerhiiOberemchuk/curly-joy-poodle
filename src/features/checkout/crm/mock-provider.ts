@@ -37,7 +37,7 @@ function buildPayload(order: Order) {
     products: order.items.map((item) => ({
       sku: item.sku,
       name: item.title,
-      parameter: item.size,
+      parameter: item.option ?? "",
       amount: item.quantity,
       // SalesDrive works in hryvnia, the shop in kopiyky.
       price: item.unitPrice / 100,

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { getProducts } from "@/features/catalog/queries";
 import { FavoriteProductCards } from "@/features/home/components/home-interactions";
-import { getHomeRecommendations } from "@/features/home/queries";
 import styles from "./favorites.module.css";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FavoritesPage() {
-  const recommendations = await getHomeRecommendations();
+  const products = await getProducts();
 
   return (
     <div className={styles.page}>
@@ -22,7 +22,7 @@ export default async function FavoritesPage() {
         <Link href="/#recommendations">До рекомендацій <span aria-hidden="true">→</span></Link>
       </header>
       <section className={styles.products} aria-label="Збережені товари">
-        <FavoriteProductCards recommendations={recommendations} />
+        <FavoriteProductCards products={products} />
       </section>
     </div>
   );

@@ -1,5 +1,4 @@
 import { getCollection, getProducts } from "../queries";
-import type { Collection } from "../types";
 import { CatalogResults } from "./catalog-results";
 
 export type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -15,7 +14,7 @@ export async function SortedProductList({
 }: {
   searchParams: SearchParams;
   category?: string;
-  collection?: Collection;
+  collection?: string;
 }) {
   const params = await searchParams;
   const requestedCollection = Array.isArray(params.collection)

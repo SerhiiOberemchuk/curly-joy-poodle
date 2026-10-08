@@ -23,16 +23,6 @@
   position: relative;
 }
 
-.badges {
-  position: absolute;
-  inset-block-start: var(--space-3);
-  inset-inline-start: var(--space-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  z-index: 1;
-}
-
 .soldOut {
   position: absolute;
   inset: 0;

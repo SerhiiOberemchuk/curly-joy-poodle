@@ -53,8 +53,8 @@ async function CheckoutContent() {
       <CartSummary cart={cart} action="none">
         <div className={styles.items}>
           {cart.lines.map((line) => (
-            <p className={styles.item} key={line.key}>
-              <span className={styles.itemName}>{line.title} · {line.size} × {line.quantity}</span>
+            <p className={styles.item} key={line.variantId}>
+              <span className={styles.itemName}>{line.title}{line.option ? ` · ${line.option}` : ""} × {line.quantity}</span>
               <strong>{formatMoney(line.lineTotal)}</strong>
             </p>
           ))}

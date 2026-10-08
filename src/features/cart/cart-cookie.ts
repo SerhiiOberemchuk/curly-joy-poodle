@@ -2,7 +2,6 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-import type { SizeCode } from "@/features/catalog/types";
 import { CART_COOKIE, MAX_CART_LINES, MAX_LINE_QUANTITY } from "./constants";
 import type { StoredCartLine } from "./types";
 
@@ -22,11 +21,11 @@ function parse(raw: string | undefined): StoredCartLine[] {
 
     return parsed.flatMap((entry): StoredCartLine[] => {
       if (typeof entry !== "object" || entry === null) return [];
-      const { p, s, q } = entry as Record<string, unknown>;
-      if (typeof p !== "string" || typeof s !== "string") return [];
+      const { p, q } = entry as Record<string, unknown>;
+      if (typeof p !== "string") return [];
       if (typeof q !== "number" || !Number.isInteger(q) || q < 1) return [];
 
-      return [{ p, s: s as SizeCode, q: Math.min(q, MAX_LINE_QUANTITY) }];
+      return [{ p, q: Math.min(q, MAX_LINE_QUANTITY) }];
     });
   } catch {
     return [];

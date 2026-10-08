@@ -6,7 +6,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 - [Архітектура](./docs/architecture.md)
 - [Дизайн головної сторінки](./docs/home-design.md)
 - [Підключення LiqPay](./docs/liqpay.md)
-- [Деплой на HostiQ](./docs/deploy.md)
+- [Деплой на Vercel](./docs/deploy.md)
 
 ## Getting Started
 
@@ -39,4 +39,4 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy
 
-Production runs on HostiQ as a standalone Node.js server, not on Vercel. See [docs/deploy.md](./docs/deploy.md).
+Production runs on Vercel. See [docs/deploy.md](./docs/deploy.md).

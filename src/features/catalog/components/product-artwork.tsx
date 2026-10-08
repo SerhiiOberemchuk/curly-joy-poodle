@@ -1,10 +1,9 @@
-import type { CSSProperties } from "react";
 import Image from "next/image";
 
 import type { ProductImage } from "../types";
 import styles from "./product-artwork.module.css";
 
-/** Real product photography with a fallback for products awaiting assets. */
+/** Product photo from the CRM, with a neutral stand-in until one is uploaded. */
 export function ProductArtwork({
   image,
   size = "md",
@@ -32,20 +31,14 @@ export function ProductArtwork({
     );
   }
 
-  const style = {
-    "--artwork-from": image.from,
-    "--artwork-to": image.to,
-  } as CSSProperties;
-
   return (
     <div
       className={`${styles.artwork} ${styles[size]}`}
-      style={style}
       role="img"
       aria-label={image.alt}
     >
       <span className={styles.glyph} aria-hidden="true">
-        {image.glyph}
+        🐾
       </span>
     </div>
   );

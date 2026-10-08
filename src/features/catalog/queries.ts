@@ -2,37 +2,50 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
-import { categories, collections, products, sizeGuide } from "./catalog-source";
-import type { SortOption } from "./sorting";
+import { loadCatalog, type Catalog } from "./catalog-source";
+import { fetchCollection } from "./crm-api";
 import type {
   Category,
-  Collection,
   CollectionInfo,
   Product,
   ProductListItem,
   ProductVariant,
-  SizeCode,
-  SizeGuideRow,
 } from "./types";
 
 /**
- * Cache tags. Mutations that touch the catalog revalidate these, so the tag
- * names live next to the reads that register them.
+ * Cache tags. The catalog is edited in the CRM, so it is cached briefly
+ * (`minutes`: refreshed in the background a minute after it was read) and the
+ * tag is there for an on-demand revalidation hook.
  */
 export const catalogTags = {
   all: "catalog",
-  product: (slug: string) => `catalog:product:${slug}`,
-  category: (slug: string) => `catalog:category:${slug}`,
+  collection: (slug: string) => `catalog:collection:${slug}`,
 } as const;
 
 export interface ProductFilter {
   category?: string;
-  collection?: Collection;
-  sort?: SortOption;
+  collection?: string;
+}
+
+/** The whole catalog in one cached read; every query below is derived from it. */
+async function getCatalog(): Promise<Catalog> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(catalogTags.all);
+
+  return loadCatalog();
+}
+
+async function getCollectionDetail(slug: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(catalogTags.all, catalogTags.collection(slug));
+
+  return fetchCollection(slug);
 }
 
 function toListItem(product: Product): ProductListItem {
-  const available = product.variants.filter((variant) => variant.stock > 0);
+  const available = product.variants.filter((variant) => variant.inStock);
   const priced = available.length > 0 ? available : product.variants;
   const cheapest = priced.reduce((min, variant) =>
     variant.price < min.price ? variant : min,
@@ -42,191 +55,149 @@ function toListItem(product: Product): ProductListItem {
     id: product.id,
     slug: product.slug,
     title: product.title,
-    line: product.line,
+    brand: product.brand,
     summary: product.summary,
-    categorySlug: product.categorySlug,
-    badges: product.badges,
     image: product.images[0],
     priceFrom: cheapest.price,
     compareAtPrice: cheapest.compareAtPrice,
-    sizes: product.variants.map((variant) => variant.size),
+    options: product.variants.length > 1
+      ? product.variants.flatMap((variant) => (variant.label ? [variant.label] : []))
+      : [],
     inStock: available.length > 0,
   };
 }
 
-function sortProducts(
-  items: ProductListItem[],
-  sort: SortOption,
-): ProductListItem[] {
-  switch (sort) {
-    case "newest":
-      return items.reverse();
-    case "price-asc":
-      return items.sort((a, b) => a.priceFrom - b.priceFrom);
-    case "price-desc":
-      return items.sort((a, b) => b.priceFrom - a.priceFrom);
-    case "title":
-      return items.sort((a, b) => a.title.localeCompare(b.title, "uk"));
-    case "featured":
-      // In-stock first, then the seed order, which mirrors merchandising priority.
-      return items.sort((a, b) => Number(b.inStock) - Number(a.inStock));
+/** The category and everything nested beneath it. */
+function categoryTree(categories: readonly Category[], rootId: string): Set<string> {
+  const ids = new Set([rootId]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const category of categories) {
+      if (category.parentId && ids.has(category.parentId) && !ids.has(category.id)) {
+        ids.add(category.id);
+        grew = true;
+      }
+    }
   }
+  return ids;
 }
 
 export async function getCategories(): Promise<readonly Category[]> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
-
-  return categories;
+  return (await getCatalog()).categories;
 }
 
 export async function getCategory(slug: string): Promise<Category | null> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all, catalogTags.category(slug));
-
-  return categories.find((category) => category.slug === slug) ?? null;
+  return (await getCategories()).find((category) => category.slug === slug) ?? null;
 }
 
-export async function getCollections(): Promise<readonly CollectionInfo[]> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
-
-  return collections;
+export async function getCategorySlugs(): Promise<string[]> {
+  return (await getCategories()).map((category) => category.slug);
 }
 
-export async function getCollection(
-  slug: string,
-): Promise<CollectionInfo | null> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
+/** `null` when the CRM has no such collection, or it is hidden or out of season. */
+export async function getCollection(slug: string): Promise<CollectionInfo | null> {
+  const collection = await getCollectionDetail(slug);
+  if (!collection) return null;
 
-  return collections.find((collection) => collection.slug === slug) ?? null;
+  return {
+    slug: collection.slug,
+    title: collection.name,
+    description: collection.description,
+  };
 }
 
+/**
+ * Products in catalog order (newest first) or, for a collection, in the
+ * merchant's order. Display sorting is the client's job — see `sorting.ts`.
+ */
 export async function getProducts(
   filter: ProductFilter = {},
 ): Promise<ProductListItem[]> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag(
-    catalogTags.all,
-    ...(filter.category ? [catalogTags.category(filter.category)] : []),
-  );
+  const { products, categories } = await getCatalog();
+  let matched: readonly Product[] = products;
 
-  const category = filter.category
-    ? categories.find((item) => item.slug === filter.category)
-    : undefined;
-  const collection = filter.collection
-    ? collections.find((item) => item.slug === filter.collection)
-    : undefined;
-  const selection = collection?.productSlugs;
-
-  const matched = products.filter((product) => {
-    if (filter.category && !category?.productSlugs.includes(product.slug)) return false;
-    if (filter.collection) {
-      if (selection) return selection.includes(product.slug);
-      return product.collection === filter.collection;
-    }
-    return true;
-  });
-
-  // Preserve the editor's sequence when the customer chooses recommendations.
-  if (selection && (!filter.sort || filter.sort === "featured")) {
-    matched.sort(
-      (a, b) => selection.indexOf(a.slug) - selection.indexOf(b.slug),
-    );
+  if (filter.category) {
+    const category = categories.find((item) => item.slug === filter.category);
+    if (!category) return [];
+    const ids = categoryTree(categories, category.id);
+    matched = matched.filter((product) => product.categoryId && ids.has(product.categoryId));
   }
 
-  return sortProducts(matched.map(toListItem), filter.sort ?? "featured");
+  if (filter.collection) {
+    const collection = await getCollectionDetail(filter.collection);
+    if (!collection) return [];
+    // The collection lists CRM products, i.e. variants; keep the merchant's order.
+    const position = new Map(collection.products.map((item, index) => [item.id, index]));
+    const rank = (product: Product) =>
+      Math.min(...product.variants.map((variant) => position.get(variant.id) ?? Infinity));
+
+    return matched
+      .filter((product) => rank(product) !== Infinity)
+      .sort((a, b) => rank(a) - rank(b))
+      .map(toListItem);
+  }
+
+  return matched.map(toListItem);
 }
 
+/**
+ * Resolves a product URL. A slug from before a rename still ends in the
+ * product's `urlKey`, so it resolves too; the page redirects it to `slug`.
+ */
 export async function getProduct(slug: string): Promise<Product | null> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag(catalogTags.all, catalogTags.product(slug));
+  const { products } = await getCatalog();
+  const exact = products.find((product) => product.slug === slug);
+  if (exact) return exact;
 
-  return products.find((product) => product.slug === slug) ?? null;
+  // Longest key wins, so `…-myw-00001` cannot land on a product keyed `00001`.
+  const renamed = products
+    .filter((product) => slug === product.urlKey || slug.endsWith(`-${product.urlKey}`))
+    .sort((a, b) => b.urlKey.length - a.urlKey.length);
+  return renamed[0] ?? null;
 }
 
-export async function getProductCategory(slug: string): Promise<Category | null> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
-
-  return categories.find((category) => category.productSlugs.includes(slug)) ?? null;
+export async function getProductCategory(product: Product): Promise<Category | null> {
+  if (!product.categoryId) return null;
+  return (await getCategories()).find((category) => category.id === product.categoryId) ?? null;
 }
 
 /** Slugs for `generateStaticParams` — prerenders every product at build time. */
 export async function getProductSlugs(): Promise<string[]> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
-
-  return products.map((product) => product.slug);
+  return (await getCatalog()).products.map((product) => product.slug);
 }
 
-export async function getCategorySlugs(): Promise<string[]> {
-  "use cache";
-  cacheLife("days");
-  cacheTag(catalogTags.all);
-
-  return categories.map((category) => category.slug);
-}
-
+/** Same category first, then the rest of the catalog, in stock only. */
 export async function getRelatedProducts(
-  slug: string,
+  product: Product,
   limit = 4,
 ): Promise<ProductListItem[]> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag(catalogTags.all, catalogTags.product(slug));
+  const { products } = await getCatalog();
+  const others = products
+    .filter((candidate) => candidate.id !== product.id)
+    .map((candidate) => ({ candidate, item: toListItem(candidate) }))
+    .filter(({ item }) => item.inStock);
 
-  const current = products.find((product) => product.slug === slug);
-  if (!current) return [];
-
-  const sameCategory = products.filter(
-    (product) =>
-      product.slug !== slug && product.categorySlug === current.categorySlug,
+  const sameCategory = others.filter(
+    ({ candidate }) => product.categoryId && candidate.categoryId === product.categoryId,
   );
-  const sameCollection = products.filter(
-    (product) =>
-      product.slug !== slug &&
-      product.categorySlug !== current.categorySlug &&
-      product.collection === current.collection,
-  );
+  const rest = others.filter(({ candidate }) => !sameCategory.some((entry) => entry.candidate === candidate));
 
-  return [...sameCategory, ...sameCollection].slice(0, limit).map(toListItem);
-}
-
-export async function getSizeGuide(): Promise<readonly SizeGuideRow[]> {
-  "use cache";
-  cacheLife("max");
-  cacheTag(catalogTags.all);
-
-  return sizeGuide;
+  return [...sameCategory, ...rest].slice(0, limit).map(({ item }) => item);
 }
 
 /**
- * Resolves a variant from ids that came off the wire (cart cookie, form input).
- * Prices are always re-read here — never trusted from the client.
+ * Resolves a variant from an id that came off the wire (cart cookie, form
+ * input). Prices are always re-read here — never trusted from the client.
  */
 export async function findVariant(
-  productId: string,
-  size: SizeCode,
+  variantId: string,
 ): Promise<{ product: Product; variant: ProductVariant } | null> {
-  "use cache";
-  cacheLife("hours");
-  cacheTag(catalogTags.all);
+  const { products } = await getCatalog();
 
-  const product = products.find((item) => item.id === productId);
-  if (!product) return null;
-
-  const variant = product.variants.find((item) => item.size === size);
-  if (!variant) return null;
-
-  return { product, variant };
+  for (const product of products) {
+    const variant = product.variants.find((item) => item.id === variantId);
+    if (variant) return { product, variant };
+  }
+  return null;
 }

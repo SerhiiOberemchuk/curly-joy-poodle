@@ -104,6 +104,7 @@
 }
 
 .summary {
+  min-width: 0;
   position: sticky;
   inset-block-start: calc(var(--header-height) + var(--space-4));
   display: flex;
@@ -117,7 +118,9 @@
 }
 
 .summaryTitle {
-  font: 400 36px/1 var(--font-home-handwriting), cursive;
+  font:
+    400 36px/1 var(--font-home-handwriting),
+    cursive;
   color: #603b2c;
 }
 
@@ -126,6 +129,15 @@
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--text-sm);
+}
+
+.summaryRow > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.summaryRow > span:last-child {
+  text-align: right;
 }
 
 .summaryTotal {
@@ -192,7 +204,9 @@
 }
 
 .empty h2 {
-  font: 400 clamp(34px, 4vw, 48px)/1.05 var(--font-home-handwriting), cursive;
+  font:
+    400 clamp(34px, 4vw, 48px)/1.05 var(--font-home-handwriting),
+    cursive;
   color: #603b2c;
 }
 
@@ -215,5 +229,9 @@
     border-radius: 22px;
   }
 
-  .summary { position: static; padding: 22px 18px; border-radius: 24px; }
+  .summary {
+    position: static;
+    padding: 22px 18px;
+    border-radius: 24px;
+  }
 }

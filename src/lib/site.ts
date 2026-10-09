@@ -37,8 +37,7 @@ export const site = {
     },
   ],
   /**
-   * Реквізити продавця. LiqPay вимагає їх на сайті, а оферта без них — це
-   * текст, а не договір. Єдине джерело: сторінки «Публічна оферта» і
+   * Реквізити продавця. Єдине джерело: сторінки «Публічна оферта» і
    * «Контакти» збирають свої блоки звідси, щоб реквізити не розійшлися.
    */
   legal: {
@@ -52,13 +51,8 @@ export const site = {
   },
 } as const;
 
-/**
- * Платіжні марки у футері. Логотип LiqPay на сайті — пряма вимога мерчант-
- * політики LiqPay: покладіть офіційний файл з брендбуку в
- * `public/images/payments/liqpay.svg` і додайте сюди `src` з розмірами.
- */
 export const paymentMarks: readonly PaymentMark[] = [
   { label: "Visa" },
   { label: "Mastercard" },
-  { label: "LiqPay", href: "https://www.liqpay.ua" },
+  { label: "Monobank", href: "https://monobank.ua" },
 ];

@@ -2,6 +2,3 @@
 
 export const CART_COOKIE = "cjp_cart";
 export const MAX_CART_LINES = 30;
-
-/** Orders above this subtotal (minor units) ship at the store's expense. */
-export const FREE_SHIPPING_THRESHOLD = 150000;

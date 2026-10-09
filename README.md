@@ -5,10 +5,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 - [Технічне завдання для погодження із замовником](./docs/technical-specification.md)
 - [Архітектура](./docs/architecture.md)
 - [Дизайн головної сторінки](./docs/home-design.md)
-- [Підключення LiqPay](./docs/liqpay.md)
+- [Замовлення, оплата та доставка через CRM](./docs/crm-checkout.md)
 - [Деплой на Vercel](./docs/deploy.md)
 
 ## Getting Started
+
+Для `npm test` використовуйте Node.js 24.15+ (або 22.22.2+) — цього потребує
+актуальна версія jsdom для перевірки взаємодії з формою.
 
 First, run the development server:
 

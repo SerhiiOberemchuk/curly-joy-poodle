@@ -2,149 +2,175 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-
 import { Button, buttonStyles } from "@/components/ui/button";
-import { checkPaymentStatusAction, retryPaymentAction } from "@/features/checkout/actions";
+import {
+  checkPaymentStatusAction,
+  retryPaymentAction,
+} from "@/features/checkout/actions";
 import { PaymentStatusPoller } from "@/features/checkout/components/payment-status-poller";
-import { crmMode } from "@/features/checkout/crm";
+import type { CrmOrder } from "@/features/checkout/crm/types";
 import { paymentLabel } from "@/features/checkout/options";
-import { findOrder } from "@/features/checkout/order-repository";
+import { currentReceipt } from "@/features/checkout/payment/settlement";
 import { readReceiptCookie } from "@/features/checkout/receipt-cookie";
-import type { OrderReceipt, PaymentStatus } from "@/features/checkout/types";
+import type { PaymentStatus } from "@/features/checkout/types";
 import { formatMoney } from "@/lib/money";
-
 import styles from "./success.module.css";
 
 export const metadata: Metadata = {
   title: "Статус замовлення",
   robots: { index: false, follow: false },
 };
-
 export default function Page() {
   return (
     <div className={styles.page}>
-      <Suspense fallback={<div className={styles.loading}>Готуємо підтвердження…</div>}>
+      <Suspense
+        fallback={<div className={styles.loading}>Готуємо підтвердження…</div>}
+      >
         <Receipt />
       </Suspense>
     </div>
   );
 }
-
 async function Receipt() {
-  const receipt = await readReceiptCookie();
+  let receipt = await readReceiptCookie();
   if (!receipt) notFound();
-
-  // The order log wins when this instance can see it; otherwise the receipt
-  // carries the last status that `settleCheckoutReturn` established, including
-  // anything it learned by asking LiqPay directly.
-  const order = await findOrder(receipt.number);
-  const status: PaymentStatus = order?.paymentStatus ?? receipt.status;
-  const awaitingCard = receipt.payment === "card" && status === "pending";
-  const cardFailed = receipt.payment === "card" && status === "failed";
-
+  let order: CrmOrder | null = null;
+  let unavailable = false;
+  try {
+    const current = await currentReceipt(receipt);
+    receipt = current.receipt;
+    order = current.order;
+  } catch {
+    unavailable = true;
+  }
+  const status = receipt.status;
+  const canPay =
+    !unavailable &&
+    order?.status !== "cancelled" &&
+    receipt.payment === "card" &&
+    (status === "pending" || status === "failed");
+  const waiting = receipt.payment === "card" && status === "pending";
+  const title = unavailable
+    ? "Статус тимчасово недоступний"
+    : status === "cancelled" || order?.status === "cancelled"
+      ? "Замовлення скасовано"
+      : status === "refunded"
+        ? "Кошти повернено"
+        : status === "failed"
+          ? "Оплату не завершено"
+          : waiting
+            ? "Очікуємо підтвердження"
+            : "Замовлення прийнято";
   return (
     <section className={styles.card}>
-      <span className={styles.glyph} aria-hidden="true">
-        {cardFailed ? "!" : awaitingCard ? "…" : "✓"}
-      </span>
-      <p className={styles.eyebrow}>
-        {cardFailed ? "Оплата не пройшла" : awaitingCard ? "Майже готово" : "Дякуємо за довіру"}
+      {!unavailable && !waiting ? (
+        <span className={styles.glyph} aria-hidden="true">
+          {status === "failed" || status === "cancelled" ? "!" : "✓"}
+        </span>
+      ) : null}
+      <p className={styles.eyebrow}>Ваше замовлення</p>
+      <h1>{title}</h1>
+      <p className={styles.number}>
+        № {receipt.crmReference ?? receipt.number}
       </p>
-      <h1>
-        {cardFailed
-          ? "Оплату не завершено"
-          : awaitingCard
-            ? "Очікуємо підтвердження"
-            : "Замовлення прийнято"}
-      </h1>
-      <p className={styles.number}>№ {receipt.number}</p>
-      <p className={styles.text}>{receipt.note}</p>
-
-      {order?.paymentDetails.failureReason ? (
-        <p className={styles.reason}>Відповідь банку: {order.paymentDetails.failureReason}</p>
-      ) : null}
-
-      {receipt.crmReference ? (
-        <p className={styles.crm}>
-          {crmMode() === "mock" ? (
-            <span className={styles.crmBadge}>Демо · CRM не підключена</span>
-          ) : null}
-          Замовлення передано менеджеру, номер у CRM: <strong>{receipt.crmReference}</strong>
-        </p>
-      ) : null}
-
-      <Details receipt={receipt} status={status} />
-
-      {cardFailed ? (
-        <FailedActions />
-      ) : awaitingCard ? (
-        <PendingActions />
-      ) : (
-        <div className={styles.actions}>
-          <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
-            До каталогу
-          </Link>
-          <Link href="/" className={buttonStyles({ variant: "outline", size: "lg" })}>
-            На головну
-          </Link>
-        </div>
-      )}
-    </section>
-  );
-}
-
-/** Ordinary forms, so both work with JavaScript switched off. */
-function PendingActions() {
-  return (
-    <>
-      <PaymentStatusPoller />
+      <p className={styles.text}>
+        {unavailable
+          ? "Не вдалося оновити статус. Ваше замовлення збережено — спробуйте ще раз."
+          : receipt.note}
+      </p>
+      <PaymentStatusPoller
+        key={receipt.number}
+        active={waiting || unavailable}
+        orderId={receipt.number}
+      >
+        {canPay && waiting ? (
+          <form action={retryPaymentAction}>
+            <Button type="submit" size="lg">
+              Перейти до оплати
+            </Button>
+          </form>
+        ) : null}
+      </PaymentStatusPoller>
+      <div className={styles.details}>
+        <Detail label="Сума товарів" value={formatMoney(receipt.total)} />
+        {order ? (
+          <Detail
+            label="Статус замовлення"
+            value={ORDER_STATUS_LABEL[order.status]}
+          />
+        ) : null}
+        <Detail label="Оплата" value={paymentLabel(receipt.payment)} />
+        <Detail
+          label="Статус оплати"
+          value={
+            unavailable ? "Не вдалося перевірити" : PAYMENT_STATUS_LABEL[status]
+          }
+        />
+        <Detail
+          label="Доставка"
+          value={`${receipt.city}, ${receipt.destination}`}
+        />
+        <Detail label="Контакт" value={receipt.phone || receipt.email} />
+        {order?.shipments
+          .filter(
+            (shipment) =>
+              shipment.trackingNumber && shipment.status !== "cancelled",
+          )
+          .map((shipment) => (
+            <Detail
+              key={shipment.id}
+              label={
+                shipment.carrier === "nova_poshta"
+                  ? "ТТН Нової пошти"
+                  : "Номер відправлення"
+              }
+              value={shipment.trackingNumber!}
+            />
+          ))}
+      </div>
       <div className={styles.actions}>
+        {canPay && !waiting ? (
+          <form action={retryPaymentAction}>
+            <Button type="submit" size="lg">
+              {status === "failed"
+                ? "Спробувати оплатити ще раз"
+                : "Перейти до оплати"}
+            </Button>
+          </form>
+        ) : null}
         <form action={checkPaymentStatusAction}>
-          <Button type="submit" size="lg">
+          <Button type="submit" size="lg" variant="outline">
             Оновити статус
           </Button>
         </form>
-        <Link href="/catalog" className={buttonStyles({ variant: "outline", size: "lg" })}>
+        <Link
+          href="/catalog"
+          className={buttonStyles({ variant: "outline", size: "lg" })}
+        >
           До каталогу
         </Link>
       </div>
-    </>
+    </section>
   );
 }
-
-function FailedActions() {
-  return (
-    <div className={styles.actions}>
-      <form action={retryPaymentAction}>
-        <Button type="submit" size="lg">
-          Спробувати оплатити ще раз
-        </Button>
-      </form>
-      <Link href="/checkout" className={buttonStyles({ variant: "outline", size: "lg" })}>
-        Змінити замовлення
-      </Link>
-    </div>
-  );
-}
-
 const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   paid: "Оплачено",
-  pending: "Очікує оплати",
+  pending: "Очікуємо підтвердження банку",
   "not-required": "При отриманні",
   failed: "Не пройшла",
+  refunded: "Кошти повернено",
+  "partially-refunded": "Частково повернено",
+  cancelled: "Скасовано",
 };
-
-function Details({ receipt, status }: { receipt: OrderReceipt; status: PaymentStatus }) {
-  return (
-    <div className={styles.details}>
-      <Detail label="Сума" value={formatMoney(receipt.total)} />
-      <Detail label="Оплата" value={paymentLabel(receipt.payment)} />
-      <Detail label="Статус оплати" value={PAYMENT_STATUS_LABEL[status]} />
-      <Detail label="Доставка" value={`${receipt.city}, ${receipt.destination}`} />
-      <Detail label="Контакт" value={receipt.phone || receipt.email} />
-    </div>
-  );
-}
+const ORDER_STATUS_LABEL: Record<CrmOrder["status"], string> = {
+  pending: "Прийнято",
+  confirmed: "Підтверджено",
+  processing: "Готуємо до відправлення",
+  shipped: "Відправлено",
+  delivered: "Доставлено",
+  cancelled: "Скасовано",
+  refunded: "Кошти повернено",
+};
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (

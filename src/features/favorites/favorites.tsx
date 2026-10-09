@@ -1,6 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 
 import { Icon } from "@/components/ui/icon";
 
@@ -21,35 +26,55 @@ export function useFavorites(): Favorites {
   return favorites;
 }
 
+function subscribe(listener: () => void) {
+  window.addEventListener("storage", listener);
+  window.addEventListener("favorites-change", listener);
+  return () => {
+    window.removeEventListener("storage", listener);
+    window.removeEventListener("favorites-change", listener);
+  };
+}
+
+function readStoredFavorites() {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+  } catch {
+    return "[]";
+  }
+}
+
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
-  const [ids, setIds] = useState<string[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
+  const stored = useSyncExternalStore(
+    subscribe,
+    readStoredFavorites,
+    () => "[]",
+  );
+  const ids = useMemo((): string[] => {
     try {
-      const parsed: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]");
-      if (Array.isArray(parsed)) {
-        setIds(parsed.filter((item): item is string => typeof item === "string"));
-      }
+      const parsed: unknown = JSON.parse(stored);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
     } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
+      return [];
     }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-  }, [ids, loaded]);
+  }, [stored]);
 
   function toggle(productId: string) {
-    setIds((current) =>
-      current.includes(productId)
-        ? current.filter((item) => item !== productId)
-        : [...current, productId],
-    );
+    const next = ids.includes(productId)
+      ? ids.filter((id) => id !== productId)
+      : [...ids, productId];
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event("favorites-change"));
+    } catch {
+      /* Storage may be disabled in the visitor's browser. */
+    }
   }
 
-  return <FavoritesContext value={{ ids, toggle }}>{children}</FavoritesContext>;
+  return (
+    <FavoritesContext value={{ ids, toggle }}>{children}</FavoritesContext>
+  );
 }
 
 /** The heart on a product tile. */

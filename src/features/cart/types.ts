@@ -34,7 +34,8 @@ export interface Cart {
   /** Total saved against strike-through prices, in minor units. */
   savings: number;
   freeShipping: boolean;
+  freeShippingThreshold: number | null;
   /** Minor units still missing for free shipping; `0` once reached. */
-  freeShippingRemainder: number;
+  freeShippingRemainder: number | null;
   isEmpty: boolean;
 }

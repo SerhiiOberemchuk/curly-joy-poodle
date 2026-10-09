@@ -1,146 +1,131 @@
+import { z } from "zod";
 import { readString } from "@/lib/form";
+import type { CustomerDetails, DeliveryDetails, PaymentMethod } from "./types";
 
-import { deliveryOption, isDeliveryMethod, isPaymentMethod } from "./options";
-import type { CustomerDetails, DeliveryDetails, DeliveryMethod, PaymentMethod } from "./types";
+export const FIELD_LIMITS = {
+  firstName: 60,
+  lastName: 60,
+  email: 120,
+  city: 120,
+  destination: 200,
+  comment: 500,
+} as const;
 
+export function normalizePhone(raw: string): string | null {
+  if (!/^[+\d\s()-]+$/.test(raw)) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("380")) return `+${digits}`;
+  if (digits.length === 10 && digits.startsWith("0")) return `+38${digits}`;
+  if (digits.length === 9) return `+380${digits}`;
+  return null;
+}
+
+export const carrierRefSchema = z.uuid({ error: "Оберіть значення зі списку" });
+const searchSchema = z.string().trim().max(120);
+const optionalRefSchema = z.union([carrierRefSchema, z.literal("")]);
+
+export const checkoutSchema = z
+  .object({
+    firstName: z
+      .string()
+      .trim()
+      .min(2, "Вкажіть ім’я")
+      .max(FIELD_LIMITS.firstName),
+    lastName: z
+      .string()
+      .trim()
+      .min(2, "Вкажіть прізвище")
+      .max(FIELD_LIMITS.lastName),
+    phone: z
+      .string()
+      .trim()
+      .refine(
+        (value) => normalizePhone(value) !== null,
+        "Вкажіть номер у форматі +380 XX XXX XX XX",
+      )
+      .transform((value) => normalizePhone(value) ?? value),
+    email: z
+      .string()
+      .trim()
+      .pipe(z.email("Вкажіть коректний email").max(FIELD_LIMITS.email)),
+    city: z.string().max(FIELD_LIMITS.city),
+    cityRef: carrierRefSchema,
+    citySearch: searchSchema.min(2, "Оберіть населений пункт зі списку"),
+    destination: z.string().max(FIELD_LIMITS.destination),
+    branchRef: optionalRefSchema,
+    streetRef: optionalRefSchema,
+    streetSearch: searchSchema,
+    building: z.string().trim().max(11),
+    flat: z.string().trim().max(35),
+    comment: z
+      .string()
+      .trim()
+      .max(FIELD_LIMITS.comment, "Не більше 500 символів"),
+    delivery: z.enum(["np-branch", "np-courier"]),
+    payment: z.enum(["card", "cod"]),
+  })
+  .superRefine((input, context) => {
+    if (input.delivery === "np-branch" && !input.branchRef) {
+      context.addIssue({
+        code: "custom",
+        path: ["branchRef"],
+        message: "Оберіть відділення або поштомат зі списку",
+      });
+    }
+    if (input.delivery === "np-courier") {
+      if (!input.streetRef || input.streetSearch.length < 2) {
+        context.addIssue({
+          code: "custom",
+          path: ["streetRef"],
+          message: "Оберіть вулицю зі списку",
+        });
+      }
+      if (!/^\d[\dА-Яа-яІіЇїЄєҐґA-Za-z/ -]{0,10}$/.test(input.building)) {
+        context.addIssue({
+          code: "custom",
+          path: ["building"],
+          message: "Вкажіть номер будинку",
+        });
+      }
+    }
+  });
+
+export type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+export type CheckoutField = keyof CheckoutFormValues;
 export type FieldErrors = Partial<Record<CheckoutField, string>>;
-
-export type CheckoutField =
-  | "firstName"
-  | "lastName"
-  | "phone"
-  | "email"
-  | "city"
-  | "destination"
-  | "comment"
-  | "delivery"
-  | "payment";
-
 export interface CheckoutInput {
   customer: CustomerDetails;
   delivery: DeliveryDetails;
   payment: PaymentMethod;
 }
 
-/**
- * Upper bounds shared with the form. They are generous for a human and tight
- * enough that a scripted submit cannot blow up the receipt cookie or the
- * `description` we sign for LiqPay.
- */
-export const FIELD_LIMITS = {
-  firstName: 60,
-  lastName: 60,
-  email: 120,
-  city: 80,
-  destination: 120,
-  comment: 500,
-} as const;
-
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-/**
- * Accepts the shapes Ukrainian customers actually type — `+380…`, `380…`,
- * `0…`, with spaces, dashes or brackets — and normalises to `+380XXXXXXXXX`.
- * Returns `null` when the number cannot be a Ukrainian mobile.
- */
-export function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-
-  const national =
-    digits.length === 12 && digits.startsWith("380")
-      ? digits.slice(2)
-      : digits.length === 10 && digits.startsWith("0")
-        ? digits
-        : digits.length === 9
-          ? `0${digits}`
-          : null;
-
-  if (!national) return null;
-  return `+38${national}`;
-}
-
-/**
- * The destination field means different things per carrier option, so the rule
- * lives here and is used by both the form and the action.
- */
-export function destinationError(method: DeliveryMethod, value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return "Вкажіть відділення або адресу";
-  if (trimmed.length > FIELD_LIMITS.destination) {
-    return `Не більше ${FIELD_LIMITS.destination} символів`;
-  }
-
-  if (deliveryOption(method).destinationKind === "number") {
-    const digits = trimmed.replace(/\D/g, "");
-    if (!digits || digits.length > 5) return "Вкажіть номер відділення, наприклад 25";
-    return null;
-  }
-
-  if (trimmed.length < 6) return "Вкажіть вулицю, будинок і квартиру";
-  return null;
-}
-
-function tooLong(value: string, limit: number): boolean {
-  return value.length > limit;
-}
-
 export function validateCheckout(
   formData: FormData,
 ): { ok: true; value: CheckoutInput } | { ok: false; errors: FieldErrors } {
-  const errors: FieldErrors = {};
-
-  const firstName = readString(formData, "firstName");
-  const lastName = readString(formData, "lastName");
-  const email = readString(formData, "email");
-  const city = readString(formData, "city");
-  const destination = readString(formData, "destination");
-  const comment = readString(formData, "comment");
-  const deliveryMethod = readString(formData, "delivery");
-  const paymentMethod = readString(formData, "payment");
-  const phone = normalizePhone(readString(formData, "phone"));
-
-  if (firstName.length < 2 || tooLong(firstName, FIELD_LIMITS.firstName)) {
-    errors.firstName = "Вкажіть ім’я";
-  }
-  if (lastName.length < 2 || tooLong(lastName, FIELD_LIMITS.lastName)) {
-    errors.lastName = "Вкажіть прізвище";
-  }
-  if (!phone) errors.phone = "Вкажіть номер у форматі +380 XX XXX XX XX";
-  if (!EMAIL_PATTERN.test(email) || tooLong(email, FIELD_LIMITS.email)) {
-    errors.email = "Вкажіть коректний email";
-  }
-  if (city.length < 2 || tooLong(city, FIELD_LIMITS.city)) {
-    errors.city = "Вкажіть населений пункт";
-  }
-  if (tooLong(comment, FIELD_LIMITS.comment)) {
-    errors.comment = `Не більше ${FIELD_LIMITS.comment} символів`;
-  }
-  if (!isDeliveryMethod(deliveryMethod)) errors.delivery = "Оберіть спосіб доставки";
-  if (!isPaymentMethod(paymentMethod)) errors.payment = "Оберіть спосіб оплати";
-
-  // Only meaningful once the carrier option is known.
-  if (isDeliveryMethod(deliveryMethod)) {
-    const destinationProblem = destinationError(deliveryMethod, destination);
-    if (destinationProblem) errors.destination = destinationProblem;
-  } else if (!destination) {
-    errors.destination = "Вкажіть відділення або адресу";
+  const raw = Object.fromEntries(
+    Object.keys(checkoutSchema.shape).map((key) => [
+      key,
+      readString(formData, key),
+    ]),
+  );
+  const result = checkoutSchema.safeParse(raw);
+  if (!result.success) {
+    return {
+      ok: false,
+      errors: Object.fromEntries(
+        result.error.issues.map((issue) => [issue.path[0], issue.message]),
+      ),
+    };
   }
 
-  if (
-    Object.keys(errors).length > 0 ||
-    !phone ||
-    !isDeliveryMethod(deliveryMethod) ||
-    !isPaymentMethod(paymentMethod)
-  ) {
-    return { ok: false, errors };
-  }
-
+  const { firstName, lastName, email, phone, delivery, payment, ...address } =
+    result.data;
   return {
     ok: true,
     value: {
-      customer: { firstName, lastName, phone, email },
-      delivery: { method: deliveryMethod, city, destination, comment },
-      payment: paymentMethod,
+      customer: { firstName, lastName, email, phone },
+      delivery: { ...address, method: delivery },
+      payment,
     },
   };
 }

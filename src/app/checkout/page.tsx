@@ -5,6 +5,11 @@ import { Suspense } from "react";
 import { buttonStyles } from "@/components/ui/button";
 import { CartSummary } from "@/features/cart/components/cart-summary";
 import { getCart } from "@/features/cart/queries";
+import { getCapabilities } from "@/features/checkout/crm";
+import {
+  availableDeliveries,
+  availablePayments,
+} from "@/features/checkout/options";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
 import { formatMoney } from "@/lib/money";
 
@@ -23,7 +28,9 @@ export default function Page() {
         <h1>Оформлення замовлення</h1>
         <p>Заповніть контакти та оберіть зручний спосіб доставки.</p>
       </header>
-      <Suspense fallback={<div className={styles.loading}>Готуємо замовлення…</div>}>
+      <Suspense
+        fallback={<div className={styles.loading}>Готуємо замовлення…</div>}
+      >
         <CheckoutContent />
       </Suspense>
     </div>
@@ -45,16 +52,45 @@ async function CheckoutContent() {
     );
   }
 
+  let capabilities;
+  try {
+    capabilities = await getCapabilities();
+  } catch {
+    return (
+      <section className={styles.empty}>
+        <h2>Оформлення тимчасово недоступне</h2>
+        <p>
+          Не вдалося завантажити способи доставки та оплати. Спробуйте ще раз
+          пізніше.
+        </p>
+      </section>
+    );
+  }
+  if (
+    capabilities.cart.currency !== "UAH" ||
+    !availableDeliveries(capabilities).length ||
+    !availablePayments(capabilities).length
+  ) {
+    return (
+      <section className={styles.empty}>
+        <h2>Оформлення тимчасово недоступне</h2>
+        <p>Зверніться до нас для оформлення замовлення.</p>
+      </section>
+    );
+  }
   return (
     <div className={styles.layout}>
       <section className={styles.formPanel} aria-label="Дані замовлення">
-        <CheckoutForm total={cart.subtotal} />
+        <CheckoutForm total={cart.subtotal} capabilities={capabilities} />
       </section>
       <CartSummary cart={cart} action="none">
         <div className={styles.items}>
           {cart.lines.map((line) => (
             <p className={styles.item} key={line.variantId}>
-              <span className={styles.itemName}>{line.title}{line.option ? ` · ${line.option}` : ""} × {line.quantity}</span>
+              <span className={styles.itemName}>
+                {line.title}
+                {line.option ? ` · ${line.option}` : ""} × {line.quantity}
+              </span>
               <strong>{formatMoney(line.lineTotal)}</strong>
             </p>
           ))}

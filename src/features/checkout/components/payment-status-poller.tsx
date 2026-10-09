@@ -1,50 +1,69 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
-
+import { startTransition, useEffect, useState, type ReactNode } from "react";
+import useSWR from "swr";
 import { checkPaymentStatusAction } from "../actions";
 import styles from "./payment-status-poller.module.css";
 
-/**
- * Backoff in milliseconds — about a minute of watching in six requests. The
- * customer is usually back before LiqPay's callback, so the first checks are
- * quick; after that the manual button takes over rather than polling forever.
- */
-const SCHEDULE = [2000, 3000, 5000, 8000, 13000, 21000] as const;
+const CHECK_INTERVAL = 5000;
+const CHECK_WINDOW = 60_000;
 
-/**
- * Asks the server to re-check the payment while the confirmation screen sits
- * in "waiting". Each check re-renders the route, so once the payment settles
- * the screen swaps to its final state and this component unmounts with it.
- */
-export function PaymentStatusPoller() {
-  const [attempt, setAttempt] = useState(0);
-  const finished = attempt >= SCHEDULE.length;
-
-  useEffect(() => {
-    const delay = SCHEDULE[attempt];
-    if (delay === undefined) return;
-
-    const timer = setTimeout(() => {
-      startTransition(async () => {
+function syncPayment() {
+  return new Promise<boolean>((resolve, reject) => {
+    startTransition(async () => {
+      try {
         await checkPaymentStatusAction();
-        setAttempt((previous) => previous + 1);
-      });
-    }, delay);
+        resolve(true);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
 
+export function PaymentStatusPoller({
+  active,
+  orderId,
+  children,
+}: {
+  active: boolean;
+  orderId: string;
+  children?: ReactNode;
+}) {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (!active) return;
+    const timer = setTimeout(() => setTimedOut(true), CHECK_WINDOW);
     return () => clearTimeout(timer);
-  }, [attempt]);
+  }, [active]);
 
+  useSWR(["checkout-payment", orderId], syncPayment, {
+    refreshInterval: active && !timedOut ? CHECK_INTERVAL : 0,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    errorRetryCount: 0,
+  });
+  if (!active) return null;
   return (
-    <p className={styles.poller} role="status" aria-live="polite">
-      {finished ? (
-        "Автоматична перевірка завершилася. Якщо ви вже оплатили, натисніть «Оновити статус»."
-      ) : (
-        <>
-          <span className={styles.pulse} aria-hidden="true" />
-          Перевіряємо оплату…
-        </>
-      )}
-    </p>
+    <div className={styles.progress}>
+      <div role="status" aria-live="polite">
+        {timedOut ? (
+          <p>
+            Перевірка займає більше часу. Якщо ви вже оплатили, не сплачуйте
+            повторно. Натисніть «Оновити статус» трохи пізніше.
+          </p>
+        ) : (
+          <>
+            <span className={styles.spinner} aria-hidden="true" />
+            <p>Перевіряємо оплату…</p>
+            <p>
+              Підтвердження від банку може зайняти трохи часу. Оновлюємо статус
+              кожні 5 секунд.
+            </p>
+          </>
+        )}
+      </div>
+      {timedOut ? children : null}
+    </div>
   );
 }

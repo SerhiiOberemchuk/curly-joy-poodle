@@ -4,7 +4,7 @@ import { getCurrentProducts } from "@/features/catalog/queries";
 import { sumMoney } from "@/lib/money";
 
 import { readCartCookie } from "./cart-cookie";
-import { FREE_SHIPPING_THRESHOLD } from "./constants";
+import { getCapabilities } from "@/features/checkout/crm";
 import { maxQuantityForVariant } from "./quantity";
 import type { Cart, CartLine, StoredCartLine } from "./types";
 
@@ -14,7 +14,8 @@ const EMPTY_CART: Cart = {
   subtotal: 0,
   savings: 0,
   freeShipping: false,
-  freeShippingRemainder: FREE_SHIPPING_THRESHOLD,
+  freeShippingThreshold: null,
+  freeShippingRemainder: null,
   isEmpty: true,
 };
 
@@ -24,19 +25,39 @@ const EMPTY_CART: Cart = {
  * stock. Checkout also compares the result with the requested quantities before
  * saving an order; this read does not reserve inventory in the CRM.
  */
-export async function buildCart(stored: readonly StoredCartLine[]): Promise<Cart> {
+export async function buildCart(
+  stored: readonly StoredCartLine[],
+): Promise<Cart> {
   if (stored.length === 0) return EMPTY_CART;
-  const products = await getCurrentProducts();
-  const variants = new Map(products.flatMap((product) =>
-    product.variants.map((variant) => [variant.id, { product, variant }] as const),
-  ));
+  const [products, capabilities] = await Promise.all([
+    getCurrentProducts(),
+    getCapabilities(),
+  ]);
+  const rule = capabilities.cart.byCurrency.find(
+    (entry) => entry.currency === "UAH",
+  );
+  const threshold = rule
+    ? rule.freeShippingThreshold
+    : capabilities.cart.currency === "UAH"
+      ? capabilities.cart.freeShippingThreshold
+      : null;
+  const freeShippingThreshold =
+    threshold === null ? null : Math.round(threshold * 100);
+  const variants = new Map(
+    products.flatMap((product) =>
+      product.variants.map(
+        (variant) => [variant.id, { product, variant }] as const,
+      ),
+    ),
+  );
   const resolved = stored.map((item): CartLine | null => {
     const match = variants.get(item.p);
     if (!match || !match.variant.inStock) return null;
 
     const { product, variant } = match;
     const maxQuantity = maxQuantityForVariant(variant);
-    const quantity = maxQuantity === null ? item.q : Math.min(item.q, maxQuantity);
+    const quantity =
+      maxQuantity === null ? item.q : Math.min(item.q, maxQuantity);
 
     return {
       variantId: variant.id,
@@ -59,7 +80,9 @@ export async function buildCart(stored: readonly StoredCartLine[]): Promise<Cart
   const subtotal = sumMoney(lines.map((line) => line.lineTotal));
   const savings = sumMoney(
     lines.map((line) =>
-      line.compareAtPrice ? (line.compareAtPrice - line.unitPrice) * line.quantity : 0,
+      line.compareAtPrice
+        ? (line.compareAtPrice - line.unitPrice) * line.quantity
+        : 0,
     ),
   );
 
@@ -68,8 +91,13 @@ export async function buildCart(stored: readonly StoredCartLine[]): Promise<Cart
     itemCount: lines.reduce((count, line) => count + line.quantity, 0),
     subtotal,
     savings,
-    freeShipping: subtotal >= FREE_SHIPPING_THRESHOLD,
-    freeShippingRemainder: Math.max(FREE_SHIPPING_THRESHOLD - subtotal, 0),
+    freeShipping:
+      freeShippingThreshold !== null && subtotal >= freeShippingThreshold,
+    freeShippingThreshold,
+    freeShippingRemainder:
+      freeShippingThreshold === null
+        ? null
+        : Math.max(freeShippingThreshold - subtotal, 0),
     isEmpty: false,
   };
 }

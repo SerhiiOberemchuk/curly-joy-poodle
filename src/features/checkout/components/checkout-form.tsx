@@ -50,9 +50,11 @@ const defaultValues: CheckoutFormValues = {
 export function CheckoutForm({
   total,
   capabilities,
+  checkoutToken,
 }: {
   total: number;
   capabilities: CrmCapabilities;
+  checkoutToken: string;
 }) {
   const deliveryOptions = availableDeliveries(capabilities);
   const paymentOptions = availablePayments(capabilities);
@@ -100,6 +102,8 @@ export function CheckoutForm({
   const submit: SubmitHandler<CheckoutFormValues> = (values) => {
     const data = new FormData();
     for (const [name, value] of Object.entries(values)) data.set(name, value);
+    data.set("expectedSubtotal", String(total));
+    data.set("checkoutToken", checkoutToken);
     startTransition(() => formAction(data));
   };
 

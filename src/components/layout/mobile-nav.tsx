@@ -9,14 +9,13 @@ import styles from "./mobile-nav.module.css";
 
 export function MobileNav({ links }: { links: readonly NavLink[] }) {
   const pathname = usePathname();
+  return <MobileNavPanel key={pathname} links={links} />;
+}
+
+function MobileNavPanel({ links }: { links: readonly NavLink[] }) {
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
-
-  // The panel belongs to the route it was opened on. Cache Components keeps
-  // routes mounted across navigations, so deriving `open` from the path closes
-  // the menu on every navigation — including browser back — without an effect.
-  const [openedFor, setOpenedFor] = useState<string | null>(null);
-  const open = openedFor === pathname;
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -27,7 +26,10 @@ export function MobileNav({ links }: { links: readonly NavLink[] }) {
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={open ? "Закрити меню" : "Відкрити меню"}
-        onClick={() => setOpenedFor(open ? null : pathname)}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setOpen(false);
+        }}
       >
         <svg
           width="20"
@@ -61,7 +63,7 @@ export function MobileNav({ links }: { links: readonly NavLink[] }) {
           aria-label="Мобільне меню"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
-              setOpenedFor(null);
+              setOpen(false);
               toggleRef.current?.focus();
             }
           }}
@@ -71,7 +73,7 @@ export function MobileNav({ links }: { links: readonly NavLink[] }) {
               key={link.href}
               href={link.href}
               className={styles.link}
-              onClick={() => setOpenedFor(null)}
+              onClick={() => setOpen(false)}
             >
               {link.label}
             </Link>

@@ -7,6 +7,7 @@ const { renderToStaticMarkup } = require("react-dom/server");
 // Run the real TS modules with only framework IO, the CRM transport and order
 // persistence replaced. No network requests, CRM writes or payments in tests.
 const cookieValues = new Map();
+let formToken;
 let products, requests, savedOrders, refreshes, failApi, cacheReads;
 let capabilities, crmOrders, link, failOrder, failPayment, invalidAddress;
 const CITY_REF = "8d5a980d-391c-11dd-90d9-001a92567626";
@@ -61,6 +62,9 @@ function product(overrides = {}) {
     price: 420,
     stock: 25,
     availability: "in_stock",
+    status: "active", storefrontVisible: true,
+    compareAtPrice: null, prices: [], productGroupId: null, size: null, color: null,
+    description: null, descriptionHtml: null, attributes: [], brand: null, category: null,
     images: [],
     ...overrides,
   };
@@ -88,7 +92,7 @@ async function renderProduct() {
   );
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   products = [product()];
   requests = [];
   savedOrders = [];
@@ -120,6 +124,7 @@ beforeEach(() => {
     "test-token-with-at-least-thirty-two-characters";
   process.env.OBRIYM_CRM_API_URL = "https://crm.test/api/v1";
   process.env.SITE_URL = "http://localhost:3001";
+  formToken = await load("src/features/checkout/checkout-attempt.ts").createCheckoutToken();
   global.fetch = async (url, options) => {
     requests.push({ url, options });
     if (failApi) throw new Error("CRM unavailable");
@@ -321,7 +326,11 @@ test("CRM failure prevents additions and checkout without changing the cart", as
 
 test("invalid and fractional CRM stocks never create zero-quantity order lines", async () => {
   const { buildCart } = load("src/features/cart/queries.ts");
-  for (const stock of [undefined, -1, 0.5, "5"]) {
+  for (const stock of [undefined, "5"]) {
+    products = [product({ stock })];
+    await assert.rejects(buildCart([{ p: "p1", q: 1 }]));
+  }
+  for (const stock of [-1, 0.5]) {
     products = [product({ stock })];
     assert.equal((await buildCart([{ p: "p1", q: 1 }])).isEmpty, true);
   }
@@ -343,6 +352,8 @@ test("checkout with sufficient current stock saves the full quantity above ten",
   setCart([{ p: "p1", q: 20 }]);
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   const data = new FormData();
+  data.set("expectedSubtotal", "840000");
+  data.set("checkoutToken", formToken);
   for (const [key, value] of Object.entries({
     firstName: "Test",
     lastName: "Customer",
@@ -391,7 +402,11 @@ test("duplicate cookie lines cannot bypass the per-product stock check", async (
 });
 
 function checkoutData(overrides = {}) {
+  const stored = JSON.parse(cookieValues.get("cjp_cart") ?? "[]");
+  const quotedTotal = stored.reduce((sum, line) => sum + Math.round((products.find(p => p.id === line.p)?.price ?? 0) * 100) * line.q, 0);
   const values = {
+    expectedSubtotal: String(quotedTotal),
+    checkoutToken: formToken,
     firstName: "Test",
     lastName: "Customer",
     phone: "+380670000000",
@@ -690,4 +705,108 @@ test("confirmation page waits for CRM payment, then shows paid, and never claims
   const unavailable = await renderReceipt();
   assert.match(unavailable, /Статус тимчасово недоступний/);
   assert.doesNotMatch(unavailable, /Оплачено|Оплату підтверджено/);
+});
+
+test("a changed checkout total asks for confirmation before creating any order or payment", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const data = checkoutData();
+  products[0].price = 500;
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const result = await placeOrderAction({}, data);
+  assert.equal(result.status, "error");
+  assert.match(result.message, /Сума замовлення змінилася/);
+  assert.equal(savedOrders.length, 0);
+  assert.equal(requests.some(r => r.url.endsWith("/payment-link")), false);
+  assert.equal(refreshes, 1);
+  assert.ok(cookieValues.has("cjp_cart"));
+});
+
+test("malformed or missing quantities do not become default or truncated purchases", async () => {
+  const { addToCartAction, setLineQuantityAction } = load("src/features/cart/actions.ts");
+  for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
+    setCart([{ p: "p1", q: 2 }]);
+    assert.equal((await addToCartAction({}, form(value))).status, "error");
+    await setLineQuantityAction(form(value));
+    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [{ p: "p1", q: 2 }]);
+  }
+});
+
+test("fractional hryvnia prices preserve kopiyky and unsafe totals are refused", () => {
+  const { formatMoney, sumMoney } = load("src/lib/money.ts");
+  assert.match(formatMoney(42050), /420,5/);
+  assert.equal(sumMoney([42050, 1]), 42051);
+  assert.throws(() => sumMoney([Number.MAX_SAFE_INTEGER, 1]), RangeError);
+  const { crmOrderSchema } = load("src/features/checkout/crm/types.ts");
+  assert.equal(crmOrderSchema.safeParse({
+    id: "order", externalId: "ext", number: null, status: "pending", currency: "UAH",
+    totalAmount: "420.00", shipments: [], payments: [{
+      id: "payment", status: "paid", currency: "UAH", amount: "999999999999999999999.00",
+      refundedAmount: null, createdAt: new Date().toISOString(),
+    }],
+  }).success, false);
+});
+
+test("the shop excludes draft and unpublished CRM products even if the API returns them", async () => {
+  products = [product(), product({id:"draft",status:"draft"}), product({id:"hidden",storefrontVisible:false})];
+  const { getCurrentProducts } = load("src/features/catalog/queries.ts");
+  assert.equal((await getCurrentProducts()).length, 1);
+});
+
+test("malformed CRM catalog data fails closed rather than becoming a purchaseable product", async () => {
+  products = [product({price:"420"})];
+  const { addToCartAction } = load("src/features/cart/actions.ts");
+  assert.equal((await addToCartAction({},form(1))).status, "error");
+  assert.equal(cookieValues.has("cjp_cart"), false);
+});
+
+test("HTML descriptions use a parser to preserve allowed markup and remove executable content", async () => {
+  products = [product({descriptionHtml: '<p onclick="evil()">Hello<script>evil()</script><img src=x onerror="evil()"><strong>safe</strong></p>'})];
+  const { getCurrentProducts } = load("src/features/catalog/queries.ts");
+  const catalog = await getCurrentProducts();
+  assert.equal(catalog[0].descriptionHtml, "<p>Hello<strong>safe</strong></p>");
+});
+
+test("incomplete or repeated CRM pages cannot silently produce a partial catalog", async () => {
+  const { fetchProducts } = load("src/features/catalog/crm-api.ts");
+  let reads = 0;
+  global.fetch = async () => {
+    reads++;
+    return Response.json({data: reads === 1 ? [product()] : [], pagination:{page:reads,perPage:100,total:2}});
+  };
+  await assert.rejects(fetchProducts(), /INCOMPLETE_CATALOG/);
+  global.fetch = async () => Response.json({data:[product()],pagination:{page:1,perPage:100,total:2}});
+  await assert.rejects(fetchProducts(), /INVALID_PAGINATION/);
+});
+
+test("concurrent requests from one signed checkout form use one CRM order key", async () => {
+  setCart([{ p:"p1",q:1 }]);
+  const {placeOrderAction}=load("src/features/checkout/actions.ts");
+  const results=await Promise.allSettled([placeOrderAction({},checkoutData()),placeOrderAction({},checkoutData())]);
+  assert.equal(savedOrders.length,1);
+  assert.equal(new Set(requests.filter(r=>r.url.endsWith("/orders")&&r.options.body).map(r=>JSON.parse(r.options.body).externalId)).size,1);
+  assert.ok(results.every(result=>result.status==="rejected" && /redirect:https:/.test(result.reason.message)));
+});
+
+test("a forged checkout form token cannot create an order or charge a payment", async () => {
+  setCart([{p:"p1",q:1}]);
+  const {placeOrderAction}=load("src/features/checkout/actions.ts");
+  const result=await placeOrderAction({},checkoutData({checkoutToken:"forged"}));
+  assert.equal(result.status,"error");
+  assert.equal(savedOrders.length,0);
+  assert.equal(requests.some(r=>r.url.endsWith("/payment-link")),false);
+  assert.equal(refreshes,1);
+});
+
+test("a new signed form after a completed COD purchase creates a new order while replaying the old form does not", async () => {
+  setCart([{p:"p1",q:1}]);
+  const {placeOrderAction}=load("src/features/checkout/actions.ts");
+  const oldForm=checkoutData({payment:"cod"});
+  await assert.rejects(placeOrderAction({},oldForm),/redirect:\/checkout\/success/);
+  setCart([{p:"p1",q:1}]);
+  await assert.rejects(placeOrderAction({},oldForm),/redirect:\/checkout\/success/);
+  assert.equal(savedOrders.length,1);
+  setCart([{p:"p1",q:1}]);
+  formToken=await load("src/features/checkout/checkout-attempt.ts").createCheckoutToken();
+  await assert.rejects(placeOrderAction({},checkoutData({payment:"cod"})),/redirect:\/checkout\/success/);
+  assert.equal(savedOrders.length,2);
 });

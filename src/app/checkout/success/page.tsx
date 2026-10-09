@@ -91,7 +91,7 @@ async function Receipt() {
           </form>
         ) : null}
       </PaymentStatusPoller>
-      <div className={styles.details}>
+      <dl className={styles.details}>
         <Detail label="Сума товарів" value={formatMoney(receipt.total)} />
         {order ? (
           <Detail
@@ -127,7 +127,7 @@ async function Receipt() {
               value={shipment.trackingNumber!}
             />
           ))}
-      </div>
+      </dl>
       <div className={styles.actions}>
         {canPay && !waiting ? (
           <form action={retryPaymentAction}>
@@ -174,9 +174,9 @@ const ORDER_STATUS_LABEL: Record<CrmOrder["status"], string> = {
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <p className={styles.detailRow}>
-      <span className={styles.detailLabel}>{label}</span>
-      <span className={styles.detailValue}>{value}</span>
-    </p>
+    <div className={styles.detailRow}>
+      <dt className={styles.detailLabel}>{label}</dt>
+      <dd className={styles.detailValue}>{value}</dd>
+    </div>
   );
 }

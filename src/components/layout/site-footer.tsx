@@ -92,7 +92,7 @@ export function SiteFooter() {
             </ul>
           </nav>
 
-          <div>
+          <address className={styles.contacts}>
             <p className={styles.columnTitle}>Контакти</p>
             <ul className={styles.list}>
               <li className={styles.contactItem}>
@@ -109,7 +109,7 @@ export function SiteFooter() {
               </li>
               <li className={styles.contactItem}>{site.address}</li>
             </ul>
-          </div>
+          </address>
         </div>
 
         <div className={styles.bottom}>

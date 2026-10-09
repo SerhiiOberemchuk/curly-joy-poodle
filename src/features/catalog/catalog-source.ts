@@ -1,4 +1,5 @@
 import "server-only";
+import sanitizeHtml from "sanitize-html";
 
 import { CURRENCY } from "@/lib/money";
 
@@ -113,9 +114,10 @@ function buildProduct(
     brand: lead.brand?.name?.trim() || null,
     categoryId: lead.category?.id ?? null,
     summary: summarize(description),
-    descriptionHtml: sanitizeDescriptionHtml(
-      descriptionSource.descriptionHtml ?? "",
-    ),
+    descriptionHtml: sanitizeHtml(descriptionSource.descriptionHtml ?? "", {
+      allowedTags: ["p", "br", "ul", "ol", "li", "strong"],
+      allowedAttributes: {},
+    }),
     attributes: (descriptionSource.attributes ?? []).map((attribute) => ({
       name: attribute.name,
       value: attribute.unit
@@ -139,6 +141,7 @@ function priceOf(
 
   // The CRM works in hryvnia, the shop in kopiyky.
   const price = Math.round(entry.price * 100);
+  if (!Number.isSafeInteger(price) || price < 1) return null;
   const compareAtPrice = entry.compareAtPrice
     ? Math.round(entry.compareAtPrice * 100)
     : 0;
@@ -326,21 +329,3 @@ function summarize(description: string, maxLength = 160): string {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–—-]+$/, "")}…`;
 }
 
-const ALLOWED_TAGS = new Set(["p", "br", "ul", "ol", "li", "strong"]);
-
-/**
- * The CRM renders descriptions to HTML with only these tags and no attributes.
- * The page injects it as HTML, so that promise is enforced here as well: any
- * other tag is dropped, attributes are stripped, and every `<` or `>` that is
- * not part of an allowed tag is escaped.
- */
-function sanitizeDescriptionHtml(html: string): string {
-  return html.replace(
-    /<(\/?)([a-z][a-z0-9]*)\b[^<>]*>|[<>]/gi,
-    (match, slash: string | undefined, tag: string | undefined) => {
-      if (!tag) return match === "<" ? "&lt;" : "&gt;";
-      const name = tag.toLowerCase();
-      return ALLOWED_TAGS.has(name) ? `<${slash}${name}>` : "";
-    },
-  );
-}

@@ -20,8 +20,7 @@ async function requestData<T>(
   schema: z.ZodType<T>,
   body?: unknown,
 ): Promise<T> {
-  const response = await crmRequest<{ data: unknown }>(path, body);
-  return schema.parse(response.data);
+  return z.object({ data: schema }).parse(await crmRequest(path, body)).data;
 }
 
 export async function getCapabilities() {

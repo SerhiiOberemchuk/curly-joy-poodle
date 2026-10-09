@@ -9,7 +9,7 @@ interface CheckoutSession {
   attempt?: { fingerprint: string; id: string };
 }
 
-export async function getCheckoutSession() {
+export function getCheckoutSessionPassword(): string {
   const password =
     process.env.CHECKOUT_SESSION_PASSWORD ?? process.env.OBRIYM_CRM_API_KEY;
   if (!password || password.length < 32) {
@@ -18,8 +18,12 @@ export async function getCheckoutSession() {
     );
   }
 
+  return password;
+}
+
+export async function getCheckoutSession() {
   return getIronSession<CheckoutSession>(await cookies(), {
-    password,
+    password: getCheckoutSessionPassword(),
     cookieName: "cjp_checkout",
     ttl: 24 * 60 * 60,
     cookieOptions: {

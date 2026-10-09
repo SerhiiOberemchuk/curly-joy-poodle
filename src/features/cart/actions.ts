@@ -20,13 +20,13 @@ export async function addToCartAction(
   formData: FormData,
 ): Promise<CartActionState> {
   const variantId = readString(formData, "variantId");
-  const requested = readInt(formData, "quantity", 1);
+  const requested = readInt(formData, "quantity");
 
   if (!variantId) {
     return failure("Оберіть варіант, щоб додати товар у кошик.");
   }
 
-  if (!Number.isSafeInteger(requested) || requested < 1) {
+  if (requested === null || requested < 1) {
     return failure("Вкажіть коректну кількість товару.");
   }
   let match: Awaited<ReturnType<typeof findVariant>>;
@@ -71,8 +71,8 @@ export async function addToCartAction(
 
 export async function setLineQuantityAction(formData: FormData): Promise<void> {
   const variantId = readString(formData, "variantId");
-  const quantity = readInt(formData, "quantity", 1);
-  if (!Number.isSafeInteger(quantity)) return;
+  const quantity = readInt(formData, "quantity");
+  if (quantity === null) return;
 
   const lines = await readCartCookie();
   const next = await applyQuantity(lines, variantId, quantity);

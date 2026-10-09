@@ -1,10 +1,12 @@
 import "server-only";
+import { z } from "zod";
 
 import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
 import { buildCart } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
-import { cartFingerprint, checkoutAttempt } from "./checkout-attempt";
+import { readString } from "@/lib/form";
+import { cartFingerprint, checkoutAttempt, readCheckoutToken } from "./checkout-attempt";
 import {
   createCrmOrder,
   getCapabilities,
@@ -149,8 +151,9 @@ function snapshotOrder(
 async function submitOrder(
   order: Order,
   stored: readonly StoredCartLine[],
+  nonce: string,
 ): Promise<OrderReceipt> {
-  order.number = await checkoutAttempt(orderPayload(order));
+  order.number = await checkoutAttempt(orderPayload(order), nonce);
   const created = await createCrmOrder(order);
   const status = order.payment === "cod" ? "not-required" : "pending";
   const receipt: OrderReceipt = {
@@ -207,10 +210,21 @@ export async function submitCheckout(
     return failure("Кошик порожній — додайте товари перед оформленням.");
   }
 
+  const quotedTotal = z.coerce.number().int().positive().safeParse(formData.get("expectedSubtotal"));
+  if (!quotedTotal.success || quotedTotal.data !== cart.subtotal) {
+    return {
+      ...failure("Сума замовлення змінилася або застаріла. Перевірте оновлений підсумок і підтвердьте оформлення ще раз."),
+      cartChanged: true,
+    };
+  }
+
   const parsed = validateCheckout(formData);
   if (!parsed.ok) {
     return failure("Перевірте виділені поля.", parsed.errors);
   }
+
+  const nonce = await readCheckoutToken(readString(formData, "checkoutToken"));
+  if (!nonce) return { ...failure("Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення."), cartChanged: true };
 
   let receipt: OrderReceipt;
   try {
@@ -240,7 +254,7 @@ export async function submitCheckout(
       cart,
       capabilities,
     );
-    receipt = await submitOrder(order, stored);
+    receipt = await submitOrder(order, stored, nonce);
   } catch {
     return failure(
       "Не вдалося передати замовлення. Спробуйте ще раз — повторне надсилання не створить дубль.",

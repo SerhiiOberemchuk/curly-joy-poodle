@@ -10,7 +10,7 @@ const formatter = new Intl.NumberFormat("uk-UA", {
   currency: CURRENCY,
   currencyDisplay: "narrowSymbol",
   minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 export function formatMoney(minorUnits: number): string {
@@ -18,7 +18,13 @@ export function formatMoney(minorUnits: number): string {
 }
 
 export function sumMoney(amounts: readonly number[]): number {
-  return amounts.reduce((total, amount) => total + amount, 0);
+  return amounts.reduce((total, amount) => {
+    const next = total + amount;
+    if (!Number.isSafeInteger(amount) || !Number.isSafeInteger(next)) {
+      throw new RangeError("Money exceeds the safe minor-unit range.");
+    }
+    return next;
+  }, 0);
 }
 
 export function discountPercent(price: number, compareAtPrice: number): number {

@@ -45,8 +45,9 @@ export default async function Page({ params }: PageProps<"/info/[slug]">) {
             <p className={styles.paragraph}>Орієнтуйтеся насамперед на обхват грудей. Порода в таблиці — лише підказка.</p>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
-                <thead><tr><th>Розмір</th><th>Спина, см</th><th>Груди, см</th><th>Орієнтовні породи</th></tr></thead>
-                <tbody>{sizes.map((size) => <tr key={size.code}><td className={styles.sizeCode}>{size.code}</td><td>{size.backLengthCm.join("–")}</td><td>{size.chestCm.join("–")}</td><td className={styles.breeds}>{size.breeds}</td></tr>)}</tbody>
+                <caption>Розміри одягу GF Pet у сантиметрах</caption>
+                <thead><tr><th scope="col">Розмір</th><th scope="col">Спина, см</th><th scope="col">Груди, см</th><th scope="col">Орієнтовні породи</th></tr></thead>
+                <tbody>{sizes.map((size) => <tr key={size.code}><th scope="row" className={styles.sizeCode}>{size.code}</th><td>{size.backLengthCm.join("–")}</td><td>{size.chestCm.join("–")}</td><td className={styles.breeds}>{size.breeds}</td></tr>)}</tbody>
               </table>
             </div>
           </section>

@@ -6,6 +6,7 @@ import { CartView } from "@/features/cart/components/cart-view";
 import styles from "./cart.module.css";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Кошик",
   description: "Ваші обрані товари Curly Joy перед оформленням замовлення.",
 };

@@ -21,9 +21,9 @@ export function CartLineItem({ line }: { line: CartLine }) {
       <div className={styles.lineBody}>
         <div className={styles.lineTop}>
           <div>
-            <h3 className={styles.lineTitle}>
+            <h2 className={styles.lineTitle}>
               <Link href={`/product/${line.slug}`}>{line.title}</Link>
-            </h3>
+            </h2>
             <p className={styles.lineMeta}>
               {line.option ? `${line.option} · ` : ""}{line.sku}
             </p>
@@ -56,7 +56,7 @@ export function CartLineItem({ line }: { line: CartLine }) {
 
           <form action={removeLineAction}>
             <input type="hidden" name="variantId" value={line.variantId} />
-            <button type="submit" className={styles.remove}>
+            <button type="submit" className={styles.remove} aria-label={`Видалити ${line.title}`}>
               Видалити
             </button>
           </form>
@@ -83,7 +83,7 @@ function QuantityButton({
     <form action={setLineQuantityAction}>
       <input type="hidden" name="variantId" value={line.variantId} />
       <input type="hidden" name="quantity" value={quantity} />
-      <button type="submit" className={styles.stepperButton} aria-label={label} disabled={disabled}>
+      <button type="submit" className={styles.stepperButton} aria-label={`${label}: ${line.title}`} disabled={disabled}>
         {symbol}
       </button>
     </form>

@@ -1,4 +1,7 @@
 import "server-only";
+import { z } from "zod";
+
+const errorSchema = z.object({ error: z.object({ code: z.string() }) });
 
 export class CrmApiError extends Error {
   constructor(
@@ -10,7 +13,7 @@ export class CrmApiError extends Error {
   }
 }
 
-export async function crmRequest<T>(path: string, body?: unknown): Promise<T> {
+export async function crmRequest(path: string, body?: unknown): Promise<unknown> {
   const key = process.env.OBRIYM_CRM_API_KEY;
   if (!key) throw new CrmApiError(503, "NOT_CONFIGURED");
   const base = (
@@ -28,11 +31,11 @@ export async function crmRequest<T>(path: string, body?: unknown): Promise<T> {
     signal: AbortSignal.timeout(body === undefined ? 15_000 : 30_000),
   });
   if (!response.ok) {
-    const error = await response.json().catch(() => null);
+    const error = errorSchema.safeParse(await response.json().catch(() => null));
     throw new CrmApiError(
       response.status,
-      error?.error?.code ?? "REQUEST_FAILED",
+      error.success ? error.data.error.code : "REQUEST_FAILED",
     );
   }
-  return (await response.json()) as T;
+  return response.json();
 }

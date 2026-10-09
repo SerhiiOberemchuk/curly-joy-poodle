@@ -6,6 +6,7 @@ import { FavoriteProducts } from "@/features/favorites/favorite-products";
 import styles from "./favorites.module.css";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Улюблені товари",
   description: "Товари Curly Joy, які ви зберегли сердечком.",
 };

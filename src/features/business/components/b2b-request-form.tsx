@@ -1,22 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import styles from "@/components/ui/form-fields.module.css";
 
-import { initialB2bRequestState } from "../action-state";
+import { initialB2bRequestState, type B2bRequestState } from "../action-state";
 import { requestB2bAccessAction } from "../actions";
 import { BUSINESS_TYPES, type B2bRequestField } from "../validation";
 
 export function B2bRequestForm() {
+  // One id per form: a repeated submit returns the lead the CRM already has.
+  // Made at the first submit, not during render, where it would be baked into
+  // the static shell and shared by every visitor.
+  const requestId = useRef<string | null>(null);
   const [state, formAction, isPending] = useActionState(
-    requestB2bAccessAction,
+    (previous: B2bRequestState, formData: FormData) => {
+      requestId.current ??= crypto.randomUUID();
+      formData.set("requestId", requestId.current);
+      return requestB2bAccessAction(previous, formData);
+    },
     initialB2bRequestState,
   );
-  // One id per form: a repeated submit returns the lead the CRM already has.
-  const [requestId] = useState(() => crypto.randomUUID());
   const messageId = useId();
 
   if (state.status === "sent") {
@@ -37,7 +43,6 @@ export function B2bRequestForm() {
 
   return (
     <form action={formAction} className={styles.form}>
-      <input type="hidden" name="requestId" value={requestId} />
       <div className={styles.row}>
         <Field
           {...field("companyName")}

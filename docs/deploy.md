@@ -17,6 +17,12 @@
 
 Після зміни змінних у Vercel → Settings → Environment Variables потрібен Redeploy.
 
+## Runtime
+
+Використовуйте Node.js 24.15+ або 22.22.2+ у межах `engines` package.json.
+Після оновлення native-залежностей перезапустіть локальний dev-сервер;
+production отримує нові пакети тільки після розгортання.
+
 ## Перед запуском
 
 - У CRM активні Monobank і Нова пошта.

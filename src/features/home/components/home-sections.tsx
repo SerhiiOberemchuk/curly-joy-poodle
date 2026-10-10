@@ -4,11 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 
 import styles from "../home.module.css";
-import {
-  getHomeCategories,
-  getHomeRecommendations,
-  RECOMMENDATIONS_COLLECTION,
-} from "../queries";
+import { getHomeCategories, getHomeRecommendations } from "../queries";
 import { ProductTile } from "./product-tile";
 import { ReferenceArtwork } from "./reference-artwork";
 
@@ -170,7 +166,8 @@ export async function HomeCategories() {
 }
 
 export async function HomeRecommendations() {
-  const recommendations = await getHomeRecommendations();
+  const { products: recommendations, catalogHref } =
+    await getHomeRecommendations();
 
   return (
     <section
@@ -189,10 +186,7 @@ export async function HomeRecommendations() {
           <br />
           Точніше — на наших собаках.
         </p>
-        <Link
-          className={styles.button}
-          href={`/catalog?collection=${RECOMMENDATIONS_COLLECTION}`}
-        >
+        <Link className={styles.button} href={catalogHref}>
           Дивитися всі товари <Icon name="arrow" />
         </Link>
       </div>

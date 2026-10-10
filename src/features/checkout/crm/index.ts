@@ -5,6 +5,10 @@ import { CrmApiError, crmRequest } from "@/lib/crm-client";
 import { siteUrl } from "@/lib/origin";
 import type { Order } from "../types";
 import {
+  createPaymentReturnToken,
+  readPaymentReturnToken,
+} from "../payment/return-token";
+import {
   capabilitiesSchema,
   crmOrderSchema,
   npCitySchema,
@@ -120,7 +124,7 @@ export async function getOrCreatePaymentLink(
     const data = await requestData(path, paymentLinkSchema);
     if (
       data.provider === "monobank" &&
-      data.returnUrl === (returnUrl ?? null) &&
+      (await matchesReturnUrl(data.returnUrl, returnUrl, externalId)) &&
       (!data.expiresAt || Date.parse(data.expiresAt) > Date.now())
     ) {
       return validateCheckoutUrl(data);
@@ -130,7 +134,35 @@ export async function getOrCreatePaymentLink(
   }
   const data = await requestData(path, paymentLinkSchema, {
     provider: "monobank",
-    ...(returnUrl ? { returnUrl } : {}),
+    ...(returnUrl
+      ? { returnUrl: await authorizedReturnUrl(returnUrl, externalId) }
+      : {}),
   });
   return validateCheckoutUrl(data);
+}
+
+async function authorizedReturnUrl(
+  base: string,
+  number: string,
+): Promise<string> {
+  const url = new URL(base);
+  url.searchParams.set("token", await createPaymentReturnToken(number));
+  return url.href;
+}
+
+async function matchesReturnUrl(
+  stored: string | null,
+  base: string | undefined,
+  number: string,
+): Promise<boolean> {
+  if (!base) return stored === null;
+  if (!stored) return false;
+  const url = new URL(stored);
+  const target = new URL(base);
+  return (
+    url.origin === target.origin &&
+    url.pathname === target.pathname &&
+    (await readPaymentReturnToken(url.searchParams.get("token") ?? "")) ===
+      number
+  );
 }

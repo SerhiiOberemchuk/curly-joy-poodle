@@ -8,11 +8,11 @@ import styles from "./payment-status-poller.module.css";
 const CHECK_INTERVAL = 5000;
 const CHECK_WINDOW = 60_000;
 
-function syncPayment() {
+function syncPayment(token?: string) {
   return new Promise<boolean>((resolve, reject) => {
     startTransition(async () => {
       try {
-        await checkPaymentStatusAction();
+        await checkPaymentStatusAction(token);
         resolve(true);
       } catch (error) {
         reject(error);
@@ -24,10 +24,12 @@ function syncPayment() {
 export function PaymentStatusPoller({
   active,
   orderId,
+  token,
   children,
 }: {
   active: boolean;
   orderId: string;
+  token?: string;
   children?: ReactNode;
 }) {
   const [timedOut, setTimedOut] = useState(false);
@@ -37,7 +39,7 @@ export function PaymentStatusPoller({
     return () => clearTimeout(timer);
   }, [active]);
 
-  useSWR(["checkout-payment", orderId], syncPayment, {
+  useSWR(["checkout-payment", orderId, token], () => syncPayment(token), {
     refreshInterval: active && !timedOut ? CHECK_INTERVAL : 0,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,

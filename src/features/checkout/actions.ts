@@ -18,15 +18,15 @@ export async function placeOrderAction(
   redirect(result.redirectTo);
 }
 
-export async function checkPaymentStatusAction(): Promise<void> {
+export async function checkPaymentStatusAction(token?: string): Promise<void> {
   try {
-    await settleCheckoutReturn();
+    await settleCheckoutReturn(token);
   } catch {
     // The refreshed page reports an unavailable status; never infer a successful payment.
   }
   refresh();
 }
 
-export async function retryPaymentAction(): Promise<void> {
-  redirect(await retryCheckoutPayment());
+export async function retryPaymentAction(token?: string): Promise<void> {
+  redirect(await retryCheckoutPayment(token));
 }

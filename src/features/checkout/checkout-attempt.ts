@@ -10,11 +10,17 @@ const tokenSchema = z.object({ id: z.uuid(), purpose: z.literal("checkout") });
 const TOKEN_TTL = 24 * 60 * 60;
 
 export async function createCheckoutToken(): Promise<string> {
-  return sealData({ id: randomUUID(), purpose: "checkout" }, { password: getCheckoutSessionPassword(), ttl: TOKEN_TTL });
+  return sealData(
+    { id: randomUUID(), purpose: "checkout" },
+    { password: getCheckoutSessionPassword(), ttl: TOKEN_TTL },
+  );
 }
 
 export async function readCheckoutToken(token: string): Promise<string | null> {
-  const decoded = await unsealData<unknown>(token, { password: getCheckoutSessionPassword(), ttl: TOKEN_TTL });
+  const decoded = await unsealData<unknown>(token, {
+    password: getCheckoutSessionPassword(),
+    ttl: TOKEN_TTL,
+  });
   const parsed = tokenSchema.safeParse(decoded);
   return parsed.success ? parsed.data.id : null;
 }
@@ -24,7 +30,10 @@ export function cartFingerprint(lines: readonly StoredCartLine[]): string {
   return createHash("sha256").update(JSON.stringify(ordered)).digest("hex");
 }
 
-export async function checkoutAttempt(payload: unknown, nonce: string): Promise<string> {
+export async function checkoutAttempt(
+  payload: unknown,
+  nonce: string,
+): Promise<string> {
   const fingerprint = createHash("sha256")
     .update(JSON.stringify(payload))
     .digest("hex");

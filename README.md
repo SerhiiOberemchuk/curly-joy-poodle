@@ -3,6 +3,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ## Документація
 
 - [Технічне завдання для погодження із замовником](./docs/technical-specification.md)
+- [Обов’язковий стандарт коду](./docs/coding-standards.md)
+- [Рев’ю коду та семантики](./docs/code-review-2026-10-10.md)
 - [Архітектура](./docs/architecture.md)
 - [Дизайн головної сторінки](./docs/home-design.md)
 - [Замовлення, оплата та доставка через CRM](./docs/crm-checkout.md)

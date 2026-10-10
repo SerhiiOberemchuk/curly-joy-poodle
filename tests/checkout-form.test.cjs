@@ -130,7 +130,11 @@ function setup() {
     React.createElement(
       SWRConfig,
       { value: { provider: () => new Map(), dedupingInterval: 0 } },
-      React.createElement(CheckoutForm, { total: 2220, capabilities, checkoutToken: "test-token" }),
+      React.createElement(CheckoutForm, {
+        total: 2220,
+        capabilities,
+        checkoutToken: "test-token",
+      }),
     ),
   );
   return user;
@@ -438,33 +442,66 @@ test("checkout labels and ARIA remain valid for branch and courier controls", as
   document.title = "Оформлення замовлення";
   await selectCity(user);
   await selectBranch(user);
-  const options = {runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa"]},rules:{"color-contrast":{enabled:false}}};
-  let result = await axe.run(document.body, options);
-  assert.deepEqual(result.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
-  await user.click(screen.getByRole("radio",{name:/Кур’єр Нової пошти/}));
-  result = await axe.run(document.body, options);
-  assert.deepEqual(result.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
+  const options = {
+    runOnly: {
+      type: "tag",
+      values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+    },
+    rules: { "color-contrast": { enabled: false } },
+  };
+  let result;
+  await act(async () => {
+    result = await axe.run(document.body, options);
+  });
+  assert.deepEqual(
+    result.violations.map((v) => ({
+      id: v.id,
+      nodes: v.nodes.map((n) => n.target),
+    })),
+    [],
+  );
+  await user.click(screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }));
+  await act(async () => {
+    result = await axe.run(document.body, options);
+  });
+  assert.deepEqual(
+    result.violations.map((v) => ({
+      id: v.id,
+      nodes: v.nodes.map((n) => n.target),
+    })),
+    [],
+  );
 });
 
 test("mobile menu stays closed after browser back and Escape also works on the toggle", async () => {
   let pathname = "/";
-  const navLoad=createLoader({
-    "next/navigation":{usePathname:()=>pathname},
-    "next/link":{__esModule:true, default:({children,...props})=>React.createElement("a",props,children)},
+  const navLoad = createLoader({
+    "next/navigation": { usePathname: () => pathname },
+    "next/link": {
+      __esModule: true,
+      default: ({ children, ...props }) =>
+        React.createElement("a", props, children),
+    },
   });
-  const {MobileNav}=navLoad("src/components/layout/mobile-nav.tsx");
-  const user=userEvent.setup({document:dom.window.document});
-  const element=()=>React.createElement(MobileNav,{links:[{href:"/catalog",label:"Каталог"}]});
-  const view=render(element());
-  await user.click(screen.getByRole("button",{name:"Відкрити меню"}));
-  assert.ok(screen.getByRole("navigation",{name:"Мобільне меню"}));
-  pathname="/catalog";
+  const { MobileNav } = navLoad("src/components/layout/mobile-nav.tsx");
+  const user = userEvent.setup({ document: dom.window.document });
+  const element = () =>
+    React.createElement(MobileNav, {
+      links: [{ href: "/catalog", label: "Каталог" }],
+    });
+  const view = render(element());
+  await user.click(screen.getByRole("button", { name: "Відкрити меню" }));
+  assert.ok(screen.getByRole("navigation", { name: "Мобільне меню" }));
+  pathname = "/catalog";
   view.rerender(element());
-  pathname="/";
+  pathname = "/";
   view.rerender(element());
-  assert.equal(screen.queryByRole("navigation"),null);
-  await user.click(screen.getByRole("button",{name:"Відкрити меню"}));
+  assert.equal(screen.queryByRole("navigation"), null);
+  await user.click(screen.getByRole("button", { name: "Відкрити меню" }));
   await user.keyboard("{Escape}");
-  assert.equal(screen.queryByRole("navigation"),null);
-  assert.equal(document.activeElement,screen.getByRole("button",{name:"Відкрити меню"}));
+  assert.equal(screen.queryByRole("navigation"), null);
+  assert.equal(
+    document.activeElement,
+    screen.getByRole("button", { name: "Відкрити меню" }),
+  );
 });

@@ -62,9 +62,18 @@ function product(overrides = {}) {
     price: 420,
     stock: 25,
     availability: "in_stock",
-    status: "active", storefrontVisible: true,
-    compareAtPrice: null, prices: [], productGroupId: null, size: null, color: null,
-    description: null, descriptionHtml: null, attributes: [], brand: null, category: null,
+    status: "active",
+    storefrontVisible: true,
+    compareAtPrice: null,
+    prices: [],
+    productGroupId: null,
+    size: null,
+    color: null,
+    description: null,
+    descriptionHtml: null,
+    attributes: [],
+    brand: null,
+    category: null,
     images: [],
     ...overrides,
   };
@@ -124,7 +133,9 @@ beforeEach(async () => {
     "test-token-with-at-least-thirty-two-characters";
   process.env.OBRIYM_CRM_API_URL = "https://crm.test/api/v1";
   process.env.SITE_URL = "http://localhost:3001";
-  formToken = await load("src/features/checkout/checkout-attempt.ts").createCheckoutToken();
+  formToken = await load(
+    "src/features/checkout/checkout-attempt.ts",
+  ).createCheckoutToken();
   global.fetch = async (url, options) => {
     requests.push({ url, options });
     if (failApi) throw new Error("CRM unavailable");
@@ -403,7 +414,13 @@ test("duplicate cookie lines cannot bypass the per-product stock check", async (
 
 function checkoutData(overrides = {}) {
   const stored = JSON.parse(cookieValues.get("cjp_cart") ?? "[]");
-  const quotedTotal = stored.reduce((sum, line) => sum + Math.round((products.find(p => p.id === line.p)?.price ?? 0) * 100) * line.q, 0);
+  const quotedTotal = stored.reduce(
+    (sum, line) =>
+      sum +
+      Math.round((products.find((p) => p.id === line.p)?.price ?? 0) * 100) *
+        line.q,
+    0,
+  );
   const values = {
     expectedSubtotal: String(quotedTotal),
     checkoutToken: formToken,
@@ -470,10 +487,20 @@ test("HTTPS checkout sends the shop confirmation URL to CRM and reuses a matchin
     (r) => r.url.endsWith("/payment-link") && r.options.method === "POST",
   );
   assert.equal(creates.length, 1);
-  assert.deepEqual(JSON.parse(creates[0].options.body), {
-    provider: "monobank",
-    returnUrl: "https://curly-joy.com/checkout/success",
-  });
+  const payload = JSON.parse(creates[0].options.body);
+  assert.equal(payload.provider, "monobank");
+  const returned = new URL(payload.returnUrl);
+  assert.equal(
+    returned.origin + returned.pathname,
+    "https://curly-joy.com/checkout/success",
+  );
+  assert.equal(
+    await load(
+      "src/features/checkout/payment/return-token.ts",
+    ).readPaymentReturnToken(returned.searchParams.get("token")),
+    savedOrders[0].externalId,
+  );
+  assert.ok(payload.returnUrl.length < 2048);
 });
 
 test("HTTP localhost does not send a return URL that CRM would reject", async () => {
@@ -491,7 +518,10 @@ test("a CRM return page on an existing link is replaced when the shop switches t
   await getOrCreatePaymentLink("order-1");
   const creates = requests.filter((r) => r.options.method === "POST");
   assert.equal(creates.length, 2);
-  assert.equal(link.returnUrl, "https://curly-joy.com/checkout/success");
+  assert.equal(
+    new URL(link.returnUrl).origin + new URL(link.returnUrl).pathname,
+    "https://curly-joy.com/checkout/success",
+  );
 });
 
 test("the confirmation receipt shows the CRM number and actual payment state instead of a stale local status", async () => {
@@ -679,9 +709,12 @@ test("confirmation page waits for CRM payment, then shows paid, and never claims
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
   const { default: Page } = load("src/app/checkout/success/page.tsx");
-  const receiptElement = Page().props.children.props.children;
+  const receiptElement = Page({ searchParams: Promise.resolve({}) }).props
+    .children.props.children;
   async function renderReceipt() {
-    return renderToStaticMarkup(await receiptElement.type());
+    return renderToStaticMarkup(
+      await receiptElement.type(receiptElement.props),
+    );
   }
   const pending = await renderReceipt();
   assert.match(pending, /Очікуємо підтвердження банку/);
@@ -716,18 +749,25 @@ test("a changed checkout total asks for confirmation before creating any order o
   assert.equal(result.status, "error");
   assert.match(result.message, /Сума замовлення змінилася/);
   assert.equal(savedOrders.length, 0);
-  assert.equal(requests.some(r => r.url.endsWith("/payment-link")), false);
+  assert.equal(
+    requests.some((r) => r.url.endsWith("/payment-link")),
+    false,
+  );
   assert.equal(refreshes, 1);
   assert.ok(cookieValues.has("cjp_cart"));
 });
 
 test("malformed or missing quantities do not become default or truncated purchases", async () => {
-  const { addToCartAction, setLineQuantityAction } = load("src/features/cart/actions.ts");
+  const { addToCartAction, setLineQuantityAction } = load(
+    "src/features/cart/actions.ts",
+  );
   for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
     setCart([{ p: "p1", q: 2 }]);
     assert.equal((await addToCartAction({}, form(value))).status, "error");
     await setLineQuantityAction(form(value));
-    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [{ p: "p1", q: 2 }]);
+    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+      { p: "p1", q: 2 },
+    ]);
   }
 });
 
@@ -737,30 +777,54 @@ test("fractional hryvnia prices preserve kopiyky and unsafe totals are refused",
   assert.equal(sumMoney([42050, 1]), 42051);
   assert.throws(() => sumMoney([Number.MAX_SAFE_INTEGER, 1]), RangeError);
   const { crmOrderSchema } = load("src/features/checkout/crm/types.ts");
-  assert.equal(crmOrderSchema.safeParse({
-    id: "order", externalId: "ext", number: null, status: "pending", currency: "UAH",
-    totalAmount: "420.00", shipments: [], payments: [{
-      id: "payment", status: "paid", currency: "UAH", amount: "999999999999999999999.00",
-      refundedAmount: null, createdAt: new Date().toISOString(),
-    }],
-  }).success, false);
+  assert.equal(
+    crmOrderSchema.safeParse({
+      id: "order",
+      externalId: "ext",
+      number: null,
+      status: "pending",
+      currency: "UAH",
+      totalAmount: "420.00",
+      shipments: [],
+      payments: [
+        {
+          id: "payment",
+          status: "paid",
+          currency: "UAH",
+          amount: "999999999999999999999.00",
+          refundedAmount: null,
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    }).success,
+    false,
+  );
 });
 
 test("the shop excludes draft and unpublished CRM products even if the API returns them", async () => {
-  products = [product(), product({id:"draft",status:"draft"}), product({id:"hidden",storefrontVisible:false})];
+  products = [
+    product(),
+    product({ id: "draft", status: "draft" }),
+    product({ id: "hidden", storefrontVisible: false }),
+  ];
   const { getCurrentProducts } = load("src/features/catalog/queries.ts");
   assert.equal((await getCurrentProducts()).length, 1);
 });
 
 test("malformed CRM catalog data fails closed rather than becoming a purchaseable product", async () => {
-  products = [product({price:"420"})];
+  products = [product({ price: "420" })];
   const { addToCartAction } = load("src/features/cart/actions.ts");
-  assert.equal((await addToCartAction({},form(1))).status, "error");
+  assert.equal((await addToCartAction({}, form(1))).status, "error");
   assert.equal(cookieValues.has("cjp_cart"), false);
 });
 
 test("HTML descriptions use a parser to preserve allowed markup and remove executable content", async () => {
-  products = [product({descriptionHtml: '<p onclick="evil()">Hello<script>evil()</script><img src=x onerror="evil()"><strong>safe</strong></p>'})];
+  products = [
+    product({
+      descriptionHtml:
+        '<p onclick="evil()">Hello<script>evil()</script><img src=x onerror="evil()"><strong>safe</strong></p>',
+    }),
+  ];
   const { getCurrentProducts } = load("src/features/catalog/queries.ts");
   const catalog = await getCurrentProducts();
   assert.equal(catalog[0].descriptionHtml, "<p>Hello<strong>safe</strong></p>");
@@ -771,42 +835,158 @@ test("incomplete or repeated CRM pages cannot silently produce a partial catalog
   let reads = 0;
   global.fetch = async () => {
     reads++;
-    return Response.json({data: reads === 1 ? [product()] : [], pagination:{page:reads,perPage:100,total:2}});
+    return Response.json({
+      data: reads === 1 ? [product()] : [],
+      pagination: { page: reads, perPage: 100, total: 2 },
+    });
   };
   await assert.rejects(fetchProducts(), /INCOMPLETE_CATALOG/);
-  global.fetch = async () => Response.json({data:[product()],pagination:{page:1,perPage:100,total:2}});
+  global.fetch = async () =>
+    Response.json({
+      data: [product()],
+      pagination: { page: 1, perPage: 100, total: 2 },
+    });
   await assert.rejects(fetchProducts(), /INVALID_PAGINATION/);
 });
 
 test("concurrent requests from one signed checkout form use one CRM order key", async () => {
-  setCart([{ p:"p1",q:1 }]);
-  const {placeOrderAction}=load("src/features/checkout/actions.ts");
-  const results=await Promise.allSettled([placeOrderAction({},checkoutData()),placeOrderAction({},checkoutData())]);
-  assert.equal(savedOrders.length,1);
-  assert.equal(new Set(requests.filter(r=>r.url.endsWith("/orders")&&r.options.body).map(r=>JSON.parse(r.options.body).externalId)).size,1);
-  assert.ok(results.every(result=>result.status==="rejected" && /redirect:https:/.test(result.reason.message)));
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const results = await Promise.allSettled([
+    placeOrderAction({}, checkoutData()),
+    placeOrderAction({}, checkoutData()),
+  ]);
+  assert.equal(savedOrders.length, 1);
+  assert.equal(
+    new Set(
+      requests
+        .filter((r) => r.url.endsWith("/orders") && r.options.body)
+        .map((r) => JSON.parse(r.options.body).externalId),
+    ).size,
+    1,
+  );
+  assert.ok(
+    results.every(
+      (result) =>
+        result.status === "rejected" &&
+        /redirect:https:/.test(result.reason.message),
+    ),
+  );
 });
 
 test("a forged checkout form token cannot create an order or charge a payment", async () => {
-  setCart([{p:"p1",q:1}]);
-  const {placeOrderAction}=load("src/features/checkout/actions.ts");
-  const result=await placeOrderAction({},checkoutData({checkoutToken:"forged"}));
-  assert.equal(result.status,"error");
-  assert.equal(savedOrders.length,0);
-  assert.equal(requests.some(r=>r.url.endsWith("/payment-link")),false);
-  assert.equal(refreshes,1);
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const result = await placeOrderAction(
+    {},
+    checkoutData({ checkoutToken: "forged" }),
+  );
+  assert.equal(result.status, "error");
+  assert.equal(savedOrders.length, 0);
+  assert.equal(
+    requests.some((r) => r.url.endsWith("/payment-link")),
+    false,
+  );
+  assert.equal(refreshes, 1);
 });
 
 test("a new signed form after a completed COD purchase creates a new order while replaying the old form does not", async () => {
-  setCart([{p:"p1",q:1}]);
-  const {placeOrderAction}=load("src/features/checkout/actions.ts");
-  const oldForm=checkoutData({payment:"cod"});
-  await assert.rejects(placeOrderAction({},oldForm),/redirect:\/checkout\/success/);
-  setCart([{p:"p1",q:1}]);
-  await assert.rejects(placeOrderAction({},oldForm),/redirect:\/checkout\/success/);
-  assert.equal(savedOrders.length,1);
-  setCart([{p:"p1",q:1}]);
-  formToken=await load("src/features/checkout/checkout-attempt.ts").createCheckoutToken();
-  await assert.rejects(placeOrderAction({},checkoutData({payment:"cod"})),/redirect:\/checkout\/success/);
-  assert.equal(savedOrders.length,2);
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const oldForm = checkoutData({ payment: "cod" });
+  await assert.rejects(
+    placeOrderAction({}, oldForm),
+    /redirect:\/checkout\/success/,
+  );
+  setCart([{ p: "p1", q: 1 }]);
+  await assert.rejects(
+    placeOrderAction({}, oldForm),
+    /redirect:\/checkout\/success/,
+  );
+  assert.equal(savedOrders.length, 1);
+  setCart([{ p: "p1", q: 1 }]);
+  formToken = await load(
+    "src/features/checkout/checkout-attempt.ts",
+  ).createCheckoutToken();
+  await assert.rejects(
+    placeOrderAction({}, checkoutData({ payment: "cod" })),
+    /redirect:\/checkout\/success/,
+  );
+  assert.equal(savedOrders.length, 2);
+});
+
+async function renderReturn(query = {}) {
+  const { default: Page } = load("src/app/checkout/success/page.tsx");
+  const element = Page({ searchParams: Promise.resolve(query) }).props.children
+    .props.children;
+  return renderToStaticMarkup(await element.type(element.props));
+}
+
+test("a confirmation without a session or a valid return proof renders recovery, not 404", async () => {
+  assert.match(await renderReturn(), /Не вдалося відкрити замовлення/);
+  assert.match(
+    await renderReturn({ token: "forged" }),
+    /Не вдалося відкрити замовлення/,
+  );
+  assert.equal(requests.length, 0);
+});
+
+test("a signed bank return restores the actual CRM status without cookies and preserves a different basket", async () => {
+  process.env.SITE_URL = "https://curly-joy.com";
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction, checkPaymentStatusAction } = load(
+    "src/features/checkout/actions.ts",
+  );
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  const token = new URL(link.returnUrl).searchParams.get("token");
+  cookieValues.delete("cjp_checkout");
+  setCart([{ p: "p1", q: 2 }]);
+  assert.match(await renderReturn({ token }), /Очікуємо підтвердження банку/);
+  const order = [...crmOrders.values()][0];
+  order.payments.push({
+    id: "payment-1",
+    status: "paid",
+    amount: order.totalAmount,
+    currency: "UAH",
+    refundedAmount: null,
+    createdAt: new Date().toISOString(),
+  });
+  await checkPaymentStatusAction(token);
+  assert.match(await renderReturn({ token }), /Оплату підтверджено/);
+  assert.equal(
+    (await load("src/features/checkout/receipt-cookie.ts").readReceiptCookie())
+      .number,
+    order.externalId,
+  );
+  assert.deepEqual(
+    await load("src/features/cart/cart-cookie.ts").readCartCookie(),
+    [{ p: "p1", q: 2 }],
+  );
+});
+
+test("cookie-less bank return handles a CRM outage truthfully and rejects a checkout-purpose token", async () => {
+  process.env.SITE_URL = "https://curly-joy.com";
+  setCart([{ p: "p1", q: 1 }]);
+  await assert.rejects(
+    load("src/features/checkout/actions.ts").placeOrderAction(
+      {},
+      checkoutData(),
+    ),
+    /redirect:https:/,
+  );
+  const token = new URL(link.returnUrl).searchParams.get("token");
+  cookieValues.delete("cjp_checkout");
+  failApi = true;
+  assert.match(await renderReturn({ token }), /Статус тимчасово недоступний/);
+  assert.doesNotMatch(
+    await renderReturn({ token }),
+    /Оплачено|Оплату підтверджено/,
+  );
+  failApi = false;
+  const reads = requests.length;
+  assert.match(
+    await renderReturn({ token: formToken }),
+    /Не вдалося відкрити замовлення/,
+  );
+  assert.equal(requests.length, reads);
 });

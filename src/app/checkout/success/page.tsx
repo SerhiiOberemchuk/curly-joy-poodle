@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import {
@@ -11,29 +10,42 @@ import { PaymentStatusPoller } from "@/features/checkout/components/payment-stat
 import type { CrmOrder } from "@/features/checkout/crm/types";
 import { paymentLabel } from "@/features/checkout/options";
 import { currentReceipt } from "@/features/checkout/payment/settlement";
-import { readReceiptCookie } from "@/features/checkout/receipt-cookie";
+import { readPaymentReceipt } from "@/features/checkout/payment/return-receipt";
+import { readPaymentReturnToken } from "@/features/checkout/payment/return-token";
 import type { PaymentStatus } from "@/features/checkout/types";
 import { formatMoney } from "@/lib/money";
 import styles from "./success.module.css";
 
 export const metadata: Metadata = {
   title: "Статус замовлення",
+  referrer: "no-referrer",
   robots: { index: false, follow: false },
 };
-export default function Page() {
+export default function Page({ searchParams }: PageProps<"/checkout/success">) {
   return (
     <div className={styles.page}>
       <Suspense
         fallback={<div className={styles.loading}>Готуємо підтвердження…</div>}
       >
-        <Receipt />
+        <Receipt searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
-async function Receipt() {
-  let receipt = await readReceiptCookie();
-  if (!receipt) notFound();
+async function Receipt({
+  searchParams,
+}: Pick<PageProps<"/checkout/success">, "searchParams">) {
+  const query = await searchParams;
+  const token = typeof query.token === "string" ? query.token : undefined;
+  let receipt;
+  try {
+    receipt = await readPaymentReceipt(token);
+  } catch {
+    return await Recovery({ token, unavailable: true });
+  }
+  if (!receipt) return await Recovery({ token });
+  const checkStatus = checkPaymentStatusAction.bind(null, token);
+  const retryPayment = retryPaymentAction.bind(null, token);
   let order: CrmOrder | null = null;
   let unavailable = false;
   try {
@@ -82,9 +94,10 @@ async function Receipt() {
         key={receipt.number}
         active={waiting || unavailable}
         orderId={receipt.number}
+        token={token}
       >
         {canPay && waiting ? (
-          <form action={retryPaymentAction}>
+          <form action={retryPayment}>
             <Button type="submit" size="lg">
               Перейти до оплати
             </Button>
@@ -106,11 +119,17 @@ async function Receipt() {
             unavailable ? "Не вдалося перевірити" : PAYMENT_STATUS_LABEL[status]
           }
         />
-        <Detail
-          label="Доставка"
-          value={`${receipt.city}, ${receipt.destination}`}
-        />
-        <Detail label="Контакт" value={receipt.phone || receipt.email} />
+        {receipt.city || receipt.destination ? (
+          <Detail
+            label="Доставка"
+            value={[receipt.city, receipt.destination]
+              .filter(Boolean)
+              .join(", ")}
+          />
+        ) : null}
+        {receipt.phone || receipt.email ? (
+          <Detail label="Контакт" value={receipt.phone || receipt.email} />
+        ) : null}
         {order?.shipments
           .filter(
             (shipment) =>
@@ -130,7 +149,7 @@ async function Receipt() {
       </dl>
       <div className={styles.actions}>
         {canPay && !waiting ? (
-          <form action={retryPaymentAction}>
+          <form action={retryPayment}>
             <Button type="submit" size="lg">
               {status === "failed"
                 ? "Спробувати оплатити ще раз"
@@ -138,7 +157,7 @@ async function Receipt() {
             </Button>
           </form>
         ) : null}
-        <form action={checkPaymentStatusAction}>
+        <form action={checkStatus}>
           <Button type="submit" size="lg" variant="outline">
             Оновити статус
           </Button>
@@ -178,5 +197,52 @@ function Detail({ label, value }: { label: string; value: string }) {
       <dt className={styles.detailLabel}>{label}</dt>
       <dd className={styles.detailValue}>{value}</dd>
     </div>
+  );
+}
+
+async function Recovery({
+  token,
+  unavailable = false,
+}: {
+  token?: string;
+  unavailable?: boolean;
+}) {
+  const number = token ? await readPaymentReturnToken(token) : null;
+  const checkStatus = checkPaymentStatusAction.bind(null, token);
+  return (
+    <section className={styles.card}>
+      <h1>
+        {unavailable
+          ? "Статус тимчасово недоступний"
+          : "Не вдалося відкрити замовлення"}
+      </h1>
+      <p className={styles.text}>
+        {unavailable
+          ? "Не вдалося отримати підтвердження оплати. Якщо ви вже оплатили, не сплачуйте повторно — ми перевіряємо статус."
+          : "Відкрийте посилання повернення з оплати у браузері, де оформляли замовлення. Якщо посилання застаріло, зверніться до нас — допоможемо перевірити оплату."}
+      </p>
+      {number && unavailable ? (
+        <>
+          <PaymentStatusPoller active orderId={number} token={token} />
+          <form action={checkStatus}>
+            <Button type="submit" variant="outline">
+              Оновити статус
+            </Button>
+          </form>
+        </>
+      ) : null}
+      <Link
+        href="/info/contacts"
+        className={buttonStyles({ variant: "outline", size: "lg" })}
+      >
+        Зв’язатися з нами
+      </Link>
+      <Link
+        href="/catalog"
+        className={buttonStyles({ variant: "outline", size: "lg" })}
+      >
+        До каталогу
+      </Link>
+    </section>
   );
 }

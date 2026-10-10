@@ -6,7 +6,11 @@ import { buildCart } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
 import { readString } from "@/lib/form";
-import { cartFingerprint, checkoutAttempt, readCheckoutToken } from "./checkout-attempt";
+import {
+  cartFingerprint,
+  checkoutAttempt,
+  readCheckoutToken,
+} from "./checkout-attempt";
 import {
   createCrmOrder,
   getCapabilities,
@@ -20,7 +24,8 @@ import type { CrmCapabilities } from "./crm/types";
 import { availableDeliveries, availablePayments } from "./options";
 import { settleCheckoutReturn } from "./payment/settlement";
 import { paymentNote } from "./payment/status";
-import { readReceiptCookie, writeReceiptCookie } from "./receipt-cookie";
+import { writeReceiptCookie } from "./receipt-cookie";
+import { readPaymentReceipt } from "./payment/return-receipt";
 import type { DeliveryDetails, Order, OrderReceipt } from "./types";
 import {
   validateCheckout,
@@ -29,7 +34,9 @@ import {
 } from "./validation";
 
 type CheckoutDestination =
-  "/checkout" | "/checkout/success" | `https://${string}`;
+  | "/checkout"
+  | "/checkout/success"
+  | `https://${string}`;
 
 type CheckoutResult =
   | { ok: true; redirectTo: CheckoutDestination }
@@ -70,7 +77,8 @@ function unavailableMethod(
 }
 
 type DeliveryResult =
-  { ok: true; delivery: DeliveryDetails } | { ok: false; errors: FieldErrors };
+  | { ok: true; delivery: DeliveryDetails }
+  | { ok: false; errors: FieldErrors };
 
 /** Resolve submitted carrier refs against CRM. Browser-supplied labels are never persisted. */
 async function resolveDelivery(
@@ -210,10 +218,16 @@ export async function submitCheckout(
     return failure("Кошик порожній — додайте товари перед оформленням.");
   }
 
-  const quotedTotal = z.coerce.number().int().positive().safeParse(formData.get("expectedSubtotal"));
+  const quotedTotal = z.coerce
+    .number()
+    .int()
+    .positive()
+    .safeParse(formData.get("expectedSubtotal"));
   if (!quotedTotal.success || quotedTotal.data !== cart.subtotal) {
     return {
-      ...failure("Сума замовлення змінилася або застаріла. Перевірте оновлений підсумок і підтвердьте оформлення ще раз."),
+      ...failure(
+        "Сума замовлення змінилася або застаріла. Перевірте оновлений підсумок і підтвердьте оформлення ще раз.",
+      ),
       cartChanged: true,
     };
   }
@@ -224,7 +238,13 @@ export async function submitCheckout(
   }
 
   const nonce = await readCheckoutToken(readString(formData, "checkoutToken"));
-  if (!nonce) return { ...failure("Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення."), cartChanged: true };
+  if (!nonce)
+    return {
+      ...failure(
+        "Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення.",
+      ),
+      cartChanged: true,
+    };
 
   let receipt: OrderReceipt;
   try {
@@ -279,12 +299,14 @@ export async function submitCheckout(
   return { ok: true, redirectTo: "/checkout/success" };
 }
 
-export async function retryCheckoutPayment(): Promise<CheckoutDestination> {
-  const receipt = await readReceiptCookie();
-  if (!receipt || receipt.payment !== "card") return "/checkout";
-
+export async function retryCheckoutPayment(
+  token?: string,
+): Promise<CheckoutDestination> {
+  let receipt: OrderReceipt | null = null;
   try {
-    const current = await settleCheckoutReturn();
+    receipt = await readPaymentReceipt(token);
+    if (!receipt || receipt.payment !== "card") return "/checkout";
+    const current = await settleCheckoutReturn(token);
     if (
       current &&
       (current.status === "pending" || current.status === "failed")
@@ -292,7 +314,8 @@ export async function retryCheckoutPayment(): Promise<CheckoutDestination> {
       return await getOrCreatePaymentLink(current.number);
     }
   } catch {
-    await writeReceiptCookie({ ...receipt, note: PAYMENT_SETUP_FAILED });
+    if (receipt)
+      await writeReceiptCookie({ ...receipt, note: PAYMENT_SETUP_FAILED });
   }
   return "/checkout/success";
 }

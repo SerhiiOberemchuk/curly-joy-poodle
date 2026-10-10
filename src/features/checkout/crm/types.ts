@@ -33,10 +33,13 @@ export type NpCity = z.infer<typeof npCitySchema>;
 export type NpWarehouse = z.infer<typeof npWarehouseSchema>;
 export type NpStreet = z.infer<typeof npStreetSchema>;
 
-const moneySchema = z.string().regex(/^\d+(\.\d{1,2})?$/).refine(
-  (value) => Number.isSafeInteger(Math.round(Number(value) * 100)),
-  "Amount exceeds the safe minor-unit range",
-);
+const moneySchema = z
+  .string()
+  .regex(/^\d+(\.\d{1,2})?$/)
+  .refine(
+    (value) => Number.isSafeInteger(Math.round(Number(value) * 100)),
+    "Amount exceeds the safe minor-unit range",
+  );
 export const crmOrderSchema = z.object({
   id: z.string(),
   externalId: z.string(),
@@ -52,6 +55,13 @@ export const crmOrderSchema = z.object({
   ]),
   currency: z.string(),
   totalAmount: moneySchema,
+  customer: z
+    .object({ email: z.string().nullable(), phone: z.string().nullable() })
+    .optional(),
+  shippingAddress: z
+    .object({ city: z.string().optional(), line1: z.string().optional() })
+    .nullable()
+    .optional(),
   payments: z.array(
     z.object({
       id: z.string(),

@@ -7,8 +7,8 @@ import {
   CartIndicator,
   CartIndicatorFallback,
 } from "@/features/cart/components/cart-indicator";
+import { getCustomerAccountUrl } from "@/features/customer-account/queries";
 import { headerNav, type NavLink } from "@/lib/navigation";
-import { site } from "@/lib/site";
 
 import { Icon } from "@/components/ui/icon";
 
@@ -17,9 +17,55 @@ import styles from "./site-header.module.css";
 import { SiteSearch } from "./site-search";
 
 const businessLink: NavLink = {
-  href: `mailto:${site.email}?subject=Співпраця%20B2B`,
+  href: "/business",
   label: "Для бізнесу (B2B)",
 };
+
+const mobileLinks: readonly NavLink[] = [
+  { href: "/catalog", label: "Каталог" },
+  ...headerNav,
+  businessLink,
+];
+
+const accountLabel = "Особистий кабінет";
+
+/**
+ * The buyer account lives in the CRM, on the shop's own address. Shown only
+ * while the CRM says it is open; if the CRM cannot be asked, the header simply
+ * goes without it — the rest of the page still renders.
+ */
+async function readAccountUrl(): Promise<string | null> {
+  try {
+    return await getCustomerAccountUrl();
+  } catch {
+    return null;
+  }
+}
+
+async function AccountAction() {
+  const url = await readAccountUrl();
+  if (!url) return null;
+  return (
+    <a
+      className={`${styles.iconButton} ${styles.tooltipAction}`}
+      href={url}
+      aria-label={accountLabel}
+    >
+      <Icon name="user" />
+      <span className={styles.actionTooltip}>{accountLabel}</span>
+    </a>
+  );
+}
+
+async function MobileMenu() {
+  const url = await readAccountUrl();
+  return (
+    <MobileNav
+      links={mobileLinks}
+      account={url ? { href: url, label: accountLabel } : null}
+    />
+  );
+}
 
 export function SiteHeader() {
   return (
@@ -66,25 +112,24 @@ export function SiteHeader() {
         <div className={styles.headerActions}>
           <SiteSearch />
           <Link
-            className={`${styles.iconButton} ${styles.businessAction}`}
+            className={`${styles.iconButton} ${styles.tooltipAction}`}
             href={businessLink.href}
             aria-label={businessLink.label}
           >
             <Icon name="briefcase" />
             <span className={styles.actionTooltip}>{businessLink.label}</span>
           </Link>
+          <Suspense fallback={null}>
+            <AccountAction />
+          </Suspense>
           <FavoritesLink />
           <Suspense fallback={<CartIndicatorFallback />}>
             <CartIndicator />
           </Suspense>
           <div className={styles.mobileMenu}>
-            <MobileNav
-              links={[
-                { href: "/catalog", label: "Каталог" },
-                ...headerNav,
-                businessLink,
-              ]}
-            />
+            <Suspense fallback={<MobileNav links={mobileLinks} />}>
+              <MobileMenu />
+            </Suspense>
           </div>
         </div>
       </div>

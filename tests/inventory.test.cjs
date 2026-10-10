@@ -37,6 +37,7 @@ const mocks = {
       throw new Error(`redirect:${url}`);
     },
   },
+  "next/server": { connection: async () => {} },
   "next/link": {
     __esModule: true,
     default: ({ children }) => React.createElement("a", null, children),

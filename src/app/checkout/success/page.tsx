@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ export default function Page({ searchParams }: PageProps<"/checkout/success">) {
 async function Receipt({
   searchParams,
 }: Pick<PageProps<"/checkout/success">, "searchParams">) {
+  await connection();
   const query = await searchParams;
   const token = typeof query.token === "string" ? query.token : undefined;
   let receipt;

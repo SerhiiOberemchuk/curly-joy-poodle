@@ -8,9 +8,10 @@
 | Змінна | Призначення |
 | --- | --- |
 | `SITE_URL` | Канонічна HTTPS-адреса сайту, наприклад `https://curly-joy.com`. З неї будується URL повернення після банку. |
-| `OBRIYM_CRM_API_KEY` | Токен акаунта магазину: `products:read`, `orders:read/write`, `payments:read/write`, `shipments:read`. |
+| `OBRIYM_CRM_API_KEY` | Токен акаунта магазину: `products:read`, `orders:read/write`, `payments:read/write`, `shipments:read`, `leads:write` (запит B2B). |
 | `OBRIYM_CRM_API_URL` | Необов’язково. За замовчуванням `https://obriym-crm.com/api/v1`. |
 | `CHECKOUT_SESSION_PASSWORD` | Необов’язковий стабільний секрет сесії, щонайменше 32 символи. Без нього використовується серверний ключ CRM. |
+| `PARTNER_PORTAL_URL` | Необов’язково. Кабінет партнера (B2B) у CRM, за замовчуванням `https://obriym-crm.com/portal`. |
 
 Ключі банку й Нової пошти зберігаються тільки в CRM. Локального журналу
 замовлень і платіжних mock/sandbox режимів немає.
@@ -29,6 +30,12 @@ production отримує нові пакети тільки після розг
 - Токен сайту має перелічені scopes та прив’язаний integration source.
 - Для ТТН у CRM збережені контакт, місто та пункт відправлення відправника.
 - Для автоматичних ТТН увімкнена відповідна автоматизація CRM.
+- CRM приймає поле `source` у `POST /leads` (з 2026-10-10). До цього CRM
+  відхиляє запит B2B з джерелом `partner` (400).
+- Іконка «Особистий кабінет» з’являється сама, коли CRM віддає
+  `customerAccount.url` у `/capabilities`: потрібні деплой CRM, адреса
+  магазину й увімкнений кабінет у налаштуваннях CRM. Змінна сайту для цього
+  не потрібна.
 - `npm run lint`, `npm test`, `npm run typecheck` проходять.
 
 ## Після деплою

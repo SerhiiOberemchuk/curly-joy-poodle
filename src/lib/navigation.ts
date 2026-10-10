@@ -10,9 +10,9 @@ export type NavHref =
   | "/catalog"
   | "/cart"
   | "/favorites"
+  | "/business"
   | "/#recommendations"
-  | InfoRoute
-  | `mailto:${string}`;
+  | InfoRoute;
 
 export interface NavLink {
   href: NavHref;

@@ -7,12 +7,18 @@ import { useId, useRef, useState } from "react";
 import type { NavLink } from "@/lib/navigation";
 import styles from "./mobile-nav.module.css";
 
-export function MobileNav({ links }: { links: readonly NavLink[] }) {
-  const pathname = usePathname();
-  return <MobileNavPanel key={pathname} links={links} />;
+interface MobileNavProps {
+  links: readonly NavLink[];
+  /** The buyer account on the shop's CRM address, when one is open. */
+  account?: { href: string; label: string } | null;
 }
 
-function MobileNavPanel({ links }: { links: readonly NavLink[] }) {
+export function MobileNav({ links, account }: MobileNavProps) {
+  const pathname = usePathname();
+  return <MobileNavPanel key={pathname} links={links} account={account} />;
+}
+
+function MobileNavPanel({ links, account }: MobileNavProps) {
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -78,6 +84,12 @@ function MobileNavPanel({ links }: { links: readonly NavLink[] }) {
               {link.label}
             </Link>
           ))}
+          {account ? (
+            // Another host, so a plain anchor rather than a client navigation.
+            <a href={account.href} className={styles.link}>
+              {account.label}
+            </a>
+          ) : null}
         </nav>
       ) : null}
     </>

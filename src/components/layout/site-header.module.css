@@ -192,7 +192,7 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.businessAction {
+.tooltipAction {
   position: relative;
 }
 .actionTooltip {
@@ -212,8 +212,8 @@
   transform: translate(-50%, -3px);
   transition: opacity 150ms ease, transform 150ms ease;
 }
-.businessAction:hover .actionTooltip,
-.businessAction:focus-visible .actionTooltip {
+.tooltipAction:hover .actionTooltip,
+.tooltipAction:focus-visible .actionTooltip {
   opacity: 1;
   transform: translate(-50%, 0);
 }
@@ -304,7 +304,7 @@
     width: 20px;
     height: 20px;
   }
-  .businessAction {
+  .tooltipAction {
     display: none;
   }
   .mobileMenu {

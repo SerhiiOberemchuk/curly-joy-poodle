@@ -34,16 +34,8 @@ const accountLabel = "Особистий кабінет";
  * while the CRM says it is open; if the CRM cannot be asked, the header simply
  * goes without it — the rest of the page still renders.
  */
-async function readAccountUrl(): Promise<string | null> {
-  try {
-    return await getCustomerAccountUrl();
-  } catch {
-    return null;
-  }
-}
-
 async function AccountAction() {
-  const url = await readAccountUrl();
+  const url = await getCustomerAccountUrl();
   if (!url) return null;
   return (
     <a
@@ -58,7 +50,7 @@ async function AccountAction() {
 }
 
 async function MobileMenu() {
-  const url = await readAccountUrl();
+  const url = await getCustomerAccountUrl();
   return (
     <MobileNav
       links={mobileLinks}

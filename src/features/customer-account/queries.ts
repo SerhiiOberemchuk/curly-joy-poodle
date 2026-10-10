@@ -20,16 +20,23 @@ const capabilitiesSchema = z.object({
 });
 
 /**
- * The buyer account address, or null when the shop has none open. Cached like
- * the catalog (`minutes`), so the header costs no CRM request per page view.
- * Throws when the CRM cannot be reached — failures are not cached, so the next
- * request asks again. A malformed answer reads as "no account", never as a
- * link the site cannot vouch for.
+ * The buyer account address, or null when the shop has none open. Cached for
+ * five minutes, so the header costs no CRM request per page view; the header
+ * is on every page, so a shorter life would make static pages regenerate
+ * every minute too.
+ * An unreachable CRM or a malformed answer reads as "no account", never as a
+ * link the site cannot vouch for. The failure is caught INSIDE the cached
+ * scope: during prerender a rejected cached call surfaces even to a caller
+ * that catches it, and the header lives in the root layout.
  */
 export async function getCustomerAccountUrl(): Promise<string | null> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife({ stale: 300, revalidate: 300, expire: 3_600 });
 
-  const parsed = capabilitiesSchema.safeParse(await crmRequest("/capabilities"));
-  return parsed.success ? (parsed.data.data.customerAccount?.url ?? null) : null;
+  try {
+    const parsed = capabilitiesSchema.safeParse(await crmRequest("/capabilities"));
+    return parsed.success ? (parsed.data.data.customerAccount?.url ?? null) : null;
+  } catch {
+    return null;
+  }
 }

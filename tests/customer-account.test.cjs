@@ -64,8 +64,8 @@ test("never links an address that is not https", async () => {
   assert.equal(await getCustomerAccountUrl(), null);
 });
 
-test("reports an unreachable CRM instead of caching a missing link", async () => {
+test("goes without the link when the CRM cannot be asked", async () => {
   answer = () =>
     Response.json({ error: { code: "SERVER_ERROR" } }, { status: 500 });
-  await assert.rejects(getCustomerAccountUrl(), { name: "CrmApiError" });
+  assert.equal(await getCustomerAccountUrl(), null);
 });

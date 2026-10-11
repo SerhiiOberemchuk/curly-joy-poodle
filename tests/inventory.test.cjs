@@ -9,6 +9,7 @@ const { renderToStaticMarkup } = require("react-dom/server");
 const cookieValues = new Map();
 let formToken;
 let products, requests, savedOrders, refreshes, failApi, cacheReads;
+let cacheProfiles, cachedTags;
 let capabilities, crmOrders, link, failOrder, failPayment, invalidAddress;
 const CITY_REF = "8d5a980d-391c-11dd-90d9-001a92567626";
 const BRANCH_REF = "1ec09d88-e1c2-11e3-8c4a-0050568002cf";
@@ -19,10 +20,13 @@ const mocks = {
     refresh: () => {
       refreshes++;
     },
-    cacheLife: () => {
+    cacheLife: (profile) => {
       cacheReads++;
+      cacheProfiles.push(profile);
     },
-    cacheTag: () => {},
+    cacheTag: (...tags) => {
+      cachedTags.push(...tags);
+    },
   },
   "next/headers": {
     cookies: async () => ({
@@ -89,8 +93,8 @@ function form(quantity, variantId = "p1") {
   return data;
 }
 async function renderProduct() {
-  const { getCurrentProduct } = load("src/features/catalog/queries.ts");
-  const current = await getCurrentProduct("sku-1");
+  const { getRecentProduct } = load("src/features/catalog/queries.ts");
+  const current = await getRecentProduct("sku-1");
   const { AddToCartForm } = load(
     "src/features/cart/components/add-to-cart-form.tsx",
   );
@@ -108,6 +112,8 @@ beforeEach(async () => {
   savedOrders = [];
   refreshes = 0;
   cacheReads = 0;
+  cacheProfiles = [];
+  cachedTags = [];
   failApi = false;
   cookieValues.clear();
   capabilities = {
@@ -1034,6 +1040,15 @@ test("the header count reads the cached catalog, not fresh stock, and survives a
   );
   failApi = true;
   assert.equal(await getCartItemCount(), 31);
+});
+
+test("product pages share a catalog read under a minute old, tagged with the catalog, invented slugs included", async () => {
+  const { getRecentProduct } = load("src/features/catalog/queries.ts");
+  assert.equal((await getRecentProduct("sku-1")).variants[0].stock, 25);
+  assert.equal(await getRecentProduct("invented-slug"), null);
+  for (const profile of cacheProfiles) assert.ok(profile.expire <= 60);
+  assert.equal(cacheProfiles.length, 2);
+  assert.ok(cachedTags.includes("catalog"));
 });
 
 test("cart and checkout pages explain a CRM outage instead of failing the whole page", async () => {

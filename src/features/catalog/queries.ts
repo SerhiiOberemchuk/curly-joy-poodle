@@ -61,6 +61,21 @@ export async function getListedProducts(): Promise<readonly Product[]> {
   return (await getCatalog()).products;
 }
 
+/**
+ * Stock and prices for the product page, shared by every visitor for half a
+ * minute. The CRM allows one quota per token for the whole site, so product
+ * views — any traffic, invented slugs included — cost it at most two catalog
+ * reads a minute and cannot starve the cart and checkout, which read fresh.
+ * A failed read throws and is not cached.
+ */
+async function getRecentProducts(): Promise<Product[]> {
+  "use cache: remote";
+  cacheLife({ stale: 30, revalidate: 30, expire: 60 });
+  cacheTag(catalogTags.all);
+
+  return loadProducts();
+}
+
 async function getCollectionDetail(slug: string) {
   "use cache";
   cacheLife("minutes");
@@ -178,8 +193,9 @@ export async function getProduct(slug: string): Promise<Product | null> {
   return resolveProduct(products, slug);
 }
 
-export async function getCurrentProduct(slug: string): Promise<Product | null> {
-  return resolveProduct(await getCurrentProducts(), slug);
+/** Purchase controls on the product page; adding to the cart re-checks fresh stock. */
+export async function getRecentProduct(slug: string): Promise<Product | null> {
+  return resolveProduct(await getRecentProducts(), slug);
 }
 
 function resolveProduct(products: readonly Product[], slug: string): Product | null {

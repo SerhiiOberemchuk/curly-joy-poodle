@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
 import { ProductGallery, ProductGallerySkeleton } from "@/features/catalog/components/product-gallery";
 import { ProductGrid } from "@/features/catalog/components/product-grid";
-import { getCurrentProduct, getProduct, getProductCategory, getProductSlugs, getRelatedProducts } from "@/features/catalog/queries";
+import { getProduct, getProductCategory, getProductSlugs, getRecentProduct, getRelatedProducts } from "@/features/catalog/queries";
 import { productJsonLd, serializeJsonLd } from "@/features/catalog/structured-data";
 import type { Product } from "@/features/catalog/types";
 
@@ -72,9 +72,10 @@ async function ProductSummary({ params }: { params: ProductParams }) {
   // Read purchase availability on navigation, rather than at build/prefetch time.
   await connection();
   const { slug } = await params;
-  // If the CRM cannot answer right now, the listing's copy keeps the page
-  // usable; adding to the cart re-checks stock against the CRM either way.
-  const product = await getCurrentProduct(slug).catch(() => getProduct(slug));
+  // At most half a minute old, shared by all visitors; if the CRM cannot
+  // answer right now, the listing's copy keeps the page usable. Adding to the
+  // cart re-checks stock against the CRM either way.
+  const product = await getRecentProduct(slug).catch(() => getProduct(slug));
   if (!product) notFound();
 
   return (

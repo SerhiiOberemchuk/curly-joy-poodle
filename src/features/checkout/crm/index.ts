@@ -1,4 +1,5 @@
 import "server-only";
+import { cacheLife } from "next/cache";
 import { z } from "zod";
 
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
@@ -17,6 +18,7 @@ import {
   orderAcceptedSchema,
   paymentLinkSchema,
   type CrmPaymentLink,
+  type NpWarehouse,
 } from "./types";
 
 async function requestData<T>(
@@ -30,19 +32,53 @@ async function requestData<T>(
 export async function getCapabilities() {
   return requestData("/capabilities", capabilitiesSchema);
 }
+
+// Nova Poshta directories change rarely, while each buyer's keystrokes would
+// otherwise all reach the CRM's per-minute carrier quota — the same quota the
+// order's address check spends. So every lookup is shared across buyers and
+// server instances, and checkout re-checks a choice against the very search
+// that offered it. A failed lookup throws and is never cached.
 export async function getNpCities(query: string) {
+  "use cache: remote";
+  cacheLife("hours");
   return requestData(
     `/carriers/nova_poshta/cities?q=${encodeURIComponent(query)}`,
     z.array(npCitySchema),
   );
 }
-export async function getNpWarehouses(cityRef: string) {
-  return requestData(
-    `/carriers/nova_poshta/warehouses?cityRef=${encodeURIComponent(cityRef)}`,
-    z.array(npWarehouseSchema),
+
+/** The picker's page size: enough to scroll, small enough to type into. */
+const NP_WAREHOUSE_PAGE = 100;
+const npWarehousePageSchema = z.object({
+  data: z.array(npWarehouseSchema),
+  pagination: z.object({ total: z.number().int().nonnegative() }),
+});
+
+/**
+ * A city's points matching `query` — a branch number («5», exact match first)
+ * or part of the address; an empty query is the city's first page. A big city
+ * has thousands of points (Kyiv over 8 000), so the CRM searches, not lists.
+ */
+export async function getNpWarehouses(
+  cityRef: string,
+  query: string,
+): Promise<{ items: NpWarehouse[]; total: number }> {
+  "use cache: remote";
+  cacheLife("hours");
+  const search = new URLSearchParams({
+    cityRef,
+    perPage: String(NP_WAREHOUSE_PAGE),
+  });
+  if (query) search.set("q", query);
+  const body = npWarehousePageSchema.parse(
+    await crmRequest(`/carriers/nova_poshta/warehouses?${search}`),
   );
+  return { items: body.data, total: body.pagination.total };
 }
+
 export async function getNpStreets(cityRef: string, query: string) {
+  "use cache: remote";
+  cacheLife("hours");
   return requestData(
     `/carriers/nova_poshta/streets?cityRef=${encodeURIComponent(cityRef)}&q=${encodeURIComponent(query)}`,
     z.array(npStreetSchema),

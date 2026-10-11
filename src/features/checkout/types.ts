@@ -1,6 +1,8 @@
 export type DeliveryMethod = "np-branch" | "np-courier";
 export type PaymentMethod = "card" | "cod";
 export type PaymentStatus =
+  /** Card order without any payment in the CRM: the buyer never reached the bank. */
+  | "unpaid"
   | "pending"
   | "not-required"
   | "paid"
@@ -22,6 +24,8 @@ export interface DeliveryDetails {
   citySearch: string;
   destination: string;
   branchRef: string;
+  /** The search that offered `branchRef`; checkout re-runs it to verify the choice. */
+  branchSearch: string;
   streetRef: string;
   streetSearch: string;
   building: string;

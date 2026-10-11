@@ -74,20 +74,23 @@ function buildProduct(
   const variants = orderVariants(
     members.flatMap((item): ProductVariant[] => {
       const price = priceOf(item);
-      return price
+      // The CRM links an order line to its product, and writes off its stock,
+      // only by SKU; a line without one would arrive as an unknown article.
+      const sku = item.sku?.trim();
+      return price && sku
         ? [
             {
               ...price,
               ...stockOf(item),
               id: item.id,
-              sku: item.sku ?? item.id,
+              sku,
               label: labelOf(item, grouped),
             },
           ]
         : [];
     }),
   );
-  // A product without a price in the shop's currency cannot be sold here.
+  // Without a price in the shop's currency or a SKU it cannot be sold here.
   if (variants.length === 0) return null;
 
   const lead = members[0];

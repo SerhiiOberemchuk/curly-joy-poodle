@@ -61,7 +61,8 @@ let submissions,
   failWarehouses,
   cityQueries,
   streetQueries,
-  warehouseCities,
+  warehouseSearches,
+  warehouseTotal,
   response;
 let statusChecks;
 const load = createLoader({
@@ -84,11 +85,20 @@ const load = createLoader({
       cityQueries.push(query);
       return { ok: true, data: query.startsWith("Лу") ? [OTHER_CITY] : [CITY] };
     },
-    listWarehousesAction: async (cityRef) => {
-      warehouseCities.push(cityRef);
-      return failWarehouses
-        ? { ok: false, error: "Довідник недоступний" }
-        : { ok: true, data: [BRANCH, OTHER_BRANCH] };
+    // Like the CRM: a number matches the points numbered with it, an
+    // address part matches the label; the whole city is searched.
+    searchWarehousesAction: async (cityRef, query) => {
+      warehouseSearches.push({ cityRef, query });
+      if (failWarehouses) return { ok: false, error: "Довідник недоступний" };
+      const items = [BRANCH, OTHER_BRANCH].filter((branch) =>
+        /^\d+$/.test(query)
+          ? branch.number.startsWith(query)
+          : branch.label.toLowerCase().includes(query.toLowerCase()),
+      );
+      return {
+        ok: true,
+        data: { items, total: query ? items.length : warehouseTotal },
+      };
     },
     searchStreetsAction: async (cityRef, query) => {
       streetQueries.push({ cityRef, query });
@@ -119,7 +129,8 @@ beforeEach(() => {
   submissions = [];
   cityQueries = [];
   streetQueries = [];
-  warehouseCities = [];
+  warehouseSearches = [];
+  warehouseTotal = 2;
   failWarehouses = false;
   response = { status: "idle", errors: {}, message: "" };
 });
@@ -163,10 +174,11 @@ async function selectBranch(user) {
   });
   await waitFor(() => assert.equal(branch.disabled, false));
   await user.type(branch, "5");
+  await screen.findByRole("option", { name: BRANCH.label });
   await user.keyboard("{ArrowDown}{Enter}");
 }
 
-test("one branch field searches by exact number, submits its CRM reference and supports keyboard selection", async () => {
+test("one branch field searches the CRM by number, submits its CRM reference with the search that offered it and supports keyboard selection", async () => {
   const user = setup();
   await contacts(user);
   await selectCity(user);
@@ -179,16 +191,30 @@ test("one branch field searches by exact number, submits its CRM reference and s
     null,
   );
   await user.type(branch, "5");
-  assert.equal(screen.getAllByRole("option").length, 1);
+  await waitFor(() => assert.equal(screen.getAllByRole("option").length, 1));
   assert.equal(screen.getByRole("option").textContent, BRANCH.label);
+  assert.deepEqual(warehouseSearches.at(-1), { cityRef: CITY.ref, query: "5" });
   await user.keyboard("{ArrowDown}{Enter}");
   await user.click(screen.getByRole("button", { name: /Перейти до оплати/ }));
   await waitFor(() => assert.equal(submissions.length, 1));
   assert.equal(submissions[0].branchRef, BRANCH.ref);
+  assert.equal(submissions[0].branchSearch, "5");
   assert.equal(submissions[0].cityRef, CITY.ref);
   assert.equal(submissions[0].citySearch, "Рівне");
   assert.equal(submissions[0].destination, BRANCH.label);
   assert.equal(submissions[0].phone, "+380671234567");
+});
+
+test("a big city's first page says how many points exist and invites a search", async () => {
+  warehouseTotal = 8038;
+  const user = setup();
+  await selectCity(user);
+  assert.ok(
+    await screen.findByText(
+      "Показано 2 з 8038. Введіть номер або частину адреси, щоб знайти свій пункт.",
+    ),
+  );
+  assert.deepEqual(warehouseSearches[0], { cityRef: CITY.ref, query: "" });
 });
 
 test("changing city clears the old branch and refreshes the directory for the new city", async () => {
@@ -202,7 +228,7 @@ test("changing city clears the old branch and refreshes the directory for the ne
   assert.ok(
     await screen.findByText("Оберіть відділення або поштомат зі списку"),
   );
-  assert.equal(warehouseCities.at(-1), OTHER_CITY.ref);
+  assert.equal(warehouseSearches.at(-1).cityRef, OTHER_CITY.ref);
   assert.equal(
     document.activeElement,
     screen.getByRole("combobox", { name: "Пункт отримання" }),
@@ -282,8 +308,17 @@ test("server branch errors focus the searchable field and disappear after correc
   assert.ok(await screen.findByText("Цей пункт отримання недоступний"));
   const branch = screen.getByRole("combobox", { name: "Пункт отримання" });
   await waitFor(() => assert.equal(document.activeElement, branch));
+  // The error is programmatically tied to the combobox, not only shown.
+  assert.equal(branch.getAttribute("aria-invalid"), "true");
+  assert.equal(
+    document.getElementById(branch.getAttribute("aria-errormessage"))
+      ?.textContent,
+    "Цей пункт отримання недоступний",
+  );
   await user.type(branch, "15");
-  await user.click(screen.getByRole("option", { name: OTHER_BRANCH.label }));
+  await user.click(
+    await screen.findByRole("option", { name: OTHER_BRANCH.label }),
+  );
   await waitFor(() =>
     assert.equal(screen.queryByText("Цей пункт отримання недоступний"), null),
   );
@@ -299,11 +334,11 @@ test("branch search also finds an address and reports no matches in the same con
   await waitFor(() => assert.equal(branch.disabled, false));
   await user.type(branch, "999");
   assert.ok(
-    screen.getByText("Нічого не знайдено. Перевірте номер або адресу."),
+    await screen.findByText("Нічого не знайдено. Перевірте номер або адресу."),
   );
   await user.clear(branch);
   await user.type(branch, "Соборна");
-  assert.equal(screen.getAllByRole("option").length, 1);
+  await waitFor(() => assert.equal(screen.getAllByRole("option").length, 1));
   await user.click(screen.getByRole("option", { name: OTHER_BRANCH.label }));
   assert.ok(screen.getByText(OTHER_BRANCH.label));
 });
@@ -348,6 +383,7 @@ test("email is trimmed and alphabetic characters cannot masquerade as a valid ph
     cityRef: CITY.ref,
     citySearch: "Рівне",
     branchRef: BRANCH.ref,
+    branchSearch: "5",
     destination: BRANCH.label,
     streetRef: "",
     streetSearch: "",

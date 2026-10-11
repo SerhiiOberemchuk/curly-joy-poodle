@@ -1,26 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useRef } from "react";
+import { useActionState, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import styles from "@/components/ui/form-fields.module.css";
 
-import { initialB2bRequestState, type B2bRequestState } from "../action-state";
+import { initialB2bRequestState } from "../action-state";
 import { requestB2bAccessAction } from "../actions";
 import { BUSINESS_TYPES, type B2bRequestField } from "../validation";
 
 export function B2bRequestForm() {
-  // One id per form: a repeated submit returns the lead the CRM already has.
-  // Made at the first submit, not during render, where it would be baked into
-  // the static shell and shared by every visitor.
-  const requestId = useRef<string | null>(null);
+  // The Server Action itself, so the form also submits before hydration. The
+  // server derives the CRM idempotency key from the request.
   const [state, formAction, isPending] = useActionState(
-    (previous: B2bRequestState, formData: FormData) => {
-      requestId.current ??= crypto.randomUUID();
-      formData.set("requestId", requestId.current);
-      return requestB2bAccessAction(previous, formData);
-    },
+    requestB2bAccessAction,
     initialB2bRequestState,
   );
   const messageId = useId();

@@ -144,18 +144,22 @@ beforeEach(async () => {
     const payload = options.body ? JSON.parse(options.body) : null;
     if (path.endsWith("/capabilities"))
       return Response.json({ data: capabilities });
+    if (path.endsWith("/categories")) return Response.json({ data: [] });
     if (path.endsWith("/cities"))
       return Response.json({
         data: invalidAddress
           ? []
           : [{ ref: CITY_REF, settlementRef: CITY_REF, label: "Kyiv" }],
       });
-    if (path.endsWith("/warehouses"))
+    if (path.endsWith("/warehouses")) {
+      const data = invalidAddress
+        ? []
+        : [{ ref: BRANCH_REF, label: "Branch 1", number: "1" }];
       return Response.json({
-        data: invalidAddress
-          ? []
-          : [{ ref: BRANCH_REF, label: "Branch 1", number: "1" }],
+        data,
+        pagination: { page: 1, perPage: 100, total: data.length },
       });
+    }
     if (path.endsWith("/streets"))
       return Response.json({ data: [{ ref: STREET_REF, label: "Street" }] });
     if (path.endsWith("/payment-link")) {
@@ -164,7 +168,7 @@ beforeEach(async () => {
           { error: { code: "SERVER_ERROR" } },
           { status: 502 },
         );
-      if (payload)
+      if (payload) {
         link = {
           checkoutUrl: "https://pay.mono.test/invoice",
           paymentId: "payment-1",
@@ -172,6 +176,18 @@ beforeEach(async () => {
           returnUrl: payload.returnUrl ?? null,
           expiresAt: null,
         };
+        // Like the CRM: an issued invoice is recorded as a pending payment.
+        const order = crmOrders.get(decodeURIComponent(path.split("/").at(-2)));
+        if (order && !order.payments.some((p) => p.id === link.paymentId))
+          order.payments.push({
+            id: link.paymentId,
+            status: "pending",
+            amount: order.totalAmount,
+            currency: "UAH",
+            refundedAmount: null,
+            createdAt: new Date().toISOString(),
+          });
+      }
       return link
         ? Response.json({ data: link })
         : Response.json({ error: { code: "NOT_FOUND" } }, { status: 404 });
@@ -272,10 +288,10 @@ test("cart quantity changes use fresh stock and remove sold-out items", async ()
   const { setLineQuantityAction } = load("src/features/cart/actions.ts");
   setCart([{ p: "p1", q: 12 }]);
   products[0].stock = 3;
-  await setLineQuantityAction(form(13));
+  await setLineQuantityAction({}, form(13));
   assert.equal(JSON.parse(cookieValues.get("cjp_cart"))[0].q, 3);
   products[0].availability = "out_of_stock";
-  await setLineQuantityAction(form(2));
+  await setLineQuantityAction({}, form(2));
   assert.equal(cookieValues.has("cjp_cart"), false);
 });
 
@@ -284,7 +300,8 @@ test("cart reads current prices and all lines from one CRM snapshot", async () =
     product({ price: 500 }),
     product({ id: "p2", sku: "SKU-2", stock: 2 }),
   ];
-  const { buildCart } = load("src/features/cart/queries.ts");
+  const { loadCart } = load("src/features/cart/queries.ts");
+  const buildCart = async (stored) => (await loadCart(stored)).cart;
   const cart = await buildCart([
     { p: "p1", q: 12 },
     { p: "p2", q: 3 },
@@ -337,7 +354,8 @@ test("CRM failure prevents additions and checkout without changing the cart", as
 });
 
 test("invalid and fractional CRM stocks never create zero-quantity order lines", async () => {
-  const { buildCart } = load("src/features/cart/queries.ts");
+  const { loadCart } = load("src/features/cart/queries.ts");
+  const buildCart = async (stored) => (await loadCart(stored)).cart;
   for (const stock of [undefined, "5"]) {
     products = [product({ stock })];
     await assert.rejects(buildCart([{ p: "p1", q: 1 }]));
@@ -376,6 +394,7 @@ test("checkout with sufficient current stock saves the full quantity above ten",
     citySearch: "Kyiv",
     destination: "1",
     branchRef: BRANCH_REF,
+    branchSearch: "",
     streetRef: "",
     streetSearch: "",
     building: "",
@@ -434,6 +453,7 @@ function checkoutData(overrides = {}) {
     citySearch: "Kyiv",
     destination: "Forged branch",
     branchRef: BRANCH_REF,
+    branchSearch: "",
     streetRef: "",
     streetSearch: "",
     building: "",
@@ -694,7 +714,8 @@ test("authorized and partially paid money do not mark the whole order paid", () 
 });
 
 test("cart shipping terms are read from the CRM without an invented threshold", async () => {
-  const { buildCart } = load("src/features/cart/queries.ts");
+  const { loadCart } = load("src/features/cart/queries.ts");
+  const buildCart = async (stored) => (await loadCart(stored)).cart;
   let cart = await buildCart([{ p: "p1", q: 1 }]);
   assert.equal(cart.freeShipping, false);
   assert.equal(cart.freeShippingThreshold, null);
@@ -765,7 +786,10 @@ test("malformed or missing quantities do not become default or truncated purchas
   for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
     setCart([{ p: "p1", q: 2 }]);
     assert.equal((await addToCartAction({}, form(value))).status, "error");
-    await setLineQuantityAction(form(value));
+    assert.equal(
+      (await setLineQuantityAction({}, form(value))).status,
+      "error",
+    );
     assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
       { p: "p1", q: 2 },
     ]);
@@ -990,4 +1014,206 @@ test("cookie-less bank return handles a CRM outage truthfully and rejects a chec
     /Не вдалося відкрити замовлення/,
   );
   assert.equal(requests.length, reads);
+});
+
+function crmPaths() {
+  return requests.map(({ url }) => new URL(url).pathname);
+}
+
+test("the header count reads the cached catalog, not fresh stock, and survives a CRM outage", async () => {
+  setCart([
+    { p: "p1", q: 30 },
+    { p: "gone", q: 1 },
+  ]);
+  const { getCartItemCount } = load("src/features/cart/queries.ts");
+  assert.equal(await getCartItemCount(), 25);
+  assert.ok(cacheReads > 0);
+  assert.equal(
+    crmPaths().some((path) => path.endsWith("/capabilities")),
+    false,
+  );
+  failApi = true;
+  assert.equal(await getCartItemCount(), 31);
+});
+
+test("cart and checkout pages explain a CRM outage instead of failing the whole page", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  failApi = true;
+  const { CartView } = load("src/features/cart/components/cart-view.tsx");
+  assert.match(
+    renderToStaticMarkup(await CartView()),
+    /Не вдалося завантажити кошик/,
+  );
+  const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
+  const content = CheckoutPage().props.children[1].props.children;
+  assert.match(
+    renderToStaticMarkup(await content.type(content.props)),
+    /Оформлення тимчасово недоступне/,
+  );
+  assert.ok(cookieValues.has("cjp_cart"));
+});
+
+test("a CRM failure on a quantity change keeps the cart and is reported on the line", async () => {
+  setCart([{ p: "p1", q: 2 }]);
+  failApi = true;
+  const { setLineQuantityAction } = load("src/features/cart/actions.ts");
+  const state = await setLineQuantityAction({}, form(3));
+  assert.equal(state.status, "error");
+  assert.match(state.message, /Не вдалося перевірити наявність/);
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+    { p: "p1", q: 2 },
+  ]);
+});
+
+test("a product without a SKU is not sold: the CRM could not link its order line", async () => {
+  products = [
+    product({ sku: null }),
+    product({ id: "p2", sku: "  " }),
+    product({ id: "p3", sku: "SKU-3" }),
+  ];
+  const { getCurrentProducts } = load("src/features/catalog/queries.ts");
+  assert.deepEqual(
+    (await getCurrentProducts()).flatMap((item) =>
+      item.variants.map((variant) => variant.sku),
+    ),
+    ["SKU-3"],
+  );
+});
+
+test("prices show kopiyky as two digits and whole hryvnias without them", () => {
+  const { formatMoney } = load("src/lib/money.ts");
+  assert.match(formatMoney(19950), /^199,50\s₴$/);
+  assert.match(formatMoney(19955), /^199,55\s₴$/);
+  assert.match(formatMoney(19900), /^199\s₴$/);
+});
+
+test("a phone number missing a digit is refused instead of becoming an impossible +380 0… number", () => {
+  const { normalizePhone } = load("src/features/checkout/validation.ts");
+  for (const typo of ["067 440 439", "+380 067 440 439", "0067440439"])
+    assert.equal(normalizePhone(typo), null);
+  for (const phone of ["67 440 43 94", "067 440 43 94", "+38 (067) 440-43-94"])
+    assert.equal(normalizePhone(phone), "+380674404394");
+});
+
+test("the order keeps the free shipping the cart showed and checks out with one read of CRM terms", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  capabilities.cart.freeShippingThreshold = 10000;
+  capabilities.cart.byCurrency = [
+    { currency: "UAH", freeShippingThreshold: 400, minOrderAmount: null },
+  ];
+  const { getCart } = load("src/features/cart/queries.ts");
+  assert.equal((await getCart()).freeShipping, true);
+  const before = crmPaths().length;
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(
+    placeOrderAction({}, checkoutData({ payment: "cod" })),
+    /redirect:\/checkout\/success/,
+  );
+  assert.match(savedOrders[0].notes, /Доставка коштом магазину/);
+  assert.equal(
+    crmPaths()
+      .slice(before)
+      .filter((path) => path.endsWith("/capabilities")).length,
+    1,
+  );
+});
+
+test("the minimum order comes from the CRM's hryvnia terms", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  capabilities.cart.byCurrency = [
+    { currency: "UAH", freeShippingThreshold: null, minOrderAmount: 500 },
+  ];
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const result = await placeOrderAction({}, checkoutData({ payment: "cod" }));
+  assert.equal(result.status, "error");
+  assert.match(result.message, /Мінімальна сума замовлення — 500\s₴/);
+  assert.equal(savedOrders.length, 0);
+});
+
+test("a bank that cannot be opened leaves an unpaid order with a pay button, not a wait for the bank", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  failPayment = true;
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(
+    placeOrderAction({}, checkoutData()),
+    /redirect:\/checkout\/success\?payment=unavailable$/,
+  );
+  const page = await renderReturn({ payment: "unavailable" });
+  assert.match(page, /Не вдалося відкрити оплату/);
+  assert.match(page, /<button[^>]*>Перейти до оплати<\/button>/);
+  assert.doesNotMatch(page, /Перевіряємо оплату…|class="spinner"/);
+  // Without the hint the CRM tells the same: no payment was ever opened.
+  const later = await renderReturn();
+  assert.match(later, /Оплату ще не розпочато/);
+  assert.match(later, /Не оплачено/);
+  assert.match(later, /<button[^>]*>Перейти до оплати<\/button>/);
+  assert.doesNotMatch(later, /class="spinner"/);
+});
+
+test("a failed payment retry keeps the return token and reports that the bank could not be opened", async () => {
+  process.env.SITE_URL = "https://curly-joy.com";
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction, retryPaymentAction } = load(
+    "src/features/checkout/actions.ts",
+  );
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  const token = new URL(link.returnUrl).searchParams.get("token");
+  link = null;
+  failPayment = true;
+  await assert.rejects(retryPaymentAction(token), (error) => {
+    const url = new URL(
+      error.message.slice("redirect:".length),
+      "https://curly-joy.com",
+    );
+    return (
+      url.pathname === "/checkout/success" &&
+      url.searchParams.get("token") === token &&
+      url.searchParams.get("payment") === "unavailable"
+    );
+  });
+});
+
+test("a branch is confirmed against the same CRM search that offered it, across the whole city", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(
+    placeOrderAction({}, checkoutData({ branchSearch: "1" })),
+    /redirect:https:/,
+  );
+  const lookup = requests
+    .map(({ url }) => new URL(url))
+    .find((url) => url.pathname.endsWith("/warehouses"));
+  assert.equal(lookup.searchParams.get("cityRef"), CITY_REF);
+  assert.equal(lookup.searchParams.get("q"), "1");
+  assert.equal(lookup.searchParams.get("perPage"), "100");
+  const { searchWarehousesAction } = load(
+    "src/features/checkout/nova-poshta.actions.ts",
+  );
+  assert.deepEqual(await searchWarehousesAction(CITY_REF, ""), {
+    ok: true,
+    data: {
+      items: [{ ref: BRANCH_REF, label: "Branch 1", number: "1" }],
+      total: 1,
+    },
+  });
+  assert.equal(
+    new URL(requests.at(-1).url).searchParams.has("q"),
+    false,
+  );
+});
+
+test("a production server without SITE_URL sends buyers back to the shop's own address, never localhost", () => {
+  delete process.env.SITE_URL;
+  const environment = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    const { siteUrl } = load("src/lib/origin.ts");
+    assert.equal(
+      siteUrl("/checkout/success"),
+      "https://curly-joy.com/checkout/success",
+    );
+  } finally {
+    if (environment === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = environment;
+  }
 });

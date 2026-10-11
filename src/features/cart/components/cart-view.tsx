@@ -26,7 +26,21 @@ export function CartEmpty() {
 }
 
 export async function CartView() {
-  const cart = await getCart();
+  let cart;
+  try {
+    cart = await getCart();
+  } catch {
+    // Prices and stock come only from the CRM; nothing is shown without them.
+    return (
+      <div className={styles.empty} role="alert">
+        <h2>Не вдалося завантажити кошик</h2>
+        <p className={styles.emptyText}>
+          Не вдалося перевірити ціни й наявність товарів. Ваш кошик збережено —
+          оновіть сторінку за кілька хвилин.
+        </p>
+      </div>
+    );
+  }
 
   if (cart.isEmpty) return <CartEmpty />;
 

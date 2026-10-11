@@ -38,7 +38,6 @@ const B2B_REQUEST = {
   city: "Рівне",
   website: "",
   message: "Цікавлять светри",
-  requestId: "6f1c2b8e-4a3d-4b1e-9c7f-2d8e5a1b3c4d",
 };
 
 test("a wholesale access request files a partner lead with a stable idempotency key", async () => {
@@ -52,12 +51,32 @@ test("a wholesale access request files a partner lead with a stable idempotency 
   const lead = requests[0].body;
   assert.equal(requests[0].path, "/leads");
   assert.equal(lead.source, "partner");
-  assert.equal(lead.externalId, `b2b-${B2B_REQUEST.requestId}`);
+  assert.match(lead.externalId, /^b2b-[0-9a-f]{64}$/);
   assert.equal(lead.email, "shop@example.com");
   assert.equal(lead.phone, "+380674404394");
   assert.equal(lead.companyName, "ФОП Коваленко");
   assert.match(lead.notes, /Тип бізнесу: Грумінг-салон/);
   assert.match(lead.notes, /Коментар: Цікавлять светри/);
+});
+
+test("a resent request reuses its CRM key while a corrected one is a new request", async () => {
+  const { requestB2bAccessAction } = load("src/features/business/actions.ts");
+  const idle = { status: "idle", message: "", errors: {} };
+  await requestB2bAccessAction(idle, form(B2B_REQUEST));
+  // The same request as typed differently: normalized before keying.
+  await requestB2bAccessAction(
+    idle,
+    form({ ...B2B_REQUEST, email: "shop@example.com", phone: "+380674404394" }),
+  );
+  await requestB2bAccessAction(
+    idle,
+    form({ ...B2B_REQUEST, message: "Цікавлять светри й жилети" }),
+  );
+  const [first, resent, corrected] = requests.map(
+    (request) => request.body.externalId,
+  );
+  assert.equal(resent, first);
+  assert.notEqual(corrected, first);
 });
 
 test("an invalid wholesale request is refused before the CRM and keeps the input", async () => {

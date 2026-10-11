@@ -32,8 +32,22 @@ export function crmPaymentStatus(
     return "pending";
   if (latest?.status === "failed" || latest?.status === "cancelled")
     return "failed";
-  return method === "cod" ? "not-required" : "pending";
+  if (method === "cod") return "not-required";
+  // The CRM records a payment as soon as it issues a bank invoice and drops it
+  // if the bank refuses one, so an order without any payment never reached the
+  // bank. Any record at all, even in another currency, means it may have.
+  return order.payments.length === 0 ? "unpaid" : "pending";
 }
+
+/** Shown instead of the CRM-derived note when opening the bank just failed. */
+export const PAYMENT_SETUP_FAILED =
+  "Замовлення збережено. Не вдалося відкрити оплату. Натисніть «Перейти до оплати», щоб повторити.";
+
+/** A card order the buyer may (still) be sent to the bank for. */
+export function awaitsCardPayment(status: PaymentStatus): boolean {
+  return status === "unpaid" || status === "pending" || status === "failed";
+}
+
 export function paymentNote(
   status: PaymentStatus,
   method: PaymentMethod,
@@ -45,6 +59,8 @@ export function paymentNote(
   if (status === "cancelled") return "Замовлення скасовано.";
   if (status === "failed")
     return "Оплату не завершено. Можна спробувати оплатити ще раз.";
+  if (status === "unpaid")
+    return "Замовлення збережено. Оплату ще не розпочато — натисніть «Перейти до оплати».";
   return method === "cod"
     ? "Замовлення прийнято. Оплатіть його при отриманні."
     : "Очікуємо підтвердження оплати від банку.";

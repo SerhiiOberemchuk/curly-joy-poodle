@@ -56,6 +56,11 @@ async function getCatalog(): Promise<Catalog> {
 /** Deduplicated within a render only; never reads the persistent catalog cache. */
 export const getCurrentProducts = cache(loadProducts);
 
+/** The cached listing: for display only, never for a purchase decision. */
+export async function getListedProducts(): Promise<readonly Product[]> {
+  return (await getCatalog()).products;
+}
+
 async function getCollectionDetail(slug: string) {
   "use cache";
   cacheLife("minutes");

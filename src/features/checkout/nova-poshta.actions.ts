@@ -2,12 +2,16 @@
 
 import { z } from "zod";
 import { getNpCities, getNpStreets, getNpWarehouses } from "./crm";
-import { carrierRefSchema } from "./validation";
+import { carrierRefSchema, warehouseSearchSchema } from "./validation";
 
 const querySchema = z.string().trim().min(2).max(120);
 const streetQuerySchema = z.object({
   cityRef: carrierRefSchema,
   query: querySchema,
+});
+const warehouseQuerySchema = z.object({
+  cityRef: carrierRefSchema,
+  query: warehouseSearchSchema,
 });
 const LOOKUP_FAILED =
   "Не вдалося завантажити довідник Нової пошти. Спробуйте ще раз.";
@@ -23,12 +27,16 @@ export async function searchCitiesAction(query: string) {
   }
 }
 
-export async function listWarehousesAction(cityRef: string) {
-  const parsed = carrierRefSchema.safeParse(cityRef);
+/** One page of the city's points matching what the buyer typed, and how many match in all. */
+export async function searchWarehousesAction(cityRef: string, query: string) {
+  const parsed = warehouseQuerySchema.safeParse({ cityRef, query });
   if (!parsed.success)
     return { ok: false as const, error: "Оберіть населений пункт." };
   try {
-    return { ok: true as const, data: await getNpWarehouses(parsed.data) };
+    return {
+      ok: true as const,
+      data: await getNpWarehouses(parsed.data.cityRef, parsed.data.query),
+    };
   } catch {
     return { ok: false as const, error: LOOKUP_FAILED };
   }

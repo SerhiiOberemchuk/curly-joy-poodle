@@ -55,8 +55,10 @@ export function LookupSelect<T extends LookupOption>({
           singleValue: (base) => ({ ...base, whiteSpace: "normal" }),
           menu: (base) => ({ ...base, zIndex: 2 }),
         }}
+        // react-select owns aria-describedby (its placeholder and live
+        // region) and drops ours, so the error is linked as an error message.
         aria-invalid={!!error}
-        aria-describedby={`${id}-help`}
+        aria-errormessage={error ? `${id}-error` : undefined}
         loadingMessage={() => "Завантажуємо…"}
         classNames={{
           container: () => styles.select,
@@ -74,8 +76,12 @@ export function LookupSelect<T extends LookupOption>({
           loadingMessage: () => styles.selectMessage,
         }}
       />
-      <div id={`${id}-help`}>
-        {error ? <p className={styles.error}>{error}</p> : null}
+      <div>
+        {error ? (
+          <p id={`${id}-error`} className={styles.error}>
+            {error}
+          </p>
+        ) : null}
         {hint ? <p className={styles.optionHint}>{hint}</p> : null}
         {lookupError ? (
           <div role="alert">

@@ -2,10 +2,11 @@ import "server-only";
 import { z } from "zod";
 
 import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
-import { buildCart } from "@/features/cart/queries";
+import { loadCart } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
 import { readString } from "@/lib/form";
+import { formatMoney } from "@/lib/money";
 import {
   cartFingerprint,
   checkoutAttempt,
@@ -13,7 +14,6 @@ import {
 } from "./checkout-attempt";
 import {
   createCrmOrder,
-  getCapabilities,
   getNpCities,
   getNpStreets,
   getNpWarehouses,
@@ -21,9 +21,13 @@ import {
   orderPayload,
 } from "./crm";
 import type { CrmCapabilities } from "./crm/types";
-import { availableDeliveries, availablePayments } from "./options";
+import {
+  availableDeliveries,
+  availablePayments,
+  hryvniaCartTerms,
+} from "./options";
 import { settleCheckoutReturn } from "./payment/settlement";
-import { paymentNote } from "./payment/status";
+import { awaitsCardPayment, paymentNote } from "./payment/status";
 import { writeReceiptCookie } from "./receipt-cookie";
 import { readPaymentReceipt } from "./payment/return-receipt";
 import type { DeliveryDetails, Order, OrderReceipt } from "./types";
@@ -36,20 +40,37 @@ import {
 type CheckoutDestination =
   | "/checkout"
   | "/checkout/success"
+  | `/checkout/success?${string}`
   | `https://${string}`;
 
 type CheckoutResult =
   | { ok: true; redirectTo: CheckoutDestination }
   | { ok: false; state: CheckoutActionState; cartChanged?: boolean };
 
-export const PAYMENT_SETUP_FAILED =
-  "Замовлення збережено. Не вдалося відкрити оплату. Натисніть «Перейти до оплати», щоб повторити.";
-
 function failure(
   message: string,
   errors: FieldErrors = {},
 ): Extract<CheckoutResult, { ok: false }> {
   return { ok: false, state: { status: "error", message, errors } };
+}
+
+/**
+ * The confirmation page. `paymentUnavailable` says the bank could not be opened
+ * on this attempt — the page reads everything else from the CRM. A return
+ * token is carried along, so a recovered order stays open after a retry.
+ */
+function confirmationPage({
+  token,
+  paymentUnavailable = false,
+}: {
+  token?: string;
+  paymentUnavailable?: boolean;
+}): CheckoutDestination {
+  const query = new URLSearchParams();
+  if (token) query.set("token", token);
+  if (paymentUnavailable) query.set("payment", "unavailable");
+  const search = query.toString();
+  return search ? `/checkout/success?${search}` : "/checkout/success";
 }
 
 function unavailableMethod(
@@ -80,7 +101,11 @@ type DeliveryResult =
   | { ok: true; delivery: DeliveryDetails }
   | { ok: false; errors: FieldErrors };
 
-/** Resolve submitted carrier refs against CRM. Browser-supplied labels are never persisted. */
+/**
+ * Resolve submitted carrier refs against CRM. Each ref must be among the
+ * results of the search that offered it to the buyer; browser-supplied labels
+ * are never persisted.
+ */
 async function resolveDelivery(
   delivery: DeliveryDetails,
 ): Promise<DeliveryResult> {
@@ -94,8 +119,8 @@ async function resolveDelivery(
   }
 
   if (delivery.method === "np-branch") {
-    const warehouses = await getNpWarehouses(city.ref);
-    const branch = warehouses.find(
+    const warehouses = await getNpWarehouses(city.ref, delivery.branchSearch);
+    const branch = warehouses.items.find(
       (option) => option.ref === delivery.branchRef,
     );
     if (!branch) {
@@ -126,16 +151,17 @@ async function resolveDelivery(
   const destination = `${street.label}, буд. ${delivery.building}${delivery.flat ? `, кв. ${delivery.flat}` : ""}`;
   return {
     ok: true,
-    delivery: { ...delivery, city: city.label, destination, branchRef: "" },
+    delivery: {
+      ...delivery,
+      city: city.label,
+      destination,
+      branchRef: "",
+      branchSearch: "",
+    },
   };
 }
 
-function snapshotOrder(
-  input: CheckoutInput,
-  cart: Cart,
-  capabilities: CrmCapabilities,
-): Order {
-  const threshold = capabilities.cart.freeShippingThreshold;
+function snapshotOrder(input: CheckoutInput, cart: Cart): Order {
   return {
     number: "",
     customer: input.customer,
@@ -151,8 +177,8 @@ function snapshotOrder(
       lineTotal: line.lineTotal,
     })),
     subtotal: cart.subtotal,
-    freeShipping:
-      threshold !== null && cart.subtotal >= Math.round(threshold * 100),
+    // The same rule the buyer saw in the cart summary.
+    freeShipping: cart.freeShipping,
   };
 }
 
@@ -163,7 +189,7 @@ async function submitOrder(
 ): Promise<OrderReceipt> {
   order.number = await checkoutAttempt(orderPayload(order), nonce);
   const created = await createCrmOrder(order);
-  const status = order.payment === "cod" ? "not-required" : "pending";
+  const status = order.payment === "cod" ? "not-required" : "unpaid";
   const receipt: OrderReceipt = {
     number: order.number,
     total: order.subtotal,
@@ -186,9 +212,13 @@ export async function submitCheckout(
   formData: FormData,
 ): Promise<CheckoutResult> {
   const stored = await readCartCookie();
+  if (stored.length === 0) {
+    return failure("Кошик порожній — додайте товари перед оформленням.");
+  }
   let cart: Cart;
+  let capabilities: CrmCapabilities;
   try {
-    cart = await buildCart(stored);
+    ({ cart, capabilities } = await loadCart(stored));
   } catch {
     return failure(
       "Не вдалося перевірити наявність товарів. Спробуйте ще раз.",
@@ -213,9 +243,6 @@ export async function submitCheckout(
       ),
       cartChanged: true,
     };
-  }
-  if (cart.isEmpty) {
-    return failure("Кошик порожній — додайте товари перед оформленням.");
   }
 
   const quotedTotal = z.coerce
@@ -246,17 +273,17 @@ export async function submitCheckout(
       cartChanged: true,
     };
 
+  const unavailable = unavailableMethod(parsed.value, capabilities);
+  if (unavailable) return failure(unavailable);
+  const { minOrderAmount } = hryvniaCartTerms(capabilities);
+  if (minOrderAmount !== null && cart.subtotal < minOrderAmount) {
+    return failure(
+      `Мінімальна сума замовлення — ${formatMoney(minOrderAmount)}.`,
+    );
+  }
+
   let receipt: OrderReceipt;
   try {
-    const capabilities = await getCapabilities();
-    const unavailable = unavailableMethod(parsed.value, capabilities);
-    if (unavailable) return failure(unavailable);
-
-    const minimum = capabilities.cart.minOrderAmount;
-    if (minimum !== null && cart.subtotal < Math.round(minimum * 100)) {
-      return failure(`Мінімальна сума замовлення — ${minimum} ₴.`);
-    }
-
     const resolved = await resolveDelivery(parsed.value.delivery);
     if (!resolved.ok)
       return failure("Перевірте адресу доставки.", resolved.errors);
@@ -272,7 +299,6 @@ export async function submitCheckout(
     const order = snapshotOrder(
       { ...parsed.value, delivery: resolved.delivery },
       cart,
-      capabilities,
     );
     receipt = await submitOrder(order, stored, nonce);
   } catch {
@@ -284,19 +310,21 @@ export async function submitCheckout(
   // A provider failure after acceptance must never invite the buyer to place the order again.
   try {
     const current = await settleCheckoutReturn();
-    if (
-      current?.payment === "card" &&
-      (current.status === "pending" || current.status === "failed")
-    ) {
+    if (current?.payment === "card" && awaitsCardPayment(current.status)) {
       return {
         ok: true,
         redirectTo: await getOrCreatePaymentLink(current.number),
       };
     }
   } catch {
-    await writeReceiptCookie({ ...receipt, note: PAYMENT_SETUP_FAILED });
+    return {
+      ok: true,
+      redirectTo: confirmationPage({
+        paymentUnavailable: receipt.payment === "card",
+      }),
+    };
   }
-  return { ok: true, redirectTo: "/checkout/success" };
+  return { ok: true, redirectTo: confirmationPage({}) };
 }
 
 export async function retryCheckoutPayment(
@@ -307,15 +335,11 @@ export async function retryCheckoutPayment(
     receipt = await readPaymentReceipt(token);
     if (!receipt || receipt.payment !== "card") return "/checkout";
     const current = await settleCheckoutReturn(token);
-    if (
-      current &&
-      (current.status === "pending" || current.status === "failed")
-    ) {
+    if (current && awaitsCardPayment(current.status)) {
       return await getOrCreatePaymentLink(current.number);
     }
   } catch {
-    if (receipt)
-      await writeReceiptCookie({ ...receipt, note: PAYMENT_SETUP_FAILED });
+    return confirmationPage({ token, paymentUnavailable: receipt !== null });
   }
-  return "/checkout/success";
+  return confirmationPage({ token });
 }

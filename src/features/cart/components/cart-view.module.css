@@ -103,6 +103,11 @@
   color: var(--color-danger);
 }
 
+.lineError {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
 .summary {
   min-width: 0;
   position: sticky;

@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { findVariant } from "@/features/catalog/queries";
 import { clamp, readInt, readString } from "@/lib/form";
 
-import type { CartActionState } from "./action-state";
+import { initialCartActionState, type CartActionState } from "./action-state";
 import { readCartCookie, writeCartCookie } from "./cart-cookie";
 import { MAX_CART_LINES } from "./constants";
 import { maxQuantityForVariant } from "./quantity";
@@ -69,16 +69,26 @@ export async function addToCartAction(
   return { status: "success", message: `${name} — у кошику` };
 }
 
-export async function setLineQuantityAction(formData: FormData): Promise<void> {
+export async function setLineQuantityAction(
+  _state: CartActionState,
+  formData: FormData,
+): Promise<CartActionState> {
   const variantId = readString(formData, "variantId");
   const quantity = readInt(formData, "quantity");
-  if (quantity === null) return;
+  if (quantity === null) return failure("Вкажіть коректну кількість товару.");
 
   const lines = await readCartCookie();
-  const next = await applyQuantity(lines, variantId, quantity);
+  let next: StoredCartLine[];
+  try {
+    next = await applyQuantity(lines, variantId, quantity);
+  } catch {
+    // The cart stays as it was; the line reports the failure.
+    return failure("Не вдалося перевірити наявність товару. Спробуйте ще раз.");
+  }
 
   await writeCartCookie(next);
   refresh();
+  return initialCartActionState;
 }
 
 export async function removeLineAction(formData: FormData): Promise<void> {

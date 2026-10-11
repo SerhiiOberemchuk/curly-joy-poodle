@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { createFilter } from "react-select";
 import useSWR from "swr";
 import { useDebounce } from "use-debounce";
 import {
-  listWarehousesAction,
   searchCitiesAction,
   searchStreetsAction,
+  searchWarehousesAction,
 } from "../nova-poshta.actions";
 import type { NpCity, NpStreet, NpWarehouse } from "../crm/types";
 import type { DeliveryMethod } from "../types";
@@ -16,10 +15,10 @@ import type { CheckoutFormValues } from "../validation";
 import { LookupSelect } from "./lookup-select";
 import styles from "./checkout-form.module.css";
 
-type LookupResult<T> = { ok: true; data: T[] } | { ok: false; error: string };
+type LookupResult<T> = { ok: true; data: T } | { ok: false; error: string };
 async function fetchLookup<T>(
   request: () => Promise<LookupResult<T>>,
-): Promise<T[]> {
+): Promise<T> {
   const result = await request();
   if (!result.ok) throw new Error(result.error);
   return result.data;
@@ -29,10 +28,10 @@ const LOOKUP_OPTIONS = {
   revalidateOnReconnect: false,
   errorRetryCount: 0,
 };
-const filterWarehouse = createFilter<NpWarehouse>();
 export const DESTINATION_FIELDS = [
   "destination",
   "branchRef",
+  "branchSearch",
   "streetRef",
   "streetSearch",
   "building",
@@ -131,41 +130,58 @@ function WarehouseField({
   disabled: boolean;
 }) {
   const { setValue, clearErrors } = useFormContext<CheckoutFormValues>();
+  const [query, setQuery] = useState("");
   const [warehouse, setWarehouse] = useState<NpWarehouse | null>(null);
+  // The CRM searches the whole city; an empty query is its first page.
+  const [warehouseSearch] = useDebounce(query.trim(), 350);
+  const waiting = query.trim() !== warehouseSearch;
   const warehouses = useSWR(
-    { kind: "warehouses", cityRef },
-    ({ cityRef }) => fetchLookup(() => listWarehousesAction(cityRef)),
+    waiting ? null : { kind: "warehouses", cityRef, query: warehouseSearch },
+    ({ cityRef, query }) =>
+      fetchLookup(() => searchWarehousesAction(cityRef, query)),
     LOOKUP_OPTIONS,
   );
+  const shown = warehouses.data?.items.length ?? 0;
+  const total = warehouses.data?.total ?? 0;
 
   return (
     <LookupSelect<NpWarehouse>
       name="branchRef"
       label="Пункт отримання"
       placeholder="Оберіть відділення або поштомат"
-      hint="Введіть номер відділення чи поштомату або частину адреси."
-      value={warehouse}
-      options={warehouses.data ?? []}
-      filterOption={(option, input) =>
-        /^\d+$/.test(input.trim())
-          ? option.data.number === input.trim()
-          : filterWarehouse(option, input)
+      hint={
+        total > shown
+          ? `Показано ${shown} з ${total}. Введіть номер або частину адреси, щоб знайти свій пункт.`
+          : "Введіть номер відділення чи поштомату або частину адреси."
       }
-      isDisabled={disabled || warehouses.isLoading}
-      isLoading={warehouses.isLoading}
+      value={warehouse}
+      inputValue={query}
+      options={warehouses.data?.items ?? []}
+      filterOption={null}
+      isDisabled={disabled}
+      isLoading={waiting || warehouses.isLoading}
       lookupError={warehouses.error}
       retry={warehouses.mutate}
       noOptionsMessage={() =>
         warehouses.error
           ? "Не вдалося завантажити пункти отримання"
-          : warehouses.data?.length
-            ? "Нічого не знайдено. Перевірте номер або адресу."
-            : "У цьому населеному пункті немає доступних пунктів отримання."
+          : waiting || warehouses.isLoading
+            ? "Завантажуємо…"
+            : warehouseSearch
+              ? "Нічого не знайдено. Перевірте номер або адресу."
+              : "У цьому населеному пункті немає доступних пунктів отримання."
       }
+      onInputChange={(value, meta) => {
+        if (meta.action === "input-change") setQuery(value.slice(0, 100));
+        else if (meta.action === "menu-close") setQuery("");
+      }}
       onChange={(option) => {
         setWarehouse(option);
+        // Checkout re-runs this search to confirm the point was offered.
+        setValue("branchSearch", option ? warehouseSearch : "");
         setValue("destination", option?.label ?? "");
-        clearErrors("destination");
+        clearErrors(["branchSearch", "destination"]);
+        setQuery("");
       }}
     />
   );

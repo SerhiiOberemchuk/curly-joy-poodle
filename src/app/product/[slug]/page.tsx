@@ -71,7 +71,10 @@ async function ProductPhotos({ params }: { params: ProductParams }) {
 async function ProductSummary({ params }: { params: ProductParams }) {
   // Read purchase availability on navigation, rather than at build/prefetch time.
   await connection();
-  const product = await getCurrentProduct((await params).slug);
+  const { slug } = await params;
+  // If the CRM cannot answer right now, the listing's copy keeps the page
+  // usable; adding to the cart re-checks stock against the CRM either way.
+  const product = await getCurrentProduct(slug).catch(() => getProduct(slug));
   if (!product) notFound();
 
   return (

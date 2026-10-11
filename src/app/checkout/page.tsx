@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
+import { readCartCookie } from "@/features/cart/cart-cookie";
 import { CartSummary } from "@/features/cart/components/cart-summary";
-import { getCart } from "@/features/cart/queries";
-import { getCapabilities } from "@/features/checkout/crm";
+import { loadCart } from "@/features/cart/queries";
 import { createCheckoutToken } from "@/features/checkout/checkout-attempt";
 import {
   availableDeliveries,
@@ -39,35 +39,38 @@ export default function Page() {
   );
 }
 
+function EmptyCart() {
+  return (
+    <section className={styles.empty}>
+      <h2>Кошик порожній</h2>
+      <p>Спочатку додайте товари, а потім поверніться до оформлення.</p>
+      <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
+        Перейти до каталогу
+      </Link>
+    </section>
+  );
+}
+
 async function CheckoutContent() {
-  const cart = await getCart();
+  const stored = await readCartCookie();
+  if (stored.length === 0) return <EmptyCart />;
 
-  if (cart.isEmpty) {
-    return (
-      <section className={styles.empty}>
-        <h2>Кошик порожній</h2>
-        <p>Спочатку додайте товари, а потім поверніться до оформлення.</p>
-        <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
-          Перейти до каталогу
-        </Link>
-      </section>
-    );
-  }
-
-  let capabilities;
+  let loaded;
   try {
-    capabilities = await getCapabilities();
+    loaded = await loadCart(stored);
   } catch {
     return (
       <section className={styles.empty}>
         <h2>Оформлення тимчасово недоступне</h2>
         <p>
-          Не вдалося завантажити способи доставки та оплати. Спробуйте ще раз
-          пізніше.
+          Не вдалося перевірити товари, доставку та оплату. Ваш кошик збережено
+          — спробуйте ще раз за кілька хвилин.
         </p>
       </section>
     );
   }
+  const { cart, capabilities } = loaded;
+  if (cart.isEmpty) return <EmptyCart />;
   if (
     capabilities.cart.currency !== "UAH" ||
     !availableDeliveries(capabilities).length ||

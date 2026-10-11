@@ -3,17 +3,11 @@ import Link from "next/link";
 import { Price } from "@/components/ui/price";
 import { ProductArtwork } from "@/features/catalog/components/product-artwork";
 
-import { removeLineAction, setLineQuantityAction } from "../actions";
 import type { CartLine } from "../types";
+import { CartLineControls } from "./cart-line-controls";
 import styles from "./cart-view.module.css";
 
-/**
- * Plain forms rather than a client component: quantity changes keep working
- * without JavaScript, and the server stays the only source of truth for stock.
- */
 export function CartLineItem({ line }: { line: CartLine }) {
-  const ceiling = line.maxQuantity;
-
   return (
     <article className={styles.line}>
       <ProductArtwork image={line.image} size="sm" decorative />
@@ -35,57 +29,8 @@ export function CartLineItem({ line }: { line: CartLine }) {
           <p className={styles.lineMeta}>У наявності: {line.maxQuantity} шт.</p>
         ) : null}
 
-        <div className={styles.lineControls}>
-          <div className={styles.stepper}>
-            <QuantityButton
-              line={line}
-              quantity={line.quantity - 1}
-              label="Зменшити кількість"
-              symbol="−"
-              disabled={line.quantity <= 1}
-            />
-            <span className={styles.stepperValue}>{line.quantity}</span>
-            <QuantityButton
-              line={line}
-              quantity={line.quantity + 1}
-              label="Збільшити кількість"
-              symbol="+"
-              disabled={ceiling !== null && line.quantity >= ceiling}
-            />
-          </div>
-
-          <form action={removeLineAction}>
-            <input type="hidden" name="variantId" value={line.variantId} />
-            <button type="submit" className={styles.remove} aria-label={`Видалити ${line.title}`}>
-              Видалити
-            </button>
-          </form>
-        </div>
+        <CartLineControls line={line} />
       </div>
     </article>
-  );
-}
-
-function QuantityButton({
-  line,
-  quantity,
-  label,
-  symbol,
-  disabled,
-}: {
-  line: CartLine;
-  quantity: number;
-  label: string;
-  symbol: string;
-  disabled: boolean;
-}) {
-  return (
-    <form action={setLineQuantityAction}>
-      <input type="hidden" name="variantId" value={line.variantId} />
-      <input type="hidden" name="quantity" value={quantity} />
-      <button type="submit" className={styles.stepperButton} aria-label={`${label}: ${line.title}`} disabled={disabled}>
-        {symbol}
-      </button>
-    </form>
   );
 }

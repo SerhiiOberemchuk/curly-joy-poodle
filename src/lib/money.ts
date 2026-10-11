@@ -5,12 +5,15 @@
 
 export const CURRENCY = "UAH" as const;
 
+// Whole hryvnias without kopiyky («420 ₴»); otherwise always two digits
+// («420,50 ₴», never «420,5 ₴»).
 const formatter = new Intl.NumberFormat("uk-UA", {
   style: "currency",
   currency: CURRENCY,
   currencyDisplay: "narrowSymbol",
-  minimumFractionDigits: 0,
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  trailingZeroDisplay: "stripIfInteger",
 });
 
 export function formatMoney(minorUnits: number): string {

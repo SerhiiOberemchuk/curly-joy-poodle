@@ -40,9 +40,6 @@ export const b2bRequestSchema = z.object({
   city: z.string().trim().max(120),
   website: z.string().trim().max(200),
   message: z.string().trim().max(1000, "Не більше 1000 символів"),
-  // Generated once per form in the browser: a double submit reaches the CRM
-  // with the same key and returns the lead it already created.
-  requestId: z.uuid(),
 });
 export type B2bRequestValues = z.input<typeof b2bRequestSchema>;
 export type B2bRequestField = keyof B2bRequestValues;

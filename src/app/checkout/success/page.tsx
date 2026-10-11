@@ -13,6 +13,10 @@ import { paymentLabel } from "@/features/checkout/options";
 import { currentReceipt } from "@/features/checkout/payment/settlement";
 import { readPaymentReceipt } from "@/features/checkout/payment/return-receipt";
 import { readPaymentReturnToken } from "@/features/checkout/payment/return-token";
+import {
+  awaitsCardPayment,
+  PAYMENT_SETUP_FAILED,
+} from "@/features/checkout/payment/status";
 import type { PaymentStatus } from "@/features/checkout/types";
 import { formatMoney } from "@/lib/money";
 import styles from "./success.module.css";
@@ -39,6 +43,8 @@ async function Receipt({
   await connection();
   const query = await searchParams;
   const token = typeof query.token === "string" ? query.token : undefined;
+  // Set by checkout when the bank could not be opened on this attempt.
+  const paymentUnavailable = query.payment === "unavailable";
   let receipt;
   try {
     receipt = await readPaymentReceipt(token);
@@ -62,8 +68,11 @@ async function Receipt({
     !unavailable &&
     order?.status !== "cancelled" &&
     receipt.payment === "card" &&
-    (status === "pending" || status === "failed");
-  const waiting = receipt.payment === "card" && status === "pending";
+    awaitsCardPayment(status);
+  // Only a payment the buyer actually started is worth waiting for.
+  const setupFailed = canPay && paymentUnavailable;
+  const waiting =
+    receipt.payment === "card" && status === "pending" && !setupFailed;
   const title = unavailable
     ? "Статус тимчасово недоступний"
     : status === "cancelled" || order?.status === "cancelled"
@@ -74,12 +83,14 @@ async function Receipt({
           ? "Оплату не завершено"
           : waiting
             ? "Очікуємо підтвердження"
-            : "Замовлення прийнято";
+            : canPay
+              ? "Замовлення очікує оплати"
+              : "Замовлення прийнято";
   return (
     <section className={styles.card}>
       {!unavailable && !waiting ? (
         <span className={styles.glyph} aria-hidden="true">
-          {status === "failed" || status === "cancelled" ? "!" : "✓"}
+          {canPay || status === "cancelled" ? "!" : "✓"}
         </span>
       ) : null}
       <p className={styles.eyebrow}>Ваше замовлення</p>
@@ -90,7 +101,9 @@ async function Receipt({
       <p className={styles.text}>
         {unavailable
           ? "Не вдалося оновити статус. Ваше замовлення збережено — спробуйте ще раз."
-          : receipt.note}
+          : setupFailed
+            ? PAYMENT_SETUP_FAILED
+            : receipt.note}
       </p>
       <PaymentStatusPoller
         key={receipt.number}
@@ -175,6 +188,7 @@ async function Receipt({
   );
 }
 const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  unpaid: "Не оплачено",
   paid: "Оплачено",
   pending: "Очікуємо підтвердження банку",
   "not-required": "При отриманні",

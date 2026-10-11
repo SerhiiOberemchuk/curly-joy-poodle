@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
 import { readString } from "@/lib/form";
 import type { B2bRequestState } from "./action-state";
@@ -14,8 +16,20 @@ const FIELDS = [
   "city",
   "website",
   "message",
-  "requestId",
 ] as const satisfies readonly B2bRequestField[];
+
+/**
+ * The CRM's idempotency key for a request. A double submit, or a retry after a
+ * lost response, carries the same content and gets the lead the CRM already
+ * has; a corrected request is a new one — reusing the key with other content
+ * would be refused by the CRM. The day keeps the same text sent again weeks
+ * later from being folded into an old lead.
+ */
+function requestKey(request: Record<B2bRequestField, string>): string {
+  const day = new Date().toISOString().slice(0, 10);
+  const content = JSON.stringify([day, ...FIELDS.map((name) => request[name])]);
+  return createHash("sha256").update(content).digest("hex");
+}
 
 /**
  * A wholesale access request becomes a CRM lead filed under the workspace's
@@ -54,7 +68,7 @@ export async function submitB2bRequest(
 
   try {
     await crmRequest("/leads", {
-      externalId: `b2b-${request.requestId}`,
+      externalId: `b2b-${requestKey(request)}`,
       name: request.contactName,
       companyName: request.companyName,
       email: request.email,

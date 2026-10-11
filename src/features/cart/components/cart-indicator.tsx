@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getCart } from "../queries";
+import { getCartItemCount } from "../queries";
 import styles from "./cart-indicator.module.css";
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -35,12 +35,12 @@ export function CartIndicatorFallback() {
 }
 
 export async function CartIndicator() {
-  const cart = await getCart();
+  const count = await getCartItemCount();
 
   return (
     <Shell>
-      <span className={styles.count} aria-label={`Товарів у кошику: ${cart.itemCount}`}>
-        {cart.itemCount}
+      <span className={styles.count} aria-label={`Товарів у кошику: ${count}`}>
+        {count}
       </span>
     </Shell>
   );

@@ -37,6 +37,7 @@ const defaultValues: CheckoutFormValues = {
   cityRef: "",
   citySearch: "",
   branchRef: "",
+  branchSearch: "",
   streetRef: "",
   streetSearch: "",
   building: "",

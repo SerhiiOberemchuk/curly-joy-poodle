@@ -14,14 +14,23 @@ export const FIELD_LIMITS = {
 export function normalizePhone(raw: string): string | null {
   if (!/^[+\d\s()-]+$/.test(raw)) return null;
   const digits = raw.replace(/\D/g, "");
-  if (digits.length === 12 && digits.startsWith("380")) return `+${digits}`;
-  if (digits.length === 10 && digits.startsWith("0")) return `+38${digits}`;
-  if (digits.length === 9) return `+380${digits}`;
-  return null;
+  const national =
+    digits.length === 12 && digits.startsWith("380")
+      ? digits.slice(3)
+      : digits.length === 10 && digits.startsWith("0")
+        ? digits.slice(1)
+        : digits.length === 9
+          ? digits
+          : null;
+  // A Ukrainian number is +380 and nine digits that never start with 0:
+  // «067 440 439» is a mistyped mobile number, not +380067440439.
+  return national && /^[1-9]\d{8}$/.test(national) ? `+380${national}` : null;
 }
 
 export const carrierRefSchema = z.uuid({ error: "Оберіть значення зі списку" });
 const searchSchema = z.string().trim().max(120);
+/** Branch number or part of the address; empty lists the city's first points. */
+export const warehouseSearchSchema = z.string().trim().max(100);
 const optionalRefSchema = z.union([carrierRefSchema, z.literal("")]);
 
 export const checkoutSchema = z
@@ -53,6 +62,7 @@ export const checkoutSchema = z
     citySearch: searchSchema.min(2, "Оберіть населений пункт зі списку"),
     destination: z.string().max(FIELD_LIMITS.destination),
     branchRef: optionalRefSchema,
+    branchSearch: warehouseSearchSchema,
     streetRef: optionalRefSchema,
     streetSearch: searchSchema,
     building: z.string().trim().max(11),

@@ -60,6 +60,26 @@ export function availableDeliveries(capabilities: CrmCapabilities) {
     ),
   );
 }
+/**
+ * The CRM's cart terms for hryvnia, in kopiyky; null where the CRM sets none.
+ * The per-currency rule wins, and the top-level one applies only while it is
+ * itself for UAH. The cart, its summary and the saved order all read these, so
+ * a buyer is never shown free shipping the order then charges for.
+ */
+export function hryvniaCartTerms(capabilities: CrmCapabilities): {
+  freeShippingThreshold: number | null;
+  minOrderAmount: number | null;
+} {
+  const rule =
+    capabilities.cart.byCurrency.find((entry) => entry.currency === "UAH") ??
+    (capabilities.cart.currency === "UAH" ? capabilities.cart : null);
+  const kopiyky = (amount: number | null | undefined) =>
+    amount === null || amount === undefined ? null : Math.round(amount * 100);
+  return {
+    freeShippingThreshold: kopiyky(rule?.freeShippingThreshold),
+    minOrderAmount: kopiyky(rule?.minOrderAmount),
+  };
+}
 export function paymentLabel(method: PaymentMethod): string {
   return (
     paymentOptions.find((option) => option.value === method)?.label ?? method

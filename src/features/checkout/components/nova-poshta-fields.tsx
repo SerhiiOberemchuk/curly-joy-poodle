@@ -41,9 +41,15 @@ export const DESTINATION_FIELDS = [
 export function NovaPoshtaFields({
   method,
   disabled,
+  courierOffered,
+  onCityChange,
 }: {
   method: DeliveryMethod;
   disabled: boolean;
+  /** Whether the shop offers courier delivery at all. */
+  courierOffered: boolean;
+  /** The form disables courier delivery for a city Nova Poshta refuses. */
+  onCityChange: (city: NpCity | null) => void;
 }) {
   const { setValue, clearErrors } = useFormContext<CheckoutFormValues>();
   const [query, setQuery] = useState("");
@@ -63,7 +69,11 @@ export function NovaPoshtaFields({
         name="cityRef"
         label="Населений пункт"
         placeholder="Введіть щонайменше 2 літери"
-        hint="Почніть вводити назву та оберіть населений пункт зі списку."
+        hint={
+          courierOffered && city?.courierAvailable === false
+            ? "Кур’єр Нової пошти сюди не доставляє — лише відділення та поштомати."
+            : "Почніть вводити назву та оберіть населений пункт зі списку."
+        }
         value={city}
         inputValue={query}
         options={cities.data ?? []}
@@ -87,6 +97,7 @@ export function NovaPoshtaFields({
         }}
         onChange={(option) => {
           setCity(option);
+          onCityChange(option);
           setValue("city", option?.label ?? "");
           setValue("citySearch", option ? citySearch : "");
           for (const name of DESTINATION_FIELDS) setValue(name, "");
@@ -169,7 +180,7 @@ function WarehouseField({
             ? "Завантажуємо…"
             : warehouseSearch
               ? "Нічого не знайдено. Перевірте номер або адресу."
-              : "У цьому населеному пункті немає доступних пунктів отримання."
+              : "Нова пошта зараз не має тут відділень і поштоматів. Оберіть найближчий населений пункт, де вони є."
       }
       onInputChange={(value, meta) => {
         if (meta.action === "input-change") setQuery(value.slice(0, 100));

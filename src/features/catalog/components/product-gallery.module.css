@@ -8,6 +8,43 @@
 .thumbs {
   display: flex;
   gap: var(--space-3);
+  overflow-x: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+}
+
+.videos {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+.video {
+  overflow: hidden;
+  border: 1px solid #e5d8ce;
+  border-radius: 18px;
+  background: #fffaf5;
+}
+.video summary {
+  padding: 16px 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.video summary span {
+  margin-right: 8px;
+  color: #795446;
+}
+.video iframe,
+.video video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #221a16;
+}
+.videoLink {
+  display: block;
+  padding: 0 20px 20px;
+  text-decoration: underline;
 }
 
 .thumb {
@@ -16,7 +53,9 @@
   border-radius: 16px;
   overflow: hidden;
   border: 2px solid transparent;
-  transition: border-color var(--transition), opacity var(--transition);
+  transition:
+    border-color var(--transition),
+    opacity var(--transition);
   opacity: 0.7;
 }
 

@@ -17,10 +17,17 @@
   font: 400 30px/1.2 var(--home-script);
 }
 
-.note span { color: #c5867b; }
+.note span {
+  color: #c5867b;
+}
 
-.related { padding-top: 48px; }
-.related h2 { margin-bottom: 26px; font-size: clamp(30px, 3vw, 44px); }
+.related {
+  padding-top: 48px;
+}
+.related h2 {
+  margin-bottom: 26px;
+  font-size: clamp(30px, 3vw, 44px);
+}
 
 .breadcrumbs {
   display: flex;
@@ -65,6 +72,73 @@
 
 .summarySkeleton {
   min-height: 300px;
+}
+
+.summaryActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.reviewLink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #795446;
+}
+.reviewLink:hover {
+  text-decoration: underline;
+}
+.favorite {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border: 1px solid #d7bfb2;
+  border-radius: 50%;
+  background: #fffaf5;
+  color: #795446;
+}
+.favorite:hover {
+  background: #f1ddd5;
+}
+.favorite[aria-pressed="true"] svg {
+  fill: #c5867b;
+  stroke: #8d5247;
+}
+.trust {
+  display: grid;
+  gap: 14px;
+  padding-top: 22px;
+  border-top: 1px solid #dfcbbf;
+}
+.trust li {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.trust svg {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  color: #795446;
+}
+.trust strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.trust span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #79675b;
+}
+.trust a:hover strong {
+  text-decoration: underline;
 }
 
 .line {
@@ -124,8 +198,12 @@
   padding-inline-start: 1.25em;
 }
 
-.description ul { list-style: disc; }
-.description ol { list-style: decimal; }
+.description ul {
+  list-style: disc;
+}
+.description ol {
+  list-style: decimal;
+}
 
 .description strong {
   font-weight: 600;
@@ -171,10 +249,19 @@
 }
 
 @media (width < 600px) {
-  .page { padding-top: 12px; }
-  .info { border-radius: 24px; padding: 22px 18px; }
-  .layout { gap: 24px; }
-  .details { gap: 28px; }
+  .page {
+    padding-top: 12px;
+  }
+  .info {
+    border-radius: 24px;
+    padding: 22px 18px;
+  }
+  .layout {
+    gap: 24px;
+  }
+  .details {
+    gap: 28px;
+  }
 }
 
 @media (width >= 900px) {

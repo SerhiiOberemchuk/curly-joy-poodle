@@ -46,6 +46,8 @@ export interface Product {
   descriptionHtml: string;
   attributes: readonly ProductAttribute[];
   images: readonly ProductImage[];
+  /** HTTPS video links published by the merchant in the CRM. */
+  videos: readonly string[];
   /** What the variant labels name, e.g. «Розмір». */
   optionName: string;
   variants: readonly ProductVariant[];

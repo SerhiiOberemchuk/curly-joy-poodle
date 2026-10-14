@@ -22,6 +22,12 @@ export const npCitySchema = z.object({
   ref: z.uuid(),
   settlementRef: z.uuid(),
   label: z.string(),
+  /**
+   * False when Nova Poshta does not deliver to a street address here (it still
+   * lists frontline villages). Absent means unknown — an older CRM or a cached
+   * lookup — and is not treated as a refusal.
+   */
+  courierAvailable: z.boolean().optional(),
 });
 export const npWarehouseSchema = z.object({
   ref: z.uuid(),

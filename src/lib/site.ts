@@ -10,6 +10,8 @@ export interface PaymentMark {
   href?: string;
 }
 
+export interface MessengerLink { label: string; href: string }
+
 export const site = {
   name: "Curly Joy Store",
   /** Торгова марка. Саме вона стоїть у © футера — реквізити ФОП живуть у `legal`. */
@@ -29,6 +31,8 @@ export const site = {
    */
   address: "02005, м. Київ, вул. Каховська, 62",
   workingHours: "Пн–Пт, 9:00–18:00",
+  /** Add the merchant's real Telegram/Viber/WhatsApp links when supplied. */
+  messengers: [] as readonly MessengerLink[],
   socials: [
     { label: "Instagram", href: "https://www.instagram.com/curly_joy_poodle" },
     {

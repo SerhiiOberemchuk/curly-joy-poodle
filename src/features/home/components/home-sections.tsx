@@ -144,20 +144,14 @@ export async function HomeCategories() {
               ) : null}
             </span>
             <div className={styles.categoryCaption}>
-              <svg
-                className={styles.categoryCaptionShape}
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path d="M0 14C18 4 42 1 64 5C83 8 100 11 100 22V100H0Z" />
-              </svg>
-              <h3>{category.title}</h3>
-              {category.description ? <p>{category.description}</p> : null}
+              <div>
+                <h3>{category.title}</h3>
+                {category.description ? <p>{category.description}</p> : null}
+              </div>
+              <span className={styles.categoryArrow} aria-hidden="true">
+                <Icon name="arrow" />
+              </span>
             </div>
-            <span className={styles.roundArrow}>
-              <Icon name="arrow" />
-            </span>
           </Link>
         ))}
       </div>

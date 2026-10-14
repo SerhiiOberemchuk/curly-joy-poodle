@@ -4,6 +4,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { QuickContact } from "@/components/layout/quick-contact";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
 import { site } from "@/lib/site";
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 {children}
               </main>
               <SiteFooter />
+              <QuickContact />
             </FavoritesProvider>
           </div>
         </NuqsAdapter>

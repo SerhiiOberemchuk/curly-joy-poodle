@@ -23,6 +23,25 @@
   position: relative;
 }
 
+.favorite {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #eaded5;
+  border-radius: 50%;
+  background: #fffaf5;
+  color: #795446;
+  box-shadow: var(--shadow-sm);
+}
+
+.favorite:hover { background: #f1ddd5; }
+.favorite[aria-pressed="true"] svg { fill: #c5867b; stroke: #8d5247; }
+
 .soldOut {
   position: absolute;
   inset: 0;

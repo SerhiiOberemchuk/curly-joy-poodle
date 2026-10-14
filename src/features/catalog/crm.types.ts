@@ -24,6 +24,7 @@ export const crmProductSchema = priceSchema.extend({
   descriptionHtml: z.string().nullable(),
   attributes: z.array(z.object({ name: z.string(), unit: z.string().nullable(), value: z.string() })),
   images: z.array(z.object({ url: z.url({ protocol: /^https?$/ }), alt: z.string().nullable() })),
+  videos: z.array(z.object({ url: z.url({ protocol: /^https$/ }) })).default([]),
   brand: namedEntity.nullable(),
   category: namedEntity.extend({ parentId: z.string().nullable() }).nullable(),
 });

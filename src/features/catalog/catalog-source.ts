@@ -10,6 +10,7 @@ import {
   type CrmProduct,
 } from "./crm-api";
 import type { Category, Product, ProductImage, ProductVariant } from "./types";
+import { videoSource } from "./video";
 
 /**
  * Builds the storefront catalog from the client's obriym-crm account. The CRM
@@ -128,6 +129,13 @@ function buildProduct(
         : attribute.value,
     })),
     images: imagesOf(members, title),
+    videos: [
+      ...new Set(
+        members
+          .flatMap((item) => (item.videos ?? []).map((video) => video.url))
+          .filter((url) => videoSource(url) !== null),
+      ),
+    ],
     optionName,
     variants,
   };
@@ -155,11 +163,12 @@ function priceOf(
 }
 
 function stockOf(item: CrmProduct): Pick<ProductVariant, "stock" | "inStock"> {
-  const stock = item.stock === null
-    ? null
-    : typeof item.stock === "number" && Number.isFinite(item.stock)
-      ? Math.max(0, Math.floor(item.stock))
-      : 0;
+  const stock =
+    item.stock === null
+      ? null
+      : typeof item.stock === "number" && Number.isFinite(item.stock)
+        ? Math.max(0, Math.floor(item.stock))
+        : 0;
   return {
     stock,
     inStock:
@@ -331,4 +340,3 @@ function summarize(description: string, maxLength = 160): string {
   const lastSpace = cut.lastIndexOf(" ");
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–—-]+$/, "")}…`;
 }
-

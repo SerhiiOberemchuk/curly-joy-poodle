@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { startTransition, useActionState, useEffect, useId } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useId,
+  useState,
+} from "react";
 import {
   useForm,
   FormProvider,
@@ -18,7 +24,7 @@ import { formatMoney } from "@/lib/money";
 import { initialCheckoutState } from "../action-state";
 import { placeOrderAction } from "../actions";
 import { availableDeliveries, availablePayments } from "../options";
-import type { CrmCapabilities } from "../crm/types";
+import type { CrmCapabilities, NpCity } from "../crm/types";
 import { DESTINATION_FIELDS, NovaPoshtaFields } from "./nova-poshta-fields";
 import {
   checkoutSchema,
@@ -86,6 +92,24 @@ export function CheckoutForm({
 
   const delivery = useWatch({ control, name: "delivery" });
   const payment = useWatch({ control, name: "payment" });
+
+  // Nova Poshta lists settlements it does not deliver to an address in (front-
+  // line villages). Courier delivery is then switched off for that city rather
+  // than offered and refused at checkout; the server checks it again.
+  const [courierBlocked, setCourierBlocked] = useState(false);
+  const courierOffered = deliveryOptions.some(
+    (option) => option.value === "np-courier",
+  );
+  const branchOffered = deliveryOptions.some(
+    (option) => option.value === "np-branch",
+  );
+  function handleCityChange(city: NpCity | null) {
+    const blocked = city?.courierAvailable === false;
+    setCourierBlocked(blocked);
+    if (blocked && delivery === "np-courier" && branchOffered) {
+      setValue("delivery", "np-branch");
+    }
+  }
 
   // Server-side errors are handed to react-hook-form so they behave like any
   // other field error: they focus the first offender and clear as it is fixed.
@@ -175,27 +199,44 @@ export function CheckoutForm({
           </legend>
 
           <div className={styles.options}>
-            {deliveryOptions.map((option) => (
-              <label key={option.value} className={styles.option}>
-                <input
-                  type="radio"
-                  value={option.value}
-                  {...register("delivery", {
-                    onChange: () => {
-                      for (const name of DESTINATION_FIELDS) setValue(name, "");
-                      clearErrors([...DESTINATION_FIELDS]);
-                    },
-                  })}
-                />
-                <span className={styles.optionBody}>
-                  <span className={styles.optionLabel}>{option.label}</span>
-                  <span className={styles.optionHint}>{option.hint}</span>
-                </span>
-              </label>
-            ))}
+            {deliveryOptions.map((option) => {
+              const unavailable =
+                option.value === "np-courier" && courierBlocked;
+              return (
+                <label key={option.value} className={styles.option}>
+                  <input
+                    type="radio"
+                    value={option.value}
+                    // Only when another way remains: a disabled checked radio
+                    // would submit no delivery method at all.
+                    disabled={unavailable && branchOffered}
+                    {...register("delivery", {
+                      onChange: () => {
+                        for (const name of DESTINATION_FIELDS)
+                          setValue(name, "");
+                        clearErrors([...DESTINATION_FIELDS]);
+                      },
+                    })}
+                  />
+                  <span className={styles.optionBody}>
+                    <span className={styles.optionLabel}>{option.label}</span>
+                    <span className={styles.optionHint}>
+                      {unavailable
+                        ? "Недоступно: Нова пошта не доставляє кур’єром в обраний населений пункт."
+                        : option.hint}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
 
-          <NovaPoshtaFields method={delivery} disabled={isPending} />
+          <NovaPoshtaFields
+            method={delivery}
+            disabled={isPending}
+            courierOffered={courierOffered}
+            onCityChange={handleCityChange}
+          />
           {delivery === "np-courier" ? (
             <div className={`${styles.row} ${styles.rowTwo}`}>
               <Field

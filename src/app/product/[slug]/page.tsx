@@ -3,12 +3,31 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { Icon } from "@/components/ui/icon";
+import { FavoriteToggle } from "@/features/favorites/favorites";
+import { ProductReviews } from "@/features/reviews/components/product-reviews";
+import { ReviewStars } from "@/features/reviews/components/review-stars";
+import { demoReviews, reviewSummary } from "@/features/reviews/demo";
+import { getProductFreeShippingThreshold } from "@/features/catalog/delivery.server";
+import { formatMoney } from "@/lib/money";
 
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
-import { ProductGallery, ProductGallerySkeleton } from "@/features/catalog/components/product-gallery";
+import {
+  ProductGallery,
+  ProductGallerySkeleton,
+} from "@/features/catalog/components/product-gallery";
 import { ProductGrid } from "@/features/catalog/components/product-grid";
-import { getProduct, getProductCategory, getProductSlugs, getRecentProduct, getRelatedProducts } from "@/features/catalog/queries";
-import { productJsonLd, serializeJsonLd } from "@/features/catalog/structured-data";
+import {
+  getProduct,
+  getProductCategory,
+  getProductSlugs,
+  getRecentProduct,
+  getRelatedProducts,
+} from "@/features/catalog/queries";
+import {
+  productJsonLd,
+  serializeJsonLd,
+} from "@/features/catalog/structured-data";
 import type { Product } from "@/features/catalog/types";
 
 import styles from "./product.module.css";
@@ -20,10 +39,14 @@ type ProductParams = PageProps<"/product/[slug]">["params"];
 
 export async function generateStaticParams() {
   const slugs = await getProductSlugs();
-  return (slugs.length > 0 ? slugs : [EMPTY_CATALOG_SLUG]).map((slug) => ({ slug }));
+  return (slugs.length > 0 ? slugs : [EMPTY_CATALOG_SLUG]).map((slug) => ({
+    slug,
+  }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/product/[slug]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/product/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) notFound();
@@ -40,7 +63,9 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
       title: product.title,
       description: product.summary || undefined,
       url: `/product/${product.slug}`,
-      ...(photo?.src ? { images: [{ url: photo.src, alt: product.title }] } : {}),
+      ...(photo?.src
+        ? { images: [{ url: photo.src, alt: product.title }] }
+        : {}),
     },
   };
 }
@@ -57,7 +82,11 @@ async function ProductCrumbs({ params }: { params: ProductParams }) {
 
   return (
     <>
-      {category ? <li><Link href={`/catalog/${category.slug}`}>{category.title}</Link></li> : null}
+      {category ? (
+        <li>
+          <Link href={`/catalog/${category.slug}`}>{category.title}</Link>
+        </li>
+      ) : null}
       <li aria-current="page">{product.title}</li>
     </>
   );
@@ -65,7 +94,13 @@ async function ProductCrumbs({ params }: { params: ProductParams }) {
 
 async function ProductPhotos({ params }: { params: ProductParams }) {
   const product = await loadProduct(params);
-  return <ProductGallery images={product.images} />;
+  return (
+    <ProductGallery
+      key={product.id}
+      images={product.images}
+      videos={product.videos}
+    />
+  );
 }
 
 async function ProductSummary({ params }: { params: ProductParams }) {
@@ -81,17 +116,77 @@ async function ProductSummary({ params }: { params: ProductParams }) {
   return (
     <>
       {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
-      <h1 className={styles.title} id="product-title">{product.title}</h1>
-      <AddToCartForm optionName={product.optionName} variants={product.variants} />
+      <h1 className={styles.title} id="product-title">
+        {product.title}
+      </h1>
+      <div className={styles.summaryActions}>
+        <a href="#product-reviews" className={styles.reviewLink}>
+          <ReviewStars rating={reviewSummary(demoReviews).average} />
+          <span>Відгуки</span>
+        </a>
+        <FavoriteToggle
+          productId={product.id}
+          productTitle={product.title}
+          className={styles.favorite}
+        />
+      </div>
+      <AddToCartForm
+        optionName={product.optionName}
+        variants={product.variants}
+      />
     </>
   );
 }
 
+async function ProductTrust() {
+  const freeFrom = await getProductFreeShippingThreshold().catch(() => null);
+  return (
+    <ul className={styles.trust} aria-label="Доставка, обмін та оплата">
+      <li>
+        <Icon name="truck" />
+        <Link href="/info/delivery">
+          <strong>
+            {freeFrom !== null
+              ? `Безкоштовна доставка${freeFrom > 0 ? ` від ${formatMoney(freeFrom)}` : ""}`
+              : "Доставка по Україні"}
+          </strong>
+          <span>Новою поштою</span>
+        </Link>
+      </li>
+      <li>
+        <Icon name="heart" />
+        <Link href="/info/returns">
+          <strong>14 днів на обмін</strong>
+          <span>Дивитися умови</span>
+        </Link>
+      </li>
+      <li>
+        <Icon name="shield" />
+        <Link href="/info/payment">
+          <strong>Захищена оплата</strong>
+          <span>На стороні платіжного сервісу</span>
+        </Link>
+      </li>
+    </ul>
+  );
+}
+
+async function Reviews({ params }: { params: ProductParams }) {
+  const product = await loadProduct(params);
+  return <ProductReviews productId={product.id} />;
+}
+
 function ReturnsLink({ sized = false }: { sized?: boolean }) {
   return sized ? (
-    <Link href="/info/returns"><strong>Не підійшов розмір?</strong><span>Допоможемо з обміном ↗</span></Link>
+    <Link href="/info/returns">
+      <strong>Не підійшов розмір?</strong>
+      <span>Допоможемо з обміном ↗</span>
+    </Link>
   ) : (
-    <Link href="/info/returns"><strong>Повернення та обмін</strong><span>Умови повернення ↗</span></Link>
+    <Link href="/info/returns">
+      <strong>Повернення та обмін</strong>
+      <span>Умови повернення ↗</span>
+    </Link>
   );
 }
 
@@ -111,7 +206,9 @@ async function ProductDetails({ params }: { params: ProductParams }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd(product, category)) }}
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(productJsonLd(product, category)),
+        }}
       />
       {product.descriptionHtml || product.attributes.length > 0 ? (
         <section className={styles.details} aria-label="Деталі товару">
@@ -119,7 +216,10 @@ async function ProductDetails({ params }: { params: ProductParams }) {
             <div>
               <h2 className={styles.detailTitle}>Більше про цю річ</h2>
               {/* Sanitized in catalog-source: p/br/ul/ol/li/strong only, no attributes. */}
-              <div className={styles.description} dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+              <div
+                className={styles.description}
+                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+              />
             </div>
           ) : null}
           {product.attributes.length > 0 ? (
@@ -137,7 +237,12 @@ async function ProductDetails({ params }: { params: ProductParams }) {
           ) : null}
         </section>
       ) : null}
-      {related.length ? <section className={styles.related}><h2>Ще трохи радості</h2><ProductGrid products={related} /></section> : null}
+      {related.length ? (
+        <section className={styles.related}>
+          <h2>Ще трохи радості</h2>
+          <ProductGrid products={related} />
+        </section>
+      ) : null}
     </>
   );
 }
@@ -147,8 +252,12 @@ export default function Page({ params }: PageProps<"/product/[slug]">) {
     <div className={styles.page}>
       <nav aria-label="Навігаційний ланцюжок">
         <ol className={styles.breadcrumbs}>
-          <li><Link href="/">Головна</Link></li>
-          <li><Link href="/catalog">Каталог</Link></li>
+          <li>
+            <Link href="/">Головна</Link>
+          </li>
+          <li>
+            <Link href="/catalog">Каталог</Link>
+          </li>
           <Suspense fallback={null}>
             <ProductCrumbs params={params} />
           </Suspense>
@@ -159,14 +268,22 @@ export default function Page({ params }: PageProps<"/product/[slug]">) {
           <Suspense fallback={<ProductGallerySkeleton />}>
             <ProductPhotos params={params} />
           </Suspense>
-          <p className={styles.note}>Для щасливих хвостиків <span aria-hidden="true">♡</span></p>
+          <p className={styles.note}>
+            Для щасливих хвостиків <span aria-hidden="true">♡</span>
+          </p>
         </div>
         <section className={styles.info} aria-labelledby="product-title">
           <Suspense fallback={<div className={styles.summarySkeleton} />}>
             <ProductSummary params={params} />
           </Suspense>
+          <Suspense fallback={null}>
+            <ProductTrust />
+          </Suspense>
           <div className={styles.shipping}>
-            <Link href="/info/delivery"><strong>Доставка</strong><span>Способи та умови відправлення ↗</span></Link>
+            <Link href="/info/delivery">
+              <strong>Доставка</strong>
+              <span>Способи та умови відправлення ↗</span>
+            </Link>
             <Suspense fallback={<ReturnsLink />}>
               <ProductReturnsLink params={params} />
             </Suspense>
@@ -175,6 +292,9 @@ export default function Page({ params }: PageProps<"/product/[slug]">) {
       </div>
       <Suspense fallback={null}>
         <ProductDetails params={params} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Reviews params={params} />
       </Suspense>
     </div>
   );

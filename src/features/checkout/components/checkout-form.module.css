@@ -167,6 +167,22 @@
   background: var(--color-sand);
 }
 
+/* A carrier refuses this address — shown, with the reason, not hidden. */
+/* No opacity: the hint says WHY, and must stay readable. */
+.option:has(input:disabled) {
+  border-color: var(--color-line);
+  cursor: not-allowed;
+}
+
+.option:has(input:disabled) input[type="radio"] {
+  border-color: var(--color-line);
+  cursor: not-allowed;
+}
+
+.option:has(input:disabled) .optionLabel {
+  color: var(--color-ink-muted);
+}
+
 .optionBody {
   min-width: 0;
   overflow-wrap: anywhere;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Price } from "@/components/ui/price";
+import { FavoriteToggle } from "@/features/favorites/favorites";
 
 import type { ProductListItem } from "../types";
 import { ProductArtwork } from "./product-artwork";
@@ -12,6 +13,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
   return (
     <article className={styles.card}>
       <div className={styles.media}>
+        <FavoriteToggle productId={product.id} productTitle={product.title} className={styles.favorite} />
         <ProductArtwork image={product.image} decorative />
 
         {product.inStock ? null : <p className={styles.soldOut}>Немає в наявності</p>}

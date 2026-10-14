@@ -229,79 +229,81 @@
 .categoryGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.8cqw;
+  gap: clamp(10px, 1.2cqw, 20px);
 }
-/* One pink surface per card: the wavy caption. The photo runs under it to the
-   bottom edge, and the card itself shares the caption colour, so a card
-   without a photo reads as one plain surface rather than two pinks. */
 .categoryCard {
-  --category-surface: #f3dfd5;
-  position: relative;
-  isolation: isolate;
-  aspect-ratio: 241 / 198;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   overflow: hidden;
-  border-radius: 1cqw;
-  background: var(--category-surface);
+  border-radius: 0;
+  border: 1px solid #e5dacf;
+  background: #fffaf6;
+  transition: border-color 180ms;
+}
+.categoryCard:hover {
+  border-color: #ae9180;
+}
+.categoryCard:focus-visible {
+  border-radius: 0;
 }
 .categoryImage {
-  position: absolute;
-  inset: 0;
-  transition: transform 300ms ease;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background: #fff;
 }
 .categoryImage img {
-  object-fit: cover;
-  object-position: center 30%;
-}
-.categoryCard:hover .categoryImage {
-  transform: scale(1.025);
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(10px, 1.2cqw, 18px);
 }
 .categoryCaption {
-  position: absolute;
-  z-index: 1;
-  inset: auto 0 0;
-  box-sizing: border-box;
-  min-height: 31%;
-  /* The right padding keeps the text clear of the arrow, which sits on the caption. */
-  padding: 1.15cqw 5.6cqw 0.9cqw 1.7cqw;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  overflow-wrap: anywhere;
+  min-height: 66px;
+  padding: clamp(14px, 1.3cqw, 20px) clamp(14px, 1.4cqw, 22px);
+  border-top: 1px solid #eee5dc;
 }
-.categoryCaptionShape {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  fill: var(--category-surface);
+.categoryCaption > div {
+  min-width: 0;
 }
 .categoryCaption h3 {
-  font-size: 1.6cqw;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-  text-wrap: initial;
+  font-size: clamp(15px, 1.25cqw, 20px);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 .categoryCaption p {
-  margin-top: 0.7cqw;
-  font-size: 1cqw;
-  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: 6px;
+  color: #79675b;
+  font-size: clamp(11px, 0.9cqw, 14px);
+  line-height: 1.5;
 }
-.roundArrow {
-  position: absolute;
-  z-index: 2;
-  right: 1cqw;
-  bottom: 1.1cqw;
+.categoryArrow {
   display: grid;
   place-items: center;
-  width: 3.5cqw;
-  height: 3.5cqw;
-  background: #fffaf6;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px #6e4b3526;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: #795446;
   transition: transform 180ms;
 }
-.roundArrow svg {
-  width: 1.8cqw;
-  height: 1.8cqw;
+.categoryArrow svg {
+  width: 100%;
+  height: 100%;
 }
-.categoryCard:hover .roundArrow {
+.categoryCard:hover .categoryArrow {
   transform: translateX(3px);
 }
 .recommendations {
@@ -681,33 +683,27 @@
   }
   .categoryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+    gap: 12px;
   }
-  .categoryCard {
-    border-radius: 10px;
-    aspect-ratio: 1 / 1.07;
+  .categoryImage {
+    aspect-ratio: 1.8 / 1;
   }
   .categoryCaption {
-    min-height: 34%;
-    padding: 15px 42px 10px 12px;
+    gap: 8px;
+    min-height: 64px;
+    padding: 12px;
   }
   .categoryCaption h3 {
-    font-size: clamp(14px, 3.6cqw, 23px);
-    line-height: 1.2;
+    font-size: clamp(14px, 2.5cqw, 16px);
+    line-height: 1.35;
   }
   .categoryCaption p {
-    font-size: clamp(10px, 2.55cqw, 15px);
-    margin-top: 7px;
+    font-size: 11px;
+    margin-top: 5px;
   }
-  .roundArrow {
-    right: 7px;
-    bottom: 11px;
-    width: 28px;
-    height: 28px;
-  }
-  .roundArrow svg {
-    width: 17px;
-    height: 17px;
+  .categoryArrow {
+    width: 16px;
+    height: 16px;
   }
   .recommendations {
     grid-template-columns: 1fr;
@@ -842,19 +838,11 @@
     width: 24px;
     height: 24px;
   }
-  .categoryCard {
-    aspect-ratio: 1 / 1.23;
-  }
   .categoryCaption {
-    padding-left: 9px;
+    padding: 10px;
   }
   .categoryCaption h3 {
     font-size: 13px;
-  }
-  .roundArrow {
-    width: 24px;
-    height: 24px;
-    right: 5px;
   }
   .promoCopy {
     padding: 18px 17px;

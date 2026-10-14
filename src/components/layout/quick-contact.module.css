@@ -1,0 +1,114 @@
+.widget {
+  position: fixed;
+  right: clamp(16px, 3vw, 36px);
+  bottom: 22px;
+  z-index: 30;
+  font-family: Arial, sans-serif;
+}
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 20px;
+  border: 1px solid #e5d8ce;
+  border-radius: 999px;
+  background: #795446;
+  color: #fffaf5;
+  box-shadow: var(--shadow-md);
+  font-size: 14px;
+}
+.trigger:hover {
+  background: #603b2c;
+}
+.trigger svg {
+  width: 22px;
+  height: 22px;
+}
+.panel {
+  position: fixed;
+  inset: auto clamp(16px, 3vw, 36px) 86px auto;
+  margin: 0;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100dvh - 110px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #e5d8ce;
+  border-radius: 24px 24px 8px 24px;
+  background: #fffaf5;
+  color: #38271f;
+  box-shadow: var(--shadow-lg);
+  font-family: Arial, sans-serif;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.heading h2 {
+  font:
+    400 32px/1.2 var(--font-home-handwriting),
+    cursive;
+  color: #603b2c;
+}
+.heading h2 span {
+  color: #ac7164;
+}
+.heading button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f2e5db;
+}
+.panel > p {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #79675b;
+}
+.links {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+.links a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f5ece3;
+  font-size: 13px;
+}
+.links a:hover {
+  background: #f1ddd5;
+}
+.links svg {
+  width: 18px;
+  height: 18px;
+}
+.panel .hours {
+  font-size: 12px;
+}
+@media (width < 600px) {
+  .trigger {
+    width: 52px;
+    padding: 14px;
+    justify-content: center;
+  }
+  .trigger > span {
+    display: none;
+  }
+  .widget {
+    bottom: 16px;
+  }
+  .panel {
+    bottom: 80px;
+  }
+}

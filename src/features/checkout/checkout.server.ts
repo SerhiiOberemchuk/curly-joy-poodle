@@ -117,6 +117,15 @@ async function resolveDelivery(
       errors: { cityRef: "Оберіть населений пункт зі списку" },
     };
   }
+  if (delivery.method === "np-courier" && city.courierAvailable === false) {
+    return {
+      ok: false,
+      errors: {
+        cityRef:
+          "Нова пошта не доставляє кур’єром у цей населений пункт. Оберіть відділення або поштомат.",
+      },
+    };
+  }
 
   if (delivery.method === "np-branch") {
     const warehouses = await getNpWarehouses(city.ref, delivery.branchSearch);

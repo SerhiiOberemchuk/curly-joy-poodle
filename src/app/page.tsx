@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import styles from "@/features/home/home.module.css";
+import { HomeReviews } from "@/features/reviews/components/home-reviews";
+import { HomeWelcomeOffer } from "@/features/welcome-offer/components/home-welcome-offer";
 
 import {
   HomeBenefits,
@@ -35,6 +37,8 @@ export default function HomePage() {
       <HomeCategories />
       <HomeRecommendations />
       <HomePromotions />
+      <HomeReviews />
+      <HomeWelcomeOffer />
     </div>
   );
 }

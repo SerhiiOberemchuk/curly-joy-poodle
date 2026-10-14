@@ -25,17 +25,6 @@
   isolation: isolate;
 }
 
-.hero::after {
-  position: absolute;
-  z-index: -1;
-  content: "";
-  inset: auto -5% -6% -5%;
-  height: 18%;
-  border-radius: 50% 48% 0 0 / 100% 85% 0 0;
-  background: #fcf8f4;
-  transform: rotate(-1deg);
-}
-
 .heroImage {
   z-index: -2;
   object-fit: cover;

@@ -42,6 +42,15 @@ const OTHER_CITY = {
   ref: "8d5a980d-391c-11dd-90d9-001a92567628",
   label: "м. Луцьк, Волинська обл.",
 };
+// Listed by Nova Poshta yet not served: no courier and no open points, like
+// с. Львове, Бериславський р-н (observed live 2026-10-14).
+const FRONTLINE_CITY = {
+  ...CITY,
+  ref: "6064aa4c-fed7-11e9-91ff-0025b501a04b",
+  settlementRef: "0dc60b9e-4b3a-11e4-ab6d-005056801329",
+  label: "с. Львове, Бериславський р-н, Херсонська обл.",
+  courierAvailable: false,
+};
 const BRANCH = {
   ref: "1ec09d88-e1c2-11e3-8c4a-0050568002cf",
   number: "5",
@@ -83,13 +92,23 @@ const load = createLoader({
   "@/features/checkout/nova-poshta.actions": {
     searchCitiesAction: async (query) => {
       cityQueries.push(query);
-      return { ok: true, data: query.startsWith("Лу") ? [OTHER_CITY] : [CITY] };
+      return {
+        ok: true,
+        data: query.startsWith("Лу")
+          ? [OTHER_CITY]
+          : query.startsWith("Льв")
+            ? [FRONTLINE_CITY]
+            : [CITY],
+      };
     },
     // Like the CRM: a number matches the points numbered with it, an
     // address part matches the label; the whole city is searched.
     searchWarehousesAction: async (cityRef, query) => {
       warehouseSearches.push({ cityRef, query });
       if (failWarehouses) return { ok: false, error: "Довідник недоступний" };
+      if (cityRef === FRONTLINE_CITY.ref) {
+        return { ok: true, data: { items: [], total: 0 } };
+      }
       const items = [BRANCH, OTHER_BRANCH].filter((branch) =>
         /^\d+$/.test(query)
           ? branch.number.startsWith(query)
@@ -275,6 +294,46 @@ test("courier keeps the city, requires a CRM street and building, and switching 
   assert.equal(submissions[1].streetSearch, "");
   assert.equal(submissions[1].building, "");
   assert.equal(submissions[1].flat, "");
+});
+
+test("a settlement Nova Poshta does not serve switches courier off, says why and invents no point", async () => {
+  const user = setup();
+  await user.click(screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }));
+  await selectCity(user, "Львове", FRONTLINE_CITY);
+  assert.equal(
+    screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }).disabled,
+    true,
+  );
+  assert.equal(
+    screen.getByRole("radio", { name: /Відділення або поштомат Нової пошти/ })
+      .checked,
+    true,
+  );
+  assert.ok(
+    screen.getByText(
+      "Недоступно: Нова пошта не доставляє кур’єром в обраний населений пункт.",
+    ),
+  );
+  assert.ok(
+    screen.getByText(
+      "Кур’єр Нової пошти сюди не доставляє — лише відділення та поштомати.",
+    ),
+  );
+  const branch = await screen.findByRole("combobox", {
+    name: "Пункт отримання",
+  });
+  await waitFor(() => assert.equal(branch.disabled, false));
+  await user.click(branch);
+  assert.ok(
+    await screen.findByText(
+      "Нова пошта зараз не має тут відділень і поштоматів. Оберіть найближчий населений пункт, де вони є.",
+    ),
+  );
+  await selectCity(user);
+  assert.equal(
+    screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }).disabled,
+    false,
+  );
 });
 
 test("directory errors offer a working retry without submitting an invented branch", async () => {

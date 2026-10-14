@@ -1,0 +1,216 @@
+.section {
+  display: grid;
+  grid-template-columns: 0.7fr 1fr;
+  align-items: center;
+  gap: 40px;
+  padding: clamp(40px, 6vw, 88px) clamp(20px, 7vw, 112px);
+  background: #fcf7f1;
+  color: #38271f;
+}
+.art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 230px;
+  border-radius: 44% 56% 40% 60%;
+  background: #ecd7cb;
+  color: #795446;
+}
+.art svg {
+  width: 100px;
+  height: 100px;
+  opacity: 0.3;
+  transform: rotate(-15deg);
+}
+.art span {
+  position: absolute;
+  bottom: 30px;
+  right: -10px;
+  font:
+    400 32px/1.1 var(--font-caveat),
+    cursive;
+  transform: rotate(-8deg);
+}
+.eyebrow {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #795446;
+}
+.copy h2,
+.dialogCopy h2 {
+  font:
+    400 clamp(32px, 3.5vw, 48px)/1.12 var(--font-home-handwriting),
+    cursive;
+  color: #603b2c;
+}
+.copy > p,
+.dialogCopy > p {
+  margin: 18px 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #79675b;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  background: #795446;
+  color: #fffaf5;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.button:hover {
+  background: #603b2c;
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(800px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid #eaded5;
+  border-radius: 28px;
+  background: #fffaf5;
+  color: #38271f;
+  box-shadow: var(--shadow-lg);
+  font-family: Arial, sans-serif;
+}
+.dialog[open] {
+  display: grid;
+  grid-template-columns: 0.65fr 1fr;
+}
+.dialog::backdrop {
+  background: rgb(43 29 21 / 45%);
+  backdrop-filter: blur(4px);
+}
+.close {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f5ece3;
+  z-index: 1;
+}
+.dialogArt {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 24px;
+  padding: 36px;
+  background: #ecd7cb;
+  color: #795446;
+}
+.dialogArt svg {
+  width: 100px;
+  height: 100px;
+  opacity: 0.5;
+  transform: rotate(-12deg);
+}
+.dialogArt span {
+  font:
+    400 40px/1 var(--font-caveat),
+    cursive;
+  transform: rotate(-8deg);
+}
+.dialogCopy {
+  padding: 48px 32px 32px;
+}
+.dialogCopy h2 {
+  font-size: 34px;
+}
+.form {
+  display: grid;
+  gap: 16px;
+}
+.field {
+  display: grid;
+  gap: 7px;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #d8bfb2;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+}
+.field input[aria-invalid="true"] {
+  border-color: #a33732;
+}
+.hint,
+.consent {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #79675b;
+}
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.consent input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #795446;
+}
+.error {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a33732;
+}
+.dialogCopy .success {
+  padding: 20px;
+  border-radius: 16px;
+  background: #e7eee4;
+  color: #41634f;
+}
+.honeypot {
+  display: none;
+}
+@media (width < 650px) {
+  .section {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .art {
+    display: none;
+  }
+  .dialog[open] {
+    grid-template-columns: 1fr;
+  }
+  .dialogArt {
+    display: none;
+  }
+  .dialogCopy {
+    padding: 56px 24px 28px;
+  }
+}

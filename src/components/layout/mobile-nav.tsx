@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { NavLink } from "@/lib/navigation";
 import styles from "./mobile-nav.module.css";
@@ -21,7 +21,29 @@ export function MobileNav({ links, account }: MobileNavProps) {
 function MobileNavPanel({ links, account }: MobileNavProps) {
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function closeOutside(event: Event) {
+      const inside = event
+        .composedPath()
+        .some(
+          (element) =>
+            element === panelRef.current || element === toggleRef.current,
+        );
+      if (!inside) setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOutside, true);
+    document.addEventListener("focusin", closeOutside, true);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside, true);
+      document.removeEventListener("focusin", closeOutside, true);
+    };
+  }, [open]);
 
   return (
     <>
@@ -65,6 +87,7 @@ function MobileNavPanel({ links, account }: MobileNavProps) {
       {open ? (
         <nav
           id={panelId}
+          ref={panelRef}
           className={styles.panel}
           aria-label="Мобільне меню"
           onKeyDown={(event) => {
@@ -86,7 +109,11 @@ function MobileNavPanel({ links, account }: MobileNavProps) {
           ))}
           {account ? (
             // Another host, so a plain anchor rather than a client navigation.
-            <a href={account.href} className={styles.link}>
+            <a
+              href={account.href}
+              className={styles.link}
+              onClick={() => setOpen(false)}
+            >
               {account.label}
             </a>
           ) : null}

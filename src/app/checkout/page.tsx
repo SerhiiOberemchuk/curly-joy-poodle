@@ -83,6 +83,20 @@ async function CheckoutContent() {
       </section>
     );
   }
+  if (cart.minOrderAmount !== null && cart.subtotal < cart.minOrderAmount) {
+    return (
+      <section className={styles.empty}>
+        <h2>Додайте товари до замовлення</h2>
+        <p>
+          Мінімальна сума замовлення — {formatMoney(cart.minOrderAmount)}.{" "}
+          Додайте товарів ще на {formatMoney(cart.minOrderAmount - cart.subtotal)}.
+        </p>
+        <Link href="/cart" className={buttonStyles({ size: "lg" })}>
+          Повернутися до кошика
+        </Link>
+      </section>
+    );
+  }
   const checkoutToken = await createCheckoutToken();
   return (
     <div className={styles.layout}>

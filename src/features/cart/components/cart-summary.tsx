@@ -49,6 +49,14 @@ export function CartSummary({
         </span>
       </p>
 
+      {cart.freeShippingThreshold === null ? null : (
+        <p className={styles.note}>
+          {cart.freeShippingThreshold === 0
+            ? "Безкоштовна доставка для всіх замовлень."
+            : `Безкоштовна доставка від ${formatMoney(cart.freeShippingThreshold)} суми товарів.`}
+        </p>
+      )}
+
       {cart.freeShipping || cart.freeShippingRemainder === null ? null : (
         <div className={styles.progress}>
           <span>
@@ -64,12 +72,21 @@ export function CartSummary({
         </div>
       )}
 
+      {!cart.minOrderAmount ? null : (
+        <p className={styles.note}>
+          Мінімальна сума замовлення — {formatMoney(cart.minOrderAmount)}.
+          {cart.minOrderRemainder
+            ? ` Додайте товарів ще на ${formatMoney(cart.minOrderRemainder)}, щоб оформити замовлення.`
+            : null}
+        </p>
+      )}
+
       <p className={styles.summaryTotal}>
         <span>Разом за товари</span>
         <span>{formatMoney(cart.subtotal)}</span>
       </p>
 
-      {action === "none" ? null : (
+      {action === "none" || cart.minOrderRemainder ? null : (
         <Link
           href="/checkout"
           className={buttonStyles({ size: "lg", block: true })}
@@ -79,8 +96,9 @@ export function CartSummary({
       )}
 
       <p className={styles.note}>
-        Вартість доставки Новою Поштою розраховується за тарифами перевізника
-        під час відправлення.
+        {cart.freeShipping
+          ? "Доставку оплачує магазин."
+          : "Вартість доставки Новою поштою розраховується за тарифами перевізника під час відправлення."}
       </p>
     </aside>
   );

@@ -9,7 +9,7 @@ import { FavoriteToggle } from "@/features/favorites/favorites";
 import { ProductReviews } from "@/features/reviews/components/product-reviews";
 import { ReviewStars } from "@/features/reviews/components/review-stars";
 import { getPublishedReviews, getReviewSummary } from "@/features/reviews/crm-reviews";
-import { getProductFreeShippingThreshold } from "@/features/catalog/delivery.server";
+import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 import { formatMoney } from "@/lib/money";
 
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
@@ -152,7 +152,9 @@ async function ProductSummary({ params }: { params: ProductParams }) {
 }
 
 async function ProductTrust() {
-  const freeFrom = await getProductFreeShippingThreshold().catch(() => null);
+  const freeFrom =
+    (await getDisplayCartTerms().catch(() => null))?.freeShippingThreshold ??
+    null;
   return (
     <ul className={styles.trust} aria-label="Доставка, обмін та оплата">
       <li>

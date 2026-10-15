@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/icon";
+import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
+import { formatMoney } from "@/lib/money";
 
 import styles from "../home.module.css";
 import { getHomeCategories, getHomeRecommendations } from "../queries";
@@ -76,7 +78,6 @@ const benefits = [
     title: "Перевірені товари",
     description: "Те, чим користуємося самі",
   },
-  { icon: "truck", title: "Доставка по Україні", description: "Новою поштою" },
   {
     icon: "heart",
     title: "Допоможемо з вибором",
@@ -85,10 +86,29 @@ const benefits = [
   { icon: "leaf", title: "Турбота про собак", description: "і їхніх людей" },
 ] as const;
 
-export function HomeBenefits() {
+export function HomeBenefits({
+  freeShippingThreshold = null,
+}: {
+  freeShippingThreshold?: number | null;
+}) {
+  const shipping =
+    freeShippingThreshold === null
+      ? {
+          icon: "truck" as const,
+          title: "Доставка по Україні",
+          description: "Новою поштою",
+        }
+      : {
+          icon: "truck" as const,
+          title: "Безкоштовна доставка",
+          description:
+            freeShippingThreshold === 0
+              ? "Для всіх замовлень"
+              : `Від ${formatMoney(freeShippingThreshold)} суми товарів`,
+        };
   return (
     <ul className={styles.benefits} aria-label="Переваги Curly Joy">
-      {benefits.map((benefit) => (
+      {[benefits[0], shipping, ...benefits.slice(1)].map((benefit) => (
         <li key={benefit.title}>
           <Icon name={benefit.icon} />
           <div>
@@ -99,6 +119,11 @@ export function HomeBenefits() {
       ))}
     </ul>
   );
+}
+
+export async function HomeBenefitsWithTerms() {
+  const terms = await getDisplayCartTerms().catch(() => null);
+  return <HomeBenefits freeShippingThreshold={terms?.freeShippingThreshold} />;
 }
 
 export async function HomeCategories() {

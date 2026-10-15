@@ -1,13 +1,17 @@
 import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
+import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
+import { formatMoney } from "@/lib/money";
 
 import { getCart } from "../queries";
 import { CartLineItem } from "./cart-line-item";
 import { CartSummary } from "./cart-summary";
 import styles from "./cart-view.module.css";
 
-export function CartEmpty() {
+export async function CartEmpty() {
+  const terms = await getDisplayCartTerms().catch(() => null);
+  const freeShippingThreshold = terms?.freeShippingThreshold ?? null;
   return (
     <div className={styles.empty}>
       <span className={styles.emptyGlyph} aria-hidden="true">
@@ -17,6 +21,18 @@ export function CartEmpty() {
       <p className={styles.emptyText}>
         Перегляньте каталог і додайте товари, які вам сподобалися.
       </p>
+      {freeShippingThreshold !== null ? (
+        <p className={styles.emptyText}>
+          {freeShippingThreshold === 0
+            ? "Безкоштовна доставка для всіх замовлень."
+            : `Безкоштовна доставка від ${formatMoney(freeShippingThreshold)} суми товарів.`}
+        </p>
+      ) : null}
+      {terms?.minOrderAmount ? (
+        <p className={styles.emptyText}>
+          Мінімальна сума замовлення — {formatMoney(terms.minOrderAmount)}.
+        </p>
+      ) : null}
       <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
         Перейти до каталогу
       </Link>

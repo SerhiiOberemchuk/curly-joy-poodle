@@ -5,6 +5,8 @@ import { Suspense } from "react";
 
 import { findInfoPage, infoPages, type InfoPage } from "@/content/info-pages";
 import { sizeGuide } from "@/content/size-guide";
+import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
+import { formatMoney } from "@/lib/money";
 import { site } from "@/lib/site";
 
 import styles from "./info.module.css";
@@ -41,13 +43,31 @@ async function InfoHero({ params }: { params: InfoParams }) {
 async function InfoBlocks({ params }: { params: InfoParams }) {
   const page = await loadInfoPage(params);
   const sizes = page.showSizeTable ? sizeGuide : [];
+  const deliveryTerms = page.slug === "delivery"
+    ? await getDisplayCartTerms().catch(() => null)
+    : null;
+  const freeShippingThreshold = deliveryTerms?.freeShippingThreshold ?? null;
 
   return (
     <>
       {page.blocks.map((block) => (
         <section className={styles.block} key={block.heading}>
           <h2 className={styles.heading}>{block.heading}</h2>
-          {block.paragraphs?.map((paragraph) => <p className={styles.paragraph} key={paragraph}>{paragraph}</p>)}
+          {page.slug === "delivery" && block.heading === "Безкоштовна доставка" && freeShippingThreshold !== null ? (
+            <p className={styles.paragraph}>
+              {freeShippingThreshold === 0
+                ? "Безкоштовна доставка для всіх замовлень."
+                : `Безкоштовна доставка від ${formatMoney(freeShippingThreshold)} суми товарів.`}{" "}
+              Підсумок покажемо в кошику перед оформленням.
+            </p>
+          ) : (
+            block.paragraphs?.map((paragraph) => <p className={styles.paragraph} key={paragraph}>{paragraph}</p>)
+          )}
+          {page.slug === "delivery" && block.heading === "Безкоштовна доставка" && deliveryTerms?.minOrderAmount ? (
+            <p className={styles.paragraph}>
+              Мінімальна сума замовлення — {formatMoney(deliveryTerms.minOrderAmount)}.
+            </p>
+          ) : null}
           {block.list ? <ul className={styles.list}>{block.list.map((item) => <li className={styles.listItem} key={item}>{item}</li>)}</ul> : null}
         </section>
       ))}

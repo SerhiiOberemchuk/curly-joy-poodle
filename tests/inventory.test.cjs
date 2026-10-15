@@ -722,15 +722,38 @@ test("authorized and partially paid money do not mark the whole order paid", () 
 
 test("cart shipping terms are read from the CRM without an invented threshold", async () => {
   const { loadCart } = load("src/features/cart/queries.ts");
+  const { CartSummary } = load("src/features/cart/components/cart-summary.tsx");
   const buildCart = async (stored) => (await loadCart(stored)).cart;
   let cart = await buildCart([{ p: "p1", q: 1 }]);
   assert.equal(cart.freeShipping, false);
   assert.equal(cart.freeShippingThreshold, null);
   assert.equal(cart.freeShippingRemainder, null);
+  assert.doesNotMatch(
+    renderToStaticMarkup(React.createElement(CartSummary, { cart })),
+    /Безкоштовна доставка від/,
+  );
   capabilities.cart.freeShippingThreshold = 400;
   cart = await buildCart([{ p: "p1", q: 1 }]);
   assert.equal(cart.freeShipping, true);
   assert.equal(cart.freeShippingThreshold, 40000);
+  assert.match(
+    renderToStaticMarkup(React.createElement(CartSummary, { cart })),
+    /Безкоштовна доставка від 400\s₴ суми товарів/,
+  );
+  capabilities.cart.byCurrency = [
+    { currency: "UAH", freeShippingThreshold: 1500, minOrderAmount: 500 },
+  ];
+  cart = await buildCart([{ p: "p1", q: 1 }]);
+  assert.equal(cart.freeShipping, false);
+  assert.equal(cart.freeShippingThreshold, 150000);
+  assert.equal(cart.freeShippingRemainder, 108000);
+  assert.equal(cart.minOrderAmount, 50000);
+  assert.equal(cart.minOrderRemainder, 8000);
+  const markup = renderToStaticMarkup(React.createElement(CartSummary, { cart }));
+  assert.match(markup, /Безкоштовна доставка від 1\s500\s₴ суми товарів/);
+  assert.match(markup, /Додайте ще на 1\s080\s₴/);
+  assert.match(markup, /Мінімальна сума замовлення — 500\s₴/);
+  assert.doesNotMatch(markup, /Оформити замовлення/);
 });
 
 test("confirmation page waits for CRM payment, then shows paid, and never claims success during a CRM outage", async () => {
@@ -1139,6 +1162,12 @@ test("the minimum order comes from the CRM's hryvnia terms", async () => {
   capabilities.cart.byCurrency = [
     { currency: "UAH", freeShippingThreshold: null, minOrderAmount: 500 },
   ];
+  const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
+  const content = CheckoutPage().props.children[1].props.children;
+  const checkout = renderToStaticMarkup(await content.type(content.props));
+  assert.match(checkout, /Мінімальна сума замовлення — 500\s₴/);
+  assert.match(checkout, /Додайте товарів ще на 80\s₴/);
+  assert.doesNotMatch(checkout, /Оформлюємо…|Перейти до оплати/);
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   const result = await placeOrderAction({}, checkoutData({ payment: "cod" }));
   assert.equal(result.status, "error");

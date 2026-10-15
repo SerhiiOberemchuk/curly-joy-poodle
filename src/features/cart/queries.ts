@@ -22,6 +22,8 @@ const EMPTY_CART: Cart = {
   freeShipping: false,
   freeShippingThreshold: null,
   freeShippingRemainder: null,
+  minOrderAmount: null,
+  minOrderRemainder: null,
   isEmpty: true,
 };
 
@@ -75,7 +77,8 @@ function priceCart(
   const lines = resolveLines(stored, products);
   if (lines.length === 0) return EMPTY_CART;
 
-  const { freeShippingThreshold } = hryvniaCartTerms(capabilities);
+  const { freeShippingThreshold, minOrderAmount } =
+    hryvniaCartTerms(capabilities);
   const subtotal = sumMoney(lines.map((line) => line.lineTotal));
   const savings = sumMoney(
     lines.map((line) =>
@@ -97,6 +100,9 @@ function priceCart(
       freeShippingThreshold === null
         ? null
         : Math.max(freeShippingThreshold - subtotal, 0),
+    minOrderAmount,
+    minOrderRemainder:
+      minOrderAmount === null ? null : Math.max(minOrderAmount - subtotal, 0),
     isEmpty: false,
   };
 }

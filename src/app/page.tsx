@@ -6,6 +6,7 @@ import { HomeWelcomeOffer } from "@/features/welcome-offer/components/home-welco
 
 import {
   HomeBenefits,
+  HomeBenefitsWithTerms,
   HomeHero,
   HomeCategories,
   HomePromotions,
@@ -34,7 +35,9 @@ export default function HomePage() {
   return (
     <div className={styles.page}>
       <HomeHero />
-      <HomeBenefits />
+      <Suspense fallback={<HomeBenefits />}>
+        <HomeBenefitsWithTerms />
+      </Suspense>
       <HomeCategories />
       <HomeRecommendations />
       <HomePromotions />

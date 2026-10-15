@@ -37,5 +37,8 @@ export interface Cart {
   freeShippingThreshold: number | null;
   /** Minor units still missing for free shipping; `0` once reached. */
   freeShippingRemainder: number | null;
+  minOrderAmount: number | null;
+  /** Minor units still missing for the CRM's minimum order; `0` once reached. */
+  minOrderRemainder: number | null;
   isEmpty: boolean;
 }

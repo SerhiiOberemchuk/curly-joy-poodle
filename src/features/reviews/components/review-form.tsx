@@ -121,7 +121,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
             required
             disabled={pending}
             defaultValue={state.values?.comment ?? ""}
-            placeholder="Що сподобалося вам і вашому хвостику?"
+            placeholder="Розкажіть про свій досвід із цим товаром"
             aria-invalid={Boolean(state.errors.comment)}
             aria-describedby={
               state.errors.comment ? `${id}-comment-error` : undefined
@@ -160,7 +160,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
           {pending ? "Надсилаємо…" : "Надіслати відгук"}
           <Icon name="arrow" />
         </button>
-        <p className={styles.hint}>Відгук з’явиться на сайті після модерації.</p>
+        <p className={styles.hint}>Відгук з’явиться на сайті після перевірки.</p>
         {state.status === "error" ? (
           <p className={styles.error} role="alert">
             {state.message}

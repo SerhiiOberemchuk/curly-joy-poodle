@@ -15,8 +15,7 @@ export function CartEmpty() {
       </span>
       <h2>Кошик порожній</h2>
       <p className={styles.emptyText}>
-        Почніть з літньої колекції — охолоджувальний жилет і бандана закривають більшість спекотних
-        днів.
+        Перегляньте каталог і додайте товари, які вам сподобалися.
       </p>
       <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
         Перейти до каталогу

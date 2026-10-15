@@ -53,10 +53,17 @@ export async function submitReviewAction(
     };
   }
   if (!z.uuid().safeParse(requestId).success) {
-    return { status: "error", message: "Оновіть сторінку й повторіть спробу.", errors: {}, values };
+    return {
+      status: "error",
+      message: "Оновіть сторінку й повторіть спробу.",
+      errors: {},
+      values,
+    };
   }
   try {
-    const product = (await getCurrentProducts()).find((item) => item.id === productId);
+    const product = (await getCurrentProducts()).find(
+      (item) => item.id === productId,
+    );
     if (!product) {
       return {
         status: "error",
@@ -76,14 +83,15 @@ export async function submitReviewAction(
   } catch {
     return {
       status: "error",
-      message: "Не вдалося надіслати відгук до CRM. Спробуйте ще раз трохи пізніше.",
+      message:
+        "Не вдалося надіслати відгук. Спробуйте ще раз трохи пізніше.",
       errors: {},
       values,
     };
   }
   return {
     status: "submitted",
-    message: "Дякуємо! Відгук отримано й передано на модерацію.",
+    message: "Дякуємо! Ваш відгук отримано.",
     errors: {},
   };
 }

@@ -45,7 +45,7 @@ export function HomeHero() {
             Перейти до магазину <Icon name="arrow" />
           </Link>
           <Link className={styles.lightButton} href="#categories">
-            Дізнатися більше
+            Переглянути категорії
           </Link>
         </div>
         <span className={styles.smallDogs} lang="en" aria-hidden="true">
@@ -76,11 +76,11 @@ const benefits = [
     title: "Перевірені товари",
     description: "Те, чим користуємося самі",
   },
-  { icon: "truck", title: "Швидка доставка", description: "по Україні" },
+  { icon: "truck", title: "Доставка по Україні", description: "Новою поштою" },
   {
     icon: "heart",
-    title: "Підтримка 7 днів",
-    description: "Ми завжди на зв’язку",
+    title: "Допоможемо з вибором",
+    description: "У робочі дні",
   },
   { icon: "leaf", title: "Турбота про собак", description: "і їхніх людей" },
 ] as const;
@@ -116,7 +116,7 @@ export async function HomeCategories() {
         </h2>
         <div>
           <p>Різні історії. Одне велике щастя.</p>
-          <span>Оберіть свою ситуацію — ми вже зібрали найкращі товари.</span>
+          <span>Оберіть категорію та знайдіть те, що потрібно вашій собаці.</span>
         </div>
         <span className={styles.dogNote} lang="en" aria-hidden="true">
           Dogs
@@ -171,17 +171,20 @@ export async function HomeRecommendations() {
     >
       <div className={styles.recommendationCopy}>
         <h2 id="recommendations-title">
-          Curly Joy
+          Товари
           <br />
-          рекомендує <Heart />
+          для собак <Heart />
         </h2>
         <p>
-          Те, що ми спробували на собі.
+          Для прогулянок, подорожей
           <br />
-          Точніше — на наших собаках.
+          і затишних днів удома.
         </p>
         <Link className={styles.button} href={catalogHref}>
-          Дивитися всі товари <Icon name="arrow" />
+          {catalogHref === "/catalog"
+            ? "Переглянути каталог"
+            : "Переглянути добірку"}{" "}
+          <Icon name="arrow" />
         </Link>
       </div>
       <div className={styles.productResults}>
@@ -192,7 +195,7 @@ export async function HomeRecommendations() {
             ))}
           </div>
         ) : (
-          <p className={styles.emptyResults}>Добірка скоро з’явиться.</p>
+          <p className={styles.emptyResults}>Зараз немає товарів для показу.</p>
         )}
       </div>
     </section>

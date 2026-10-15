@@ -105,7 +105,7 @@ export function SiteFooter() {
                 <a href={`mailto:${site.email}`}>
                   <strong>{site.email}</strong>
                 </a>
-                Відповідаємо протягом робочого дня
+                Відповідаємо в робочий час
               </li>
               <li className={styles.contactItem}>{site.address}</li>
             </ul>

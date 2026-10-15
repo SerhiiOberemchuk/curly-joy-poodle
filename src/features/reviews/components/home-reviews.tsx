@@ -16,7 +16,7 @@ export async function HomeReviews() {
         <div>
           <span className={styles.eyebrow}>Curly Joy — для життя разом</span>
           <h2 id="home-reviews-title">
-            Щастя, яким діляться <span aria-hidden="true">♡</span>
+            Враження покупців <span aria-hidden="true">♡</span>
           </h2>
         </div>
         <a
@@ -29,8 +29,7 @@ export async function HomeReviews() {
         </a>
       </div>
       <p className={styles.sectionIntro}>
-        Маленькі знахідки для великих пригод — і враження, якими хочеться
-        поділитися.
+        Дізнайтеся, як покупці оцінюють товари Curly Joy.
       </p>
       <div className={styles.homeCards}>
         {reviews.map((review) => (

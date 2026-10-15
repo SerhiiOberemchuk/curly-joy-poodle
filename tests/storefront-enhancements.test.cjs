@@ -155,7 +155,7 @@ test("review submission sends a pending CRM review with a stable retry id", asyn
     path: "/reviews",
     body: { productId: "variant-1", rating: 5, authorName: "Марія", authorEmail: "maria@example.com", body: "Приємна річ для щоденних прогулянок.", externalId: REVIEW_REQUEST_ID, locale: "uk", status: "pending" },
   });
-  assert.match(state.message, /модерацію/);
+  assert.match(state.message, /відгук отримано/i);
 });
 test("review submission refuses missing or unavailable CRM products", async () => {
   products = [];
@@ -216,6 +216,7 @@ test("bundle composition links only components published in the shop", async () 
 });
 test("review form supports keyboard rating selection and confirms CRM submission", async () => {
   render(React.createElement(ReviewForm, { productId: "group:model", requestId: REVIEW_REQUEST_ID }));
+  assert.match(screen.getByText(/після перевірки/).textContent, /після перевірки/);
   const user = userEvent.setup();
   const first = screen.getByRole("radio", { name: "1 з 5" });
   first.focus();
@@ -234,7 +235,7 @@ test("review form supports keyboard rating selection and confirms CRM submission
   await waitFor(() =>
     assert.match(
       screen.getByRole("status").textContent,
-      /передано на модерацію/,
+      /відгук отримано/i,
     ),
   );
   assert.equal(requests.length, 1);

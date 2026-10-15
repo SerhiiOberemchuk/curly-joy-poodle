@@ -65,7 +65,7 @@ export function CartSummary({
       )}
 
       <p className={styles.summaryTotal}>
-        <span>До сплати</span>
+        <span>Разом за товари</span>
         <span>{formatMoney(cart.subtotal)}</span>
       </p>
 

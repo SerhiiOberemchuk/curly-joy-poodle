@@ -5,6 +5,11 @@ import { ReviewCard } from "./review-card";
 import { ReviewForm } from "./review-form";
 import { ReviewStars } from "./review-stars";
 
+const reviewCount = (count: number) => {
+  const form = new Intl.PluralRules("uk").select(count);
+  return `${count} ${form === "one" ? "відгук" : form === "few" ? "відгуки" : "відгуків"}`;
+};
+
 export function ProductReviews({ productId, productSlug, requestId, reviews, page, total, summary, unavailable }: {
   productId: string;
   productSlug: string;
@@ -27,7 +32,7 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
         <div>
           <span className={styles.eyebrow}>Від хвостиків та їхніх людей</span>
           <h2 id="product-reviews-title">
-            Маленькі історії щастя <span aria-hidden="true">♡</span>
+            Відгуки покупців <span aria-hidden="true">♡</span>
           </h2>
         </div>
         <div className={styles.headingActions}>
@@ -37,7 +42,7 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
         </div>
       </div>
       <p className={styles.sectionIntro}>
-        Розкажіть, що сподобалося вам і вашому хвостику.
+        Розкажіть про свій досвід із цим товаром.
       </p>
       <div className={styles.reviewLayout}>
         <div>
@@ -52,7 +57,7 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
                   {average.toFixed(1).replace(".", ",")}
                 </strong>
                 <ReviewStars rating={average} />
-                <p>{count} відгуків</p>
+                <p>{reviewCount(count)}</p>
               </div>
               <div className={styles.distribution}>
                 {([5, 4, 3, 2, 1] as const).map((rating) => {
@@ -66,7 +71,7 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
                         min={0}
                         max={count}
                         value={total}
-                        aria-label={`${rating} зірок: ${total} відгуків`}
+                        aria-label={`Оцінка ${rating} із 5: ${reviewCount(total)}`}
                       />
                       <span>{total}</span>
                     </div>

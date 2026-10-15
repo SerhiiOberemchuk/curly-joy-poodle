@@ -8,7 +8,7 @@
 | Змінна | Призначення |
 | --- | --- |
 | `SITE_URL` | Канонічна HTTPS-адреса сайту, наприклад `https://curly-joy.com`. З неї будується URL повернення після банку. Без неї production використовує `site.url` (`https://curly-joy.com`); для preview-деплою з власним доменом задайте явно. |
-| `OBRIYM_CRM_API_KEY` | Токен акаунта магазину: `products:read`, `orders:read/write`, `payments:read/write`, `shipments:read`, `leads:write` (запит B2B). |
+| `OBRIYM_CRM_API_KEY` | Токен акаунта магазину: `products:read`, `orders:read/write`, `payments:read/write`, `shipments:read`, `leads:write` (запит B2B), `reviews:read`, `reviews:write`. Для відгуків потрібне джерело інтеграції CRM. |
 | `OBRIYM_CRM_API_URL` | Необов’язково. За замовчуванням `https://obriym-crm.com/api/v1`. |
 | `CHECKOUT_SESSION_PASSWORD` | Необов’язковий стабільний секрет сесії, щонайменше 32 символи. Без нього використовується серверний ключ CRM. |
 | `PARTNER_PORTAL_URL` | Необов’язково. Кабінет партнера (B2B) у CRM, за замовчуванням `https://obriym-crm.com/portal`. |

@@ -3,13 +3,12 @@
 import { useActionState, useId } from "react";
 import { Icon } from "@/components/ui/icon";
 import { initialReviewState } from "../action-state";
-import { previewReviewAction } from "../actions";
+import { submitReviewAction } from "../actions";
 import styles from "../reviews.module.css";
-import { ReviewStars } from "./review-stars";
 
-export function ReviewForm({ productId }: { productId: string }) {
+export function ReviewForm({ productId, requestId }: { productId: string; requestId: string }) {
   const [state, action, pending] = useActionState(
-    previewReviewAction.bind(null, productId),
+    submitReviewAction.bind(null, productId, requestId),
     initialReviewState,
   );
   const id = useId();
@@ -29,6 +28,9 @@ export function ReviewForm({ productId }: { productId: string }) {
       maxLength: 120,
     },
   ] as const;
+  if (state.status === "submitted") {
+    return <div className={styles.formPanel} id="review-form" role="status">{state.message}</div>;
+  }
   return (
     <div className={styles.formPanel} id="review-form">
       <span className={styles.eyebrow}>Ваша історія має значення</span>
@@ -155,25 +157,14 @@ export function ReviewForm({ productId }: { productId: string }) {
           className={styles.primaryButton}
           disabled={pending}
         >
-          {pending ? "Готуємо перегляд…" : "Переглянути відгук"}
+          {pending ? "Надсилаємо…" : "Надіслати відгук"}
           <Icon name="arrow" />
         </button>
-        <p className={styles.hint}>
-          Зараз форма працює в режимі попереднього перегляду. Надсилання
-          відгуків буде доступне згодом.
-        </p>
+        <p className={styles.hint}>Відгук з’явиться на сайті після модерації.</p>
         {state.status === "error" ? (
           <p className={styles.error} role="alert">
             {state.message}
           </p>
-        ) : null}
-        {state.preview ? (
-          <div className={styles.preview} role="status">
-            <p>{state.message}</p>
-            <ReviewStars rating={state.preview.rating} />
-            <strong>{state.preview.author}</strong>
-            <p>{state.preview.text}</p>
-          </div>
         ) : null}
       </form>
     </div>

@@ -115,6 +115,9 @@
   font-size: 15px;
   line-height: 1.75;
 }
+.reply { margin-block-start: 20px; padding-block-start: 16px; border-top: 1px solid #e8dace; font-size: 13px; line-height: 1.6; }
+.reviewPages { display: flex; flex-wrap: wrap; gap: 18px; margin-block-start: 24px; font-size: 14px; }
+.reviewPages a { text-decoration: underline; text-underline-offset: 3px; }
 .author {
   display: flex;
   align-items: center;

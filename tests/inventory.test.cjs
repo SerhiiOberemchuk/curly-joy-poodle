@@ -63,6 +63,7 @@ function product(overrides = {}) {
     id: "p1",
     sku: "SKU-1",
     name: "Product",
+    type: "simple",
     currency: "UAH",
     price: 420,
     stock: 25,

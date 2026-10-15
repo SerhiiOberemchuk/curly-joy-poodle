@@ -31,6 +31,7 @@ export interface ProductAttribute {
 
 export interface Product {
   id: string;
+  type: "simple" | "bundle";
   slug: string;
   /**
    * The rename-proof tail of the slug (from the SKU or model code). An old link

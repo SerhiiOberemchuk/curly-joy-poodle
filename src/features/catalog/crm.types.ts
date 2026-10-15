@@ -12,6 +12,7 @@ export const crmProductSchema = priceSchema.extend({
   id: identifier,
   sku: z.string().nullable(),
   name: z.string().min(1),
+  type: z.enum(["simple", "bundle"]),
   status: z.string(),
   storefrontVisible: z.boolean(),
   prices: z.array(priceSchema),
@@ -52,6 +53,21 @@ export const crmProductsPageSchema = z.object({
     page: z.number().int().positive(),
     perPage: z.number().int().positive(),
     total: z.number().int().nonnegative(),
+  }),
+});
+export const crmBundleDetailSchema = z.object({
+  data: z.object({
+    id: identifier,
+    type: z.enum(["simple", "bundle"]),
+    bundleItems: z.array(z.object({
+      quantity: z.number().int().positive(),
+      product: z.object({
+        id: identifier,
+        name: z.string().min(1),
+        sku: z.string().nullable(),
+        images: z.array(z.object({ url: z.url({ protocol: /^https?$/ }), alt: z.string().nullable() })),
+      }),
+    })),
   }),
 });
 export type CrmProduct = z.infer<typeof crmProductSchema>;

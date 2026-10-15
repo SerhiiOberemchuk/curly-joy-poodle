@@ -4,7 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { cache } from "react";
 
 import { loadCatalog, loadProducts, type Catalog } from "./catalog-source";
-import { fetchCollection } from "./crm-api";
+import { fetchBundleDetail, fetchCollection } from "./crm-api";
 import type {
   Category,
   CollectionInfo,
@@ -212,6 +212,26 @@ function resolveProduct(products: readonly Product[], slug: string): Product | n
 export async function getProductCategory(product: Product): Promise<Category | null> {
   if (!product.categoryId) return null;
   return (await getCategories()).find((category) => category.id === product.categoryId) ?? null;
+}
+
+/** Composition comes from CRM detail; only listed components receive shop links. */
+export async function getBundleComposition(product: Product) {
+  if (product.type !== "bundle") return [];
+  const detail = await fetchBundleDetail(product.variants[0].id);
+  if (detail.type !== "bundle" || detail.id !== product.variants[0].id) {
+    throw new Error("CRM returned a different bundle");
+  }
+  const listed = await getListedProducts();
+  return detail.bundleItems.map((item) => ({
+    id: item.product.id,
+    title: item.product.name,
+    sku: item.product.sku,
+    quantity: item.quantity,
+    image: item.product.images[0]?.url ?? null,
+    slug: listed.find((candidate) =>
+      candidate.variants.some((variant) => variant.id === item.product.id),
+    )?.slug ?? null,
+  }));
 }
 
 /** Slugs for `generateStaticParams` — prerenders every product at build time. */

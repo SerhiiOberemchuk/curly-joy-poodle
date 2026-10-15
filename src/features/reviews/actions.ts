@@ -1,8 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { getListedProducts } from "@/features/catalog/queries";
+import { getCurrentProducts } from "@/features/catalog/queries";
 import { readString } from "@/lib/form";
+import { submitReview } from "./crm-reviews";
 import type { ReviewState } from "./action-state";
 
 const reviewSchema = z.object({
@@ -26,9 +27,10 @@ const reviewSchema = z.object({
   }),
 });
 
-/** Validates a preview only. No email, review or rating is persisted or published. */
-export async function previewReviewAction(
+/** Sends a pending review to CRM; the request id remains stable across retries. */
+export async function submitReviewAction(
   productId: string,
+  requestId: string,
   _state: ReviewState,
   formData: FormData,
 ): Promise<ReviewState> {
@@ -50,10 +52,12 @@ export async function previewReviewAction(
       values,
     };
   }
+  if (!z.uuid().safeParse(requestId).success) {
+    return { status: "error", message: "Оновіть сторінку й повторіть спробу.", errors: {}, values };
+  }
   try {
-    if (
-      !(await getListedProducts()).some((product) => product.id === productId)
-    ) {
+    const product = (await getCurrentProducts()).find((item) => item.id === productId);
+    if (!product) {
       return {
         status: "error",
         message: "Товар більше недоступний. Оновіть сторінку.",
@@ -61,24 +65,25 @@ export async function previewReviewAction(
         values,
       };
     }
+    await submitReview({
+      productId: product.variants[0].id,
+      rating: parsed.data.rating,
+      authorName: parsed.data.name,
+      authorEmail: parsed.data.email,
+      body: parsed.data.comment,
+      externalId: requestId,
+    });
   } catch {
     return {
       status: "error",
-      message: "Не вдалося перевірити товар. Спробуйте ще раз трохи пізніше.",
+      message: "Не вдалося надіслати відгук до CRM. Спробуйте ще раз трохи пізніше.",
       errors: {},
       values,
     };
   }
   return {
-    status: "preview",
-    message:
-      "Ось як виглядатиме ваш відгук. Він ще не опублікований і не збережений.",
+    status: "submitted",
+    message: "Дякуємо! Відгук отримано й передано на модерацію.",
     errors: {},
-    values,
-    preview: {
-      author: parsed.data.name,
-      rating: parsed.data.rating,
-      text: parsed.data.comment,
-    },
   };
 }

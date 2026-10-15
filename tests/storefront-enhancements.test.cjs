@@ -30,10 +30,10 @@ const {
 } = require("@testing-library/react");
 const userEvent = require("@testing-library/user-event").default;
 
-let products = [{ id: "group:model" }];
+let products = [{ id: "group:model", variants: [{ id: "variant-1" }] }];
 let catalogFailure = false;
 let crmFailure = null;
-let crmResponse = { data: { id: "lead-1" } };
+let crmResponse = { data: { id: "review-1", status: "pending" }, deduplicated: false };
 let requests = [];
 class CrmApiError extends Error {
   constructor(status) {
@@ -44,7 +44,7 @@ class CrmApiError extends Error {
 const load = createLoader({
   "server-only": {},
   "@/features/catalog/queries": {
-    getListedProducts: async () => {
+    getCurrentProducts: async () => {
       if (catalogFailure) throw new Error("Unavailable");
       return products;
     },
@@ -58,11 +58,10 @@ const load = createLoader({
     },
   },
 });
-const { previewReviewAction } = load("src/features/reviews/actions.ts");
+const { submitReviewAction } = load("src/features/reviews/actions.ts");
 const { initialReviewState } = load("src/features/reviews/action-state.ts");
 const { ReviewForm } = load("src/features/reviews/components/review-form.tsx");
 const { videoSource } = load("src/features/catalog/video.ts");
-const { reviewSummary } = load("src/features/reviews/demo.ts");
 const { getWelcomeOffer, submitOfferRequest } = load(
   "src/features/welcome-offer/offer.server.ts",
 );
@@ -77,10 +76,10 @@ const previousEnv = Object.fromEntries(
 
 afterEach(() => {
   cleanup();
-  products = [{ id: "group:model" }];
+  products = [{ id: "group:model", variants: [{ id: "variant-1" }] }];
   catalogFailure = false;
   crmFailure = null;
-  crmResponse = { data: { id: "lead-1" } };
+  crmResponse = { data: { id: "review-1", status: "pending" }, deduplicated: false };
   requests = [];
   for (const [key, value] of Object.entries(previousEnv)) {
     if (value === undefined) delete process.env[key];
@@ -101,6 +100,7 @@ function reviewData(overrides = {}) {
     data.set(key, value);
   return data;
 }
+const REVIEW_REQUEST_ID = "f3c1d64e-e026-4423-9226-612d08f8644a";
 function enableOffer() {
   process.env.WELCOME_OFFER_ENABLED = "true";
   process.env.WELCOME_OFFER_DESCRIPTION = "Узгоджені умови пропозиції";
@@ -119,9 +119,10 @@ function offerData(overrides = {}) {
   return data;
 }
 
-test("review preview validates all fields on the server and preserves corrections", async () => {
-  const state = await previewReviewAction(
+test("review submission validates all fields on the server and preserves corrections", async () => {
+  const state = await submitReviewAction(
     "group:model",
+    REVIEW_REQUEST_ID,
     initialReviewState,
     reviewData({
       name: "М",
@@ -142,40 +143,79 @@ test("review preview validates all fields on the server and preserves correction
   assert.equal(state.values.comment, "Коротко");
   assert.equal(requests.length, 0);
 });
-test("review preview does not publish, store email or create a CRM lead", async () => {
-  const state = await previewReviewAction(
+test("review submission sends a pending CRM review with a stable retry id", async () => {
+  const state = await submitReviewAction(
     "group:model",
+    REVIEW_REQUEST_ID,
     initialReviewState,
     reviewData(),
   );
-  assert.equal(state.status, "preview");
-  assert.deepEqual(state.preview, {
-    author: "Марія",
-    rating: 5,
-    text: "Приємна річ для щоденних прогулянок.",
+  assert.equal(state.status, "submitted");
+  assert.deepEqual(requests[0], {
+    path: "/reviews",
+    body: { productId: "variant-1", rating: 5, authorName: "Марія", authorEmail: "maria@example.com", body: "Приємна річ для щоденних прогулянок.", externalId: REVIEW_REQUEST_ID, locale: "uk", status: "pending" },
   });
-  assert.equal(state.preview.email, undefined);
-  assert.equal(requests.length, 0);
-  assert.match(state.message, /не збережений/);
+  assert.match(state.message, /модерацію/);
 });
-test("review preview refuses missing or unavailable CRM products", async () => {
+test("review submission refuses missing or unavailable CRM products", async () => {
   products = [];
   assert.equal(
-    (await previewReviewAction("group:model", initialReviewState, reviewData()))
+    (await submitReviewAction("group:model", REVIEW_REQUEST_ID, initialReviewState, reviewData()))
       .status,
     "error",
   );
   catalogFailure = true;
-  const state = await previewReviewAction(
+  const state = await submitReviewAction(
     "group:model",
+    REVIEW_REQUEST_ID,
     initialReviewState,
     reviewData(),
   );
   assert.equal(state.status, "error");
   assert.equal(state.values.email, "maria@example.com");
 });
-test("review form supports keyboard rating selection and shows only a preview", async () => {
-  render(React.createElement(ReviewForm, { productId: "group:model" }));
+test("CRM review failure keeps the buyer's input for a retry", async () => {
+  crmFailure = new CrmApiError(503);
+  const state = await submitReviewAction(
+    "group:model",
+    REVIEW_REQUEST_ID,
+    initialReviewState,
+    reviewData(),
+  );
+  assert.equal(state.status, "error");
+  assert.equal(state.values.email, "maria@example.com");
+  assert.equal(requests[0].body.externalId, REVIEW_REQUEST_ID);
+});
+test("bundle composition links only components published in the shop", async () => {
+  const bundleLoad = createLoader({
+    "server-only": {},
+    "next/cache": { cacheLife: () => {}, cacheTag: () => {} },
+    "@/features/catalog/catalog-source": {
+      loadCatalog: async () => ({
+        products: [{ id: "visible", slug: "visible-product", variants: [{ id: "component-1" }] }],
+        categories: [],
+      }),
+      loadProducts: async () => [],
+    },
+    "@/features/catalog/crm-api": {
+      fetchBundleDetail: async () => ({
+        id: "bundle-1", type: "bundle",
+        bundleItems: [
+          { quantity: 2, product: { id: "component-1", name: "Шлейка", sku: "MYW-1", images: [] } },
+          { quantity: 1, product: { id: "hidden", name: "Сумка", sku: "MYW-2", images: [] } },
+        ],
+      }),
+    },
+  });
+  const { getBundleComposition } = bundleLoad("src/features/catalog/queries.ts");
+  const items = await getBundleComposition({ type: "bundle", variants: [{ id: "bundle-1" }] });
+  assert.deepEqual(items.map(({ quantity, slug }) => ({ quantity, slug })), [
+    { quantity: 2, slug: "visible-product" },
+    { quantity: 1, slug: null },
+  ]);
+});
+test("review form supports keyboard rating selection and confirms CRM submission", async () => {
+  render(React.createElement(ReviewForm, { productId: "group:model", requestId: REVIEW_REQUEST_ID }));
   const user = userEvent.setup();
   const first = screen.getByRole("radio", { name: "1 з 5" });
   first.focus();
@@ -190,14 +230,14 @@ test("review form supports keyboard rating selection and shows only a preview", 
     "Приємна річ для щоденних прогулянок.",
   );
   await user.click(screen.getByRole("checkbox"));
-  await user.click(screen.getByRole("button", { name: "Переглянути відгук" }));
+  await user.click(screen.getByRole("button", { name: "Надіслати відгук" }));
   await waitFor(() =>
     assert.match(
       screen.getByRole("status").textContent,
-      /ще не опублікований і не збережений/,
+      /передано на модерацію/,
     ),
   );
-  assert.equal(requests.length, 0);
+  assert.equal(requests.length, 1);
 });
 test("favorite button on a catalog card updates the shared store without navigating", async () => {
   window.localStorage.clear();
@@ -280,9 +320,6 @@ test("video embeds use exact provider hosts and refuse unsafe protocols", () => 
     "file",
   );
 });
-test("empty review summaries never manufacture a rating", () => {
-  assert.deepEqual(reviewSummary([]), { count: 0, average: 0 });
-});
 
 test("mobile menu closes on outside pointer and keyboard focus while keeping inside clicks and toggle behavior", async () => {
   const navLoad = createLoader({
@@ -362,6 +399,7 @@ test("CRM model gallery merges variant photos and videos without duplicates and 
     id: "variant-m",
     sku: "MODEL-M",
     name: "Шлейка M",
+    type: "simple",
     status: "active",
     storefrontVisible: true,
     currency: "UAH",

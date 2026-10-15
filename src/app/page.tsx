@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import styles from "@/features/home/home.module.css";
 import { HomeReviews } from "@/features/reviews/components/home-reviews";
 import { HomeWelcomeOffer } from "@/features/welcome-offer/components/home-welcome-offer";
@@ -37,7 +38,7 @@ export default function HomePage() {
       <HomeCategories />
       <HomeRecommendations />
       <HomePromotions />
-      <HomeReviews />
+      <Suspense fallback={null}><HomeReviews /></Suspense>
       <HomeWelcomeOffer />
     </div>
   );

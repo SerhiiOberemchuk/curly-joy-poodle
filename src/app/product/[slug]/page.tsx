@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
@@ -7,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { FavoriteToggle } from "@/features/favorites/favorites";
 import { ProductReviews } from "@/features/reviews/components/product-reviews";
 import { ReviewStars } from "@/features/reviews/components/review-stars";
-import { demoReviews, reviewSummary } from "@/features/reviews/demo";
+import { getPublishedReviews, getReviewSummary } from "@/features/reviews/crm-reviews";
 import { getProductFreeShippingThreshold } from "@/features/catalog/delivery.server";
 import { formatMoney } from "@/lib/money";
 
@@ -18,6 +19,7 @@ import {
 } from "@/features/catalog/components/product-gallery";
 import { ProductGrid } from "@/features/catalog/components/product-grid";
 import {
+  getBundleComposition,
   getProduct,
   getProductCategory,
   getProductSlugs,
@@ -103,6 +105,19 @@ async function ProductPhotos({ params }: { params: ProductParams }) {
   );
 }
 
+async function ProductReviewLink({ productId }: { productId: string }) {
+  const modelKey = productId.startsWith("group:")
+    ? productId.slice(6)
+    : productId;
+  const summary = await getReviewSummary(modelKey).catch(() => null);
+  return (
+    <a href="#product-reviews" className={styles.reviewLink}>
+      {summary?.count ? <ReviewStars rating={summary.average ?? 0} /> : null}
+      <span>Відгуки{summary?.count ? ` (${summary.count})` : ""}</span>
+    </a>
+  );
+}
+
 async function ProductSummary({ params }: { params: ProductParams }) {
   // Read purchase availability on navigation, rather than at build/prefetch time.
   await connection();
@@ -112,7 +127,6 @@ async function ProductSummary({ params }: { params: ProductParams }) {
   // cart re-checks stock against the CRM either way.
   const product = await getRecentProduct(slug).catch(() => getProduct(slug));
   if (!product) notFound();
-
   return (
     <>
       {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
@@ -120,10 +134,9 @@ async function ProductSummary({ params }: { params: ProductParams }) {
         {product.title}
       </h1>
       <div className={styles.summaryActions}>
-        <a href="#product-reviews" className={styles.reviewLink}>
-          <ReviewStars rating={reviewSummary(demoReviews).average} />
-          <span>Відгуки</span>
-        </a>
+        <Suspense fallback={<a href="#product-reviews" className={styles.reviewLink}>Відгуки</a>}>
+          <ProductReviewLink productId={product.id} />
+        </Suspense>
         <FavoriteToggle
           productId={product.id}
           productTitle={product.title}
@@ -171,9 +184,36 @@ async function ProductTrust() {
   );
 }
 
-async function Reviews({ params }: { params: ProductParams }) {
+async function Reviews({ params, searchParams }: {
+  params: ProductParams;
+  searchParams: PageProps<"/product/[slug]">["searchParams"];
+}) {
+  await connection();
+  const rawPage = (await searchParams).reviewsPage;
+  const requestedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 1000
+    ? requestedPage
+    : 1;
   const product = await loadProduct(params);
-  return <ProductReviews productId={product.id} />;
+  const modelKey = product.id.startsWith("group:")
+    ? product.id.slice(6)
+    : product.id;
+  const [reviews, summary] = await Promise.all([
+    getPublishedReviews(modelKey, page).catch(() => null),
+    getReviewSummary(modelKey).catch(() => null),
+  ]);
+  return (
+    <ProductReviews
+      productId={product.id}
+      productSlug={product.slug}
+      requestId={crypto.randomUUID()}
+      reviews={reviews?.data ?? []}
+      page={page}
+      total={reviews?.pagination.total ?? 0}
+      summary={summary}
+      unavailable={reviews === null || summary === null}
+    />
+  );
 }
 
 function ReturnsLink({ sized = false }: { sized?: boolean }) {
@@ -197,9 +237,10 @@ async function ProductReturnsLink({ params }: { params: ProductParams }) {
 
 async function ProductDetails({ params }: { params: ProductParams }) {
   const product = await loadProduct(params);
-  const [category, related] = await Promise.all([
+  const [category, related, composition] = await Promise.all([
     getProductCategory(product),
     getRelatedProducts(product),
+    getBundleComposition(product).catch(() => null),
   ]);
 
   return (
@@ -237,6 +278,41 @@ async function ProductDetails({ params }: { params: ProductParams }) {
           ) : null}
         </section>
       ) : null}
+      {product.type === "bundle" ? (
+        <section className={styles.bundle} aria-labelledby="bundle-title">
+          <div className={styles.bundleHeading}>
+            <span className={styles.bundleEyebrow}>Разом у наборі</span>
+            <h2 id="bundle-title">Склад комплекту</h2>
+            <p>Речі, які входять до цього набору.</p>
+          </div>
+          {composition === null ? (
+            <p role="status">Склад комплекту тимчасово недоступний. Спробуйте оновити сторінку пізніше.</p>
+          ) : composition.length === 0 ? (
+            <p>Склад комплекту ще не вказано в каталозі.</p>
+          ) : (
+            <ul className={styles.bundleList}>
+              {composition.map((item) => (
+                <li className={styles.bundleItem} key={item.id}>
+                  {item.image ? (
+                    <Image src={item.image} alt="" width={88} height={88} />
+                  ) : (
+                    <span className={styles.bundlePlaceholder} aria-hidden="true">♡</span>
+                  )}
+                  <div className={styles.bundleItemCopy}>
+                    {item.slug ? (
+                      <Link href={`/product/${item.slug}`}>{item.title}</Link>
+                    ) : (
+                      <strong>{item.title}</strong>
+                    )}
+                    {item.sku ? <span>Артикул: {item.sku}</span> : null}
+                  </div>
+                  <span className={styles.bundleQuantity}>× {item.quantity}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
       {related.length ? (
         <section className={styles.related}>
           <h2>Ще трохи радості</h2>
@@ -247,7 +323,7 @@ async function ProductDetails({ params }: { params: ProductParams }) {
   );
 }
 
-export default function Page({ params }: PageProps<"/product/[slug]">) {
+export default function Page({ params, searchParams }: PageProps<"/product/[slug]">) {
   return (
     <div className={styles.page}>
       <nav aria-label="Навігаційний ланцюжок">
@@ -294,7 +370,7 @@ export default function Page({ params }: PageProps<"/product/[slug]">) {
         <ProductDetails params={params} />
       </Suspense>
       <Suspense fallback={null}>
-        <Reviews params={params} />
+        <Reviews params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );

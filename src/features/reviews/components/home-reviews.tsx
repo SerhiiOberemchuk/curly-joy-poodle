@@ -1,10 +1,12 @@
 import { Icon } from "@/components/ui/icon";
 import { site } from "@/lib/site";
-import { demoReviews } from "../demo";
+import { getRecentPublishedReviews } from "../crm-reviews";
 import styles from "../reviews.module.css";
 import { ReviewCard } from "./review-card";
 
-export function HomeReviews() {
+export async function HomeReviews() {
+  const reviews = await getRecentPublishedReviews().catch(() => null);
+  if (!reviews?.length) return null;
   return (
     <section
       className={styles.homeSection}
@@ -31,7 +33,7 @@ export function HomeReviews() {
         поділитися.
       </p>
       <div className={styles.homeCards}>
-        {demoReviews.slice(0, 3).map((review) => (
+        {reviews.map((review) => (
           <ReviewCard key={review.id} review={review} />
         ))}
       </div>

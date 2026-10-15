@@ -112,6 +112,7 @@ function buildProduct(
 
   return {
     id,
+    type: lead.type,
     slug,
     urlKey,
     title,

@@ -1,7 +1,8 @@
 import "server-only";
+import { cacheLife } from "next/cache";
 import { z } from "zod";
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
-import { crmCategorySchema, crmCollectionDetailSchema, crmCollectionSchema, crmProductsPageSchema, type CrmProduct } from "./crm.types";
+import { crmBundleDetailSchema, crmCategorySchema, crmCollectionDetailSchema, crmCollectionSchema, crmProductsPageSchema, type CrmProduct } from "./crm.types";
 
 export { CrmApiError } from "@/lib/crm-client";
 export type { CrmProduct, CrmCategory, CrmCollection, CrmCollectionDetail } from "./crm.types";
@@ -48,4 +49,11 @@ export async function fetchCollections() {
 export async function fetchCollection(slug: string) {
   const body = await request(`/collections/${encodeURIComponent(slug)}`, z.object({ data: crmCollectionDetailSchema }));
   return body?.data ?? null;
+}
+
+/** The list endpoint leaves bundleItems empty; composition is only in detail. */
+export async function fetchBundleDetail(id: string) {
+  "use cache: remote";
+  cacheLife({ stale: 60, revalidate: 60, expire: 120 });
+  return (await requestOrThrow(`/products/${encodeURIComponent(id)}`, crmBundleDetailSchema)).data;
 }

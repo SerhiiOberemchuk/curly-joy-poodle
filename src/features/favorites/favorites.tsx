@@ -3,77 +3,54 @@
 import {
   createContext,
   useContext,
-  useMemo,
-  useSyncExternalStore,
+  useEffect,
+  useState,
 } from "react";
+import { useStore } from "zustand";
 
 import { Icon } from "@/components/ui/icon";
 
-/** Favourites live in this browser only — there are no customer accounts. */
-const STORAGE_KEY = "curly-joy-favorites";
+import { FAVORITES_STORAGE_KEY } from "./favorites-storage";
+import { createFavoritesStore, type FavoritesState } from "./favorites-store";
+import styles from "./favorites.module.css";
 
-interface Favorites {
-  /** Product ids, in the order they were saved. */
-  ids: readonly string[];
-  toggle: (productId: string) => void;
+const FavoritesContext = createContext<ReturnType<typeof createFavoritesStore> | null>(null);
+
+export function useFavoritesStore<T>(selector: (state: FavoritesState) => T): T {
+  const store = useContext(FavoritesContext);
+  if (!store) throw new Error("useFavoritesStore requires FavoritesProvider");
+  return useStore(store, selector);
 }
 
-const FavoritesContext = createContext<Favorites | null>(null);
-
-export function useFavorites(): Favorites {
-  const favorites = useContext(FavoritesContext);
-  if (!favorites) throw new Error("useFavorites requires FavoritesProvider");
-  return favorites;
-}
-
-function subscribe(listener: () => void) {
-  window.addEventListener("storage", listener);
-  window.addEventListener("favorites-change", listener);
-  return () => {
-    window.removeEventListener("storage", listener);
-    window.removeEventListener("favorites-change", listener);
-  };
-}
-
-function readStoredFavorites() {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) ?? "[]";
-  } catch {
-    return "[]";
-  }
+function FavoritesStorageNotice() {
+  const error = useFavoritesStore((state) => state.storageError);
+  return <div role="status" className={error ? styles.notice : undefined}>{error}</div>;
 }
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
-  const stored = useSyncExternalStore(
-    subscribe,
-    readStoredFavorites,
-    () => "[]",
-  );
-  const ids = useMemo((): string[] => {
-    try {
-      const parsed: unknown = JSON.parse(stored);
-      return Array.isArray(parsed)
-        ? parsed.filter((item): item is string => typeof item === "string")
-        : [];
-    } catch {
-      return [];
-    }
-  }, [stored]);
+  const [store] = useState(createFavoritesStore);
 
-  function toggle(productId: string) {
-    const next = ids.includes(productId)
-      ? ids.filter((id) => id !== productId)
-      : [...ids, productId];
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new Event("favorites-change"));
-    } catch {
-      /* Storage may be disabled in the visitor's browser. */
+  useEffect(() => {
+    function syncStorage(event: StorageEvent) {
+      if (event.key !== FAVORITES_STORAGE_KEY && event.key !== null) return;
+      try {
+        if (event.storageArea !== window.localStorage) return;
+      } catch {
+        return;
+      }
+      void store.persist.rehydrate();
     }
-  }
+
+    window.addEventListener("storage", syncStorage);
+    void store.persist.rehydrate();
+    return () => window.removeEventListener("storage", syncStorage);
+  }, [store]);
 
   return (
-    <FavoritesContext value={{ ids, toggle }}>{children}</FavoritesContext>
+    <FavoritesContext value={store}>
+      {children}
+      <FavoritesStorageNotice />
+    </FavoritesContext>
   );
 }
 
@@ -87,13 +64,15 @@ export function FavoriteToggle({
   productTitle: string;
   className?: string;
 }) {
-  const { ids, toggle } = useFavorites();
-  const selected = ids.includes(productId);
+  const selected = useFavoritesStore((state) => state.ids.includes(productId));
+  const toggle = useFavoritesStore((state) => state.toggle);
+  const isHydrated = useFavoritesStore((state) => state.isHydrated);
 
   return (
     <button
       className={className}
       type="button"
+      disabled={!isHydrated}
       aria-pressed={selected}
       aria-label={`${selected ? "Прибрати з обраного" : "Додати до обраного"}: ${productTitle}`}
       onClick={() => toggle(productId)}

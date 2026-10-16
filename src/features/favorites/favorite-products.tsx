@@ -7,12 +7,15 @@ import type { ProductListItem } from "@/features/catalog/types";
 import { ProductTile } from "@/features/home/components/product-tile";
 import styles from "@/features/home/home.module.css";
 
-import { useFavorites } from "./favorites";
+import { useFavoritesStore } from "./favorites";
 
 /** The saved products, resolved against the live catalog in this browser. */
 export function FavoriteProducts({ products }: { products: readonly ProductListItem[] }) {
-  const { ids } = useFavorites();
+  const ids = useFavoritesStore((state) => state.ids);
+  const isHydrated = useFavoritesStore((state) => state.isHydrated);
   const saved = products.filter((product) => ids.includes(product.id));
+
+  if (!isHydrated) return <p role="status">Завантажуємо обране…</p>;
 
   if (saved.length === 0) {
     return (

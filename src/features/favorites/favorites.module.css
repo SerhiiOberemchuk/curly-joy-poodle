@@ -1,0 +1,15 @@
+.notice {
+  position: fixed;
+  z-index: 100;
+  inset-inline: 1rem;
+  bottom: 6rem;
+  width: fit-content;
+  max-width: min(32rem, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 1rem 1.25rem;
+  color: var(--color-ink);
+  background: var(--color-cream);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}

@@ -289,7 +289,7 @@ test("favorite button on a catalog card updates the shared store without navigat
   );
   assert.deepEqual(
     JSON.parse(window.localStorage.getItem("curly-joy-favorites")),
-    ["group:model"],
+    { state: { ids: ["group:model"] }, version: 1 },
   );
   assert.ok(screen.getByText("Немає в наявності"));
 });

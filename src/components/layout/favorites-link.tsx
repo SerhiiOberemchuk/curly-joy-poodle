@@ -3,19 +3,19 @@
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/icon";
-import { useFavorites } from "@/features/favorites/favorites";
+import { useFavoritesStore } from "@/features/favorites/favorites";
 
 import styles from "./site-header.module.css";
 
 export function FavoritesLink() {
-  const { ids } = useFavorites();
+  const count = useFavoritesStore((state) => state.ids.length);
 
   return (
-    <Link href="/favorites" className={styles.iconButton} aria-label={`Обране: ${ids.length}`}>
+    <Link href="/favorites" className={styles.iconButton} aria-label={`Обране: ${count}`}>
       <Icon name="heart" />
-      {ids.length > 0 ? (
+      {count > 0 ? (
         <span className={styles.favoriteCount} aria-hidden="true">
-          {ids.length}
+          {count}
         </span>
       ) : null}
     </Link>

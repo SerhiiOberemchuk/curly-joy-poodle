@@ -8,8 +8,7 @@ import type { Product } from "@/features/catalog/types";
 import { getCapabilities } from "@/features/checkout/crm";
 import type { CrmCapabilities } from "@/features/checkout/crm/types";
 import { hryvniaCartTerms } from "@/features/checkout/options";
-import { sumMoney } from "@/lib/money";
-
+import { calculateCart } from "./calculate";
 import { readCartCookie } from "./cart-cookie";
 import { maxQuantityForVariant } from "./quantity";
 import type { Cart, CartLine, StoredCartLine } from "./types";
@@ -76,35 +75,7 @@ function priceCart(
 ): Cart {
   const lines = resolveLines(stored, products);
   if (lines.length === 0) return EMPTY_CART;
-
-  const { freeShippingThreshold, minOrderAmount } =
-    hryvniaCartTerms(capabilities);
-  const subtotal = sumMoney(lines.map((line) => line.lineTotal));
-  const savings = sumMoney(
-    lines.map((line) =>
-      line.compareAtPrice
-        ? (line.compareAtPrice - line.unitPrice) * line.quantity
-        : 0,
-    ),
-  );
-
-  return {
-    lines,
-    itemCount: lines.reduce((count, line) => count + line.quantity, 0),
-    subtotal,
-    savings,
-    freeShipping:
-      freeShippingThreshold !== null && subtotal >= freeShippingThreshold,
-    freeShippingThreshold,
-    freeShippingRemainder:
-      freeShippingThreshold === null
-        ? null
-        : Math.max(freeShippingThreshold - subtotal, 0),
-    minOrderAmount,
-    minOrderRemainder:
-      minOrderAmount === null ? null : Math.max(minOrderAmount - subtotal, 0),
-    isEmpty: false,
-  };
+  return calculateCart(lines, hryvniaCartTerms(capabilities));
 }
 
 /**

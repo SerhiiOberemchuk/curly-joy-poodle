@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { QuickContact } from "@/components/layout/quick-contact";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
+import { CartStoreProvider } from "@/features/cart/cart-store";
 import { site } from "@/lib/site";
 
 import "./globals.css";
@@ -65,12 +66,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </a>
           <div className={styles.shell}>
             <FavoritesProvider>
-              <SiteHeader />
-              <main id="main-content" className={styles.main}>
-                {children}
-              </main>
-              <SiteFooter />
-              <QuickContact />
+              <CartStoreProvider>
+                <SiteHeader />
+                <main id="main-content" className={styles.main}>
+                  {children}
+                </main>
+                <SiteFooter />
+                <QuickContact />
+              </CartStoreProvider>
             </FavoritesProvider>
           </div>
         </NuqsAdapter>

@@ -85,7 +85,7 @@ function product(overrides = {}) {
   };
 }
 function setCart(lines) {
-  cookieValues.set("cjp_cart", JSON.stringify(lines));
+  cookieValues.set("cjp_cart_v2", JSON.stringify(lines));
 }
 function form(quantity, variantId = "p1") {
   const data = new FormData();
@@ -287,19 +287,32 @@ test("cumulative additions cannot exceed stock or silently change the request", 
   setCart([{ p: "p1", q: 20 }]);
   const { addToCartAction } = load("src/features/cart/actions.ts");
   assert.equal((await addToCartAction({}, form(6))).status, "error");
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart"))[0].q, 20);
+  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 20);
   assert.equal((await addToCartAction({}, form(5))).status, "success");
 });
 
-test("cart quantity changes use fresh stock and remove sold-out items", async () => {
-  const { setLineQuantityAction } = load("src/features/cart/actions.ts");
-  setCart([{ p: "p1", q: 12 }]);
-  products[0].stock = 3;
-  await setLineQuantityAction({}, form(13));
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart"))[0].q, 3);
-  products[0].availability = "out_of_stock";
-  await setLineQuantityAction({}, form(2));
-  assert.equal(cookieValues.has("cjp_cart"), false);
+test("cart quantity changes update totals locally and stay within displayed stock", async () => {
+  const { loadCart } = load("src/features/cart/queries.ts");
+  const { createCartStore } = load("src/features/cart/cart-store.tsx");
+  capabilities.cart.freeShippingThreshold = 1000;
+  const cart = (await loadCart([{ p: "p1", q: 2 }])).cart;
+  const store = createCartStore();
+  store.getState().hydrate(cart);
+  const crmReads = requests.length;
+  store.getState().setQuantity("p1", 3);
+  assert.equal(store.getState().cart.lines[0].quantity, 3);
+  assert.equal(store.getState().cart.subtotal, cart.lines[0].unitPrice * 3);
+  assert.equal(store.getState().cart.freeShipping, true);
+  assert.equal(store.getState().cart.freeShippingRemainder, 0);
+  store.getState().setQuantity("p1", 26);
+  assert.equal(store.getState().cart.lines[0].quantity, 3);
+  store.getState().hydrate(cart);
+  assert.equal(store.getState().cart.lines[0].quantity, 2);
+  store.getState().setQuantity("p1", 4);
+  assert.equal(store.getState().cart.itemCount, 4);
+  store.getState().remove("p1");
+  assert.equal(store.getState().cart.isEmpty, true);
+  assert.equal(requests.length, crmReads);
 });
 
 test("cart reads current prices and all lines from one CRM snapshot", async () => {
@@ -330,7 +343,7 @@ test("checkout stops before saving an order if stock has decreased", async () =>
   assert.equal(result.status, "error");
   assert.match(result.message, /Наявність товарів змінилася/);
   assert.equal(savedOrders.length, 0);
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart"))[0].q, 2);
+  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 2);
 });
 
 test("checkout does not silently submit only the surviving cart items", async () => {
@@ -342,7 +355,7 @@ test("checkout does not silently submit only the surviving cart items", async ()
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
     { p: "p2", q: 1 },
   ]);
 });
@@ -355,7 +368,7 @@ test("CRM failure prevents additions and checkout without changing the cart", as
   assert.equal((await addToCartAction({}, form(1))).status, "error");
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
     { p: "p1", q: 12 },
   ]);
 });
@@ -434,13 +447,13 @@ test("duplicate cookie lines cannot bypass the per-product stock check", async (
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
   assert.equal(refreshes, 1);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
     { p: "p1", q: 3 },
   ]);
 });
 
 function checkoutData(overrides = {}) {
-  const stored = JSON.parse(cookieValues.get("cjp_cart") ?? "[]");
+  const stored = JSON.parse(cookieValues.get("cjp_cart_v2") ?? "[]");
   const quotedTotal = stored.reduce(
     (sum, line) =>
       sum +
@@ -486,7 +499,7 @@ test("checkout uses carrier labels and refs validated on the server", async () =
   assert.equal(savedOrders[0].delivery.branch, "Branch 1");
   assert.equal(savedOrders[0].delivery.branchRef, BRANCH_REF);
   assert.equal(savedOrders[0].delivery.cod, false);
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart"))[0].q, 1);
+  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 1);
 });
 
 test("retrying the same checkout reuses both the CRM order and its active payment link", async () => {
@@ -588,7 +601,7 @@ test("a refused CRM order preserves the basket and never starts a payment", asyn
     requests.some((request) => request.url.endsWith("/payment-link")),
     false,
   );
-  assert.ok(cookieValues.has("cjp_cart"));
+  assert.ok(cookieValues.has("cjp_cart_v2"));
 });
 
 test("a provider failure retains the accepted order and retries payment without another order", async () => {
@@ -602,7 +615,7 @@ test("a provider failure retains the accepted order and retries payment without 
     /redirect:\/checkout\/success/,
   );
   assert.equal(savedOrders.length, 1);
-  assert.ok(cookieValues.has("cjp_cart"));
+  assert.ok(cookieValues.has("cjp_cart_v2"));
   failPayment = false;
   await assert.rejects(retryPaymentAction(), /redirect:https:/);
   assert.equal(savedOrders.length, 1);
@@ -674,7 +687,7 @@ test("a changed basket survives payment settlement for the previous order", asyn
     "src/features/checkout/payment/settlement.ts",
   );
   assert.equal((await settleCheckoutReturn()).status, "paid");
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
     { p: "p1", q: 2 },
   ]);
 });
@@ -806,21 +819,17 @@ test("a changed checkout total asks for confirmation before creating any order o
     false,
   );
   assert.equal(refreshes, 1);
-  assert.ok(cookieValues.has("cjp_cart"));
+  assert.ok(cookieValues.has("cjp_cart_v2"));
 });
 
 test("malformed or missing quantities do not become default or truncated purchases", async () => {
-  const { addToCartAction, setLineQuantityAction } = load(
+  const { addToCartAction } = load(
     "src/features/cart/actions.ts",
   );
   for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
     setCart([{ p: "p1", q: 2 }]);
     assert.equal((await addToCartAction({}, form(value))).status, "error");
-    assert.equal(
-      (await setLineQuantityAction({}, form(value))).status,
-      "error",
-    );
-    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
+    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
       { p: "p1", q: 2 },
     ]);
   }
@@ -870,7 +879,7 @@ test("malformed CRM catalog data fails closed rather than becoming a purchaseabl
   products = [product({ price: "420" })];
   const { addToCartAction } = load("src/features/cart/actions.ts");
   assert.equal((await addToCartAction({}, form(1))).status, "error");
-  assert.equal(cookieValues.has("cjp_cart"), false);
+  assert.equal(cookieValues.has("cjp_cart_v2"), false);
 });
 
 test("HTML descriptions use a parser to preserve allowed markup and remove executable content", async () => {
@@ -1089,19 +1098,24 @@ test("cart and checkout pages explain a CRM outage instead of failing the whole 
     renderToStaticMarkup(await content.type(content.props)),
     /Оформлення тимчасово недоступне/,
   );
-  assert.ok(cookieValues.has("cjp_cart"));
+  assert.ok(cookieValues.has("cjp_cart_v2"));
 });
 
-test("a CRM failure on a quantity change keeps the cart and is reported on the line", async () => {
-  setCart([{ p: "p1", q: 2 }]);
-  failApi = true;
-  const { setLineQuantityAction } = load("src/features/cart/actions.ts");
-  const state = await setLineQuantityAction({}, form(3));
-  assert.equal(state.status, "error");
-  assert.match(state.message, /Не вдалося перевірити наявність/);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart")), [
-    { p: "p1", q: 2 },
-  ]);
+test("legacy HttpOnly cart is read once and moved to the browser cart on server write", async () => {
+  cookieValues.set("cjp_cart", JSON.stringify([{ p: "p1", q: 2 }]));
+  const { readCartCookie } = load("src/features/cart/cart-cookie.ts");
+  assert.deepEqual(await readCartCookie(), [{ p: "p1", q: 2 }]);
+  const { addToCartAction } = load("src/features/cart/actions.ts");
+  assert.equal((await addToCartAction({}, form(1))).status, "success");
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [{ p: "p1", q: 3 }]);
+  assert.equal(cookieValues.has("cjp_cart"), false);
+});
+
+test("an empty browser cart cannot revive an older HttpOnly cart", async () => {
+  cookieValues.set("cjp_cart", JSON.stringify([{ p: "p1", q: 2 }]));
+  cookieValues.set("cjp_cart_v2", "[]");
+  const { readCartCookie } = load("src/features/cart/cart-cookie.ts");
+  assert.deepEqual(await readCartCookie(), []);
 });
 
 test("a product without a SKU is not sold: the CRM could not link its order line", async () => {

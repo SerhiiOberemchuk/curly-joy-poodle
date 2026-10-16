@@ -3,13 +3,12 @@
 import { refresh } from "next/cache";
 
 import { findVariant } from "@/features/catalog/queries";
-import { clamp, readInt, readString } from "@/lib/form";
+import { readInt, readString } from "@/lib/form";
 
-import { initialCartActionState, type CartActionState } from "./action-state";
+import type { CartActionState } from "./action-state";
 import { readCartCookie, writeCartCookie } from "./cart-cookie";
 import { MAX_CART_LINES } from "./constants";
 import { maxQuantityForVariant } from "./quantity";
-import type { StoredCartLine } from "./types";
 
 function failure(message: string): CartActionState {
   return { status: "error", message };
@@ -67,59 +66,4 @@ export async function addToCartAction(
   refresh();
 
   return { status: "success", message: `${name} — у кошику` };
-}
-
-export async function setLineQuantityAction(
-  _state: CartActionState,
-  formData: FormData,
-): Promise<CartActionState> {
-  const variantId = readString(formData, "variantId");
-  const quantity = readInt(formData, "quantity");
-  if (quantity === null) return failure("Вкажіть коректну кількість товару.");
-
-  const lines = await readCartCookie();
-  let next: StoredCartLine[];
-  try {
-    next = await applyQuantity(lines, variantId, quantity);
-  } catch {
-    // The cart stays as it was; the line reports the failure.
-    return failure("Не вдалося перевірити наявність товару. Спробуйте ще раз.");
-  }
-
-  await writeCartCookie(next);
-  refresh();
-  return initialCartActionState;
-}
-
-export async function removeLineAction(formData: FormData): Promise<void> {
-  const variantId = readString(formData, "variantId");
-
-  const lines = await readCartCookie();
-  await writeCartCookie(lines.filter((item) => item.p !== variantId));
-  refresh();
-}
-
-export async function clearCartAction(): Promise<void> {
-  await writeCartCookie([]);
-  refresh();
-}
-
-async function applyQuantity(
-  lines: StoredCartLine[],
-  variantId: string,
-  quantity: number,
-): Promise<StoredCartLine[]> {
-  if (quantity < 1) {
-    return lines.filter((item) => item.p !== variantId);
-  }
-
-  const match = await findVariant(variantId);
-  if (!match || !match.variant.inStock) {
-    return lines.filter((item) => item.p !== variantId);
-  }
-
-  const ceiling = maxQuantityForVariant(match.variant);
-  return lines.map((item) =>
-    item.p === variantId ? { ...item, q: ceiling === null ? quantity : clamp(quantity, 1, ceiling) } : item,
-  );
 }

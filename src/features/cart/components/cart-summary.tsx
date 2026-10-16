@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
@@ -87,12 +86,12 @@ export function CartSummary({
       </p>
 
       {action === "none" || cart.minOrderRemainder ? null : (
-        <Link
+        <a
           href="/checkout"
           className={buttonStyles({ size: "lg", block: true })}
         >
           Оформити замовлення
-        </Link>
+        </a>
       )}
 
       <p className={styles.note}>

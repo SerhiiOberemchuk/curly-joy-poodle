@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getCartItemCount } from "../queries";
+import { CartCount } from "./cart-count";
 import styles from "./cart-indicator.module.css";
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -39,9 +40,7 @@ export async function CartIndicator() {
 
   return (
     <Shell>
-      <span className={styles.count} aria-label={`Товарів у кошику: ${count}`}>
-        {count}
-      </span>
+      <CartCount serverCount={count} />
     </Shell>
   );
 }

@@ -67,22 +67,57 @@ function formatFigures(offer: CrmOffer, locale: Locale): OfferFigures {
   };
 }
 
+const crmHints: Partial<Record<number, string>> = {
+  401: "Check OBRIYM_CRM_API_KEY.",
+  403: "The token needs contacts:read and contacts:write for its sales source.",
+  404: "No active campaign with this WELCOME_OFFER_CAMPAIGN_ID for the token's sales source.",
+};
+
+/** What the server log needs to explain a failure; never the buyer's email. */
+function describeFailure(error: unknown): Record<string, unknown> {
+  if (error instanceof CrmApiError)
+    return {
+      status: error.status,
+      code: error.code,
+      reason: error.reason,
+      hint: crmHints[error.status],
+    };
+  if (error instanceof z.ZodError)
+    return {
+      invalidFields: error.issues.map((issue) => issue.path.join(".")),
+      hint: "Unexpected CRM answer; the offer needs obriym-crm with migration 0264.",
+    };
+  return { error };
+}
+
 async function readOffer(
   locale: Locale,
 ): Promise<{ offer: WelcomeOffer; emailLocale: Locale | null } | null> {
+  if (process.env.WELCOME_OFFER_ENABLED !== "true") return null;
   const id = process.env.WELCOME_OFFER_CAMPAIGN_ID?.trim();
-  if (
-    process.env.WELCOME_OFFER_ENABLED !== "true" ||
-    !id ||
-    !process.env.OBRIYM_CRM_API_KEY
-  )
+  if (!id || !process.env.OBRIYM_CRM_API_KEY) {
+    console.error(
+      "[welcome-offer] Enabled without WELCOME_OFFER_CAMPAIGN_ID or OBRIYM_CRM_API_KEY; the offer is hidden.",
+    );
     return null;
+  }
   try {
     const { data } = offerSchema.parse(
       await crmRequest(`/promotions/${encodeURIComponent(id)}/capture`),
     );
     // The cart is priced in the shop currency; another one could never apply.
-    if (data.campaignId !== id || data.currency !== CURRENCY) return null;
+    if (data.campaignId !== id || data.currency !== CURRENCY) {
+      console.error(
+        "[welcome-offer] The CRM offer does not fit this shop; it is hidden.",
+        {
+          campaignId: id,
+          returnedCampaignId: data.campaignId,
+          currency: data.currency,
+          shopCurrency: CURRENCY,
+        },
+      );
+      return null;
+    }
     const copy = welcomeOfferCopy[locale];
     const figures = formatFigures(data, locale);
     const title = copy.offer.title(figures);
@@ -103,7 +138,11 @@ async function readOffer(
       // Without the shop's language the CRM writes in the workspace's own.
       emailLocale: data.emailLocales.includes(locale) ? locale : null,
     };
-  } catch {
+  } catch (error) {
+    console.error(
+      "[welcome-offer] The CRM offer could not be read; it is hidden.",
+      { campaignId: id, ...describeFailure(error) },
+    );
     return null;
   }
 }
@@ -163,8 +202,13 @@ export async function submitOfferRequest(
     );
     return { state: { status: "sent", message: messages.sent, errors: {} } };
   } catch (error) {
+    // Throttling is the CRM's intended answer to repeats, not a fault.
     if (error instanceof CrmApiError && error.status === 429)
       return { state: fail(messages.throttled) };
+    console.error("[welcome-offer] The CRM did not accept the capture.", {
+      campaignId: offer.id,
+      ...describeFailure(error),
+    });
     if (error instanceof CrmApiError && error.status === 404)
       return { state: fail(messages.unavailable) };
     return { state: fail(messages.failed) };

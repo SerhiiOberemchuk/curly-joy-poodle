@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
-const { test, beforeEach, afterEach } = require("node:test");
+const { test, mock, beforeEach, afterEach } = require("node:test");
 const { createLoader } = require("./load-modules.cjs");
-let calls, failure, response, offer, revision;
+let calls, failure, offerFailure, response, offer, revision, logs;
 class CrmApiError extends Error {
   constructor(status) {
     super();
@@ -17,7 +17,10 @@ const load = createLoader({
     CrmApiError,
     crmRequest: async (path, body, headers) => {
       calls.push({ path, body, headers });
-      if (body === undefined) return { data: offer };
+      if (body === undefined) {
+        if (offerFailure) throw offerFailure;
+        return { data: offer };
+      }
       if (failure) throw failure;
       return response;
     },
@@ -35,6 +38,8 @@ const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
 beforeEach(async () => {
   calls = [];
   failure = null;
+  offerFailure = null;
+  logs = mock.method(console, "error", () => {});
   offer = {
     campaignId: "welcome",
     title: "Внутрішня назва акції",
@@ -58,6 +63,7 @@ beforeEach(async () => {
   calls = [];
 });
 afterEach(() => {
+  logs.mock.restore();
   for (const [key, value] of Object.entries(previous)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
@@ -200,4 +206,47 @@ test("capture handles rate limits, unavailable offer, outages and malformed ackn
   failure = null;
   response = { data: {} };
   assert.equal((await submitOfferRequest(data())).state.status, "error");
+});
+test("a hidden offer explains itself in the server log without the buyer's email", async () => {
+  process.env.WELCOME_OFFER_ENABLED = "false";
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.equal(logs.mock.callCount(), 0);
+  process.env.WELCOME_OFFER_ENABLED = "true";
+  delete process.env.WELCOME_OFFER_CAMPAIGN_ID;
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.match(logs.mock.calls.at(-1).arguments[0], /WELCOME_OFFER_CAMPAIGN_ID/);
+  process.env.WELCOME_OFFER_CAMPAIGN_ID = "welcome";
+  offerFailure = new CrmApiError(404);
+  offerFailure.code = "NOT_FOUND";
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.deepEqual(logs.mock.calls.at(-1).arguments[1], {
+    campaignId: "welcome",
+    status: 404,
+    code: "NOT_FOUND",
+    reason: undefined,
+    hint: "No active campaign with this WELCOME_OFFER_CAMPAIGN_ID for the token's sales source.",
+  });
+  offerFailure = null;
+  delete offer.emailLocales;
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.deepEqual(logs.mock.calls.at(-1).arguments[1].invalidFields, [
+    "data.emailLocales",
+  ]);
+  offer.emailLocales = ["uk"];
+  offer.currency = "EUR";
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.equal(logs.mock.calls.at(-1).arguments[1].currency, "EUR");
+  offer.currency = "UAH";
+  revision = (await getWelcomeOffer("uk")).revision;
+  const before = logs.mock.callCount();
+  failure = new CrmApiError(429);
+  await submitOfferRequest(data());
+  assert.equal(logs.mock.callCount(), before);
+  failure = new CrmApiError(500);
+  await submitOfferRequest(data());
+  assert.equal(logs.mock.callCount(), before + 1);
+  assert.doesNotMatch(
+    JSON.stringify(logs.mock.calls.map((call) => call.arguments)),
+    /maria/i,
+  );
 });

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { test, beforeEach } = require("node:test");
+const { JSDOM } = require("jsdom");
 const { createLoader } = require("./load-modules.cjs");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
@@ -205,6 +206,19 @@ beforeEach(async () => {
           { error: { code: "SERVER_ERROR" } },
           { status: 500 },
         );
+      if (payload.promotion && !crmOrders.has(payload.externalId)) {
+        const expected = (
+          payload.items.reduce(
+            (sum, item) => sum + Number(item.unitPrice) * item.quantity,
+            0,
+          ) * 0.95
+        ).toFixed(2);
+        if (payload.promotion.expectedTotal !== expected)
+          return Response.json(
+            { error: { code: "CONFLICT", reason: "price_changed" } },
+            { status: 409 },
+          );
+      }
       if (!crmOrders.has(payload.externalId)) {
         savedOrders.push(payload);
         crmOrders.set(payload.externalId, {
@@ -213,12 +227,14 @@ beforeEach(async () => {
           number: "101",
           status: "pending",
           currency: "UAH",
-          totalAmount: payload.items
-            .reduce(
-              (total, item) => total + Number(item.unitPrice) * item.quantity,
-              0,
-            )
-            .toFixed(2),
+          totalAmount:
+            payload.promotion?.expectedTotal ??
+            payload.items
+              .reduce(
+                (total, item) => total + Number(item.unitPrice) * item.quantity,
+                0,
+              )
+              .toFixed(2),
           payments: [],
           shipments: [],
         });
@@ -291,7 +307,15 @@ test("cumulative additions cannot exceed stock or silently change the request", 
   assert.equal((await addToCartAction({}, form(5))).status, "success");
 });
 
-test("cart quantity changes update totals locally and stay within displayed stock", async () => {
+test("cart quantity changes update totals locally and stay within displayed stock", async (t) => {
+  // The browser cookie must accept each change, or the store undoes it.
+  const { window } = new JSDOM("", { url: "http://localhost/cart" });
+  Object.assign(globalThis, { window, document: window.document, location: window.location });
+  t.after(() => {
+    delete globalThis.window;
+    delete globalThis.document;
+    delete globalThis.location;
+  });
   const { loadCart } = load("src/features/cart/queries.ts");
   const { createCartStore } = load("src/features/cart/cart-store.tsx");
   capabilities.cart.freeShippingThreshold = 1000;
@@ -312,6 +336,7 @@ test("cart quantity changes update totals locally and stay within displayed stoc
   assert.equal(store.getState().cart.itemCount, 4);
   store.getState().remove("p1");
   assert.equal(store.getState().cart.isEmpty, true);
+  assert.equal(store.getState().error, null);
   assert.equal(requests.length, crmReads);
 });
 
@@ -488,6 +513,63 @@ function checkoutData(overrides = {}) {
   return data;
 }
 
+test("managed promotion keeps original CRM prices, pays the net total and replays the accepted first order without another quote", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const data = checkoutData({
+    promotionCode: "welcome",
+    promotionTotal: "39900",
+    promotionCartKey: JSON.stringify([["p1", 1, 42000]]),
+  });
+  await assert.rejects(
+    placeOrderAction({}, data),
+    /redirect:https:\/\/pay.mono.test/,
+  );
+  assert.deepEqual(savedOrders[0].promotion, {
+    code: "WELCOME",
+    expectedTotal: "399.00",
+  });
+  assert.equal(savedOrders[0].items[0].unitPrice, "420.00");
+  assert.equal(savedOrders[0].promoCode, undefined);
+  assert.equal(savedOrders[0].discountAmount, undefined);
+  assert.equal(savedOrders[0].shippingThresholdAmount, undefined);
+  assert.equal([...crmOrders.values()][0].totalAmount, "399.00");
+  await assert.rejects(
+    placeOrderAction({}, data),
+    /redirect:https:\/\/pay.mono.test/,
+  );
+  assert.equal(savedOrders.length, 1);
+  assert.equal(
+    requests.some(({ url }) => url.includes("/promotions/quote")),
+    false,
+  );
+});
+
+test("managed promotion rejects a stale cart and missing expectation locally, then surfaces CRM price conflicts before payment", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  assert.equal(
+    (await placeOrderAction({}, checkoutData({ promotionCode: "WELCOME" })))
+      .status,
+    "error",
+  );
+  assert.equal(savedOrders.length, 0);
+  const state = await placeOrderAction(
+    {},
+    checkoutData({
+      promotionCode: "WELCOME",
+      promotionTotal: "1",
+      promotionCartKey: JSON.stringify([["p1", 1, 42000]]),
+    }),
+  );
+  assert.match(state.message, /Сума зі знижкою змінилася/);
+  assert.equal(savedOrders.length, 0);
+  assert.equal(
+    requests.some(({ url }) => url.endsWith("/payment-link")),
+    false,
+  );
+});
+
 test("checkout uses carrier labels and refs validated on the server", async () => {
   setCart([{ p: "p1", q: 1 }]);
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
@@ -500,6 +582,26 @@ test("checkout uses carrier labels and refs validated on the server", async () =
   assert.equal(savedOrders[0].delivery.branchRef, BRANCH_REF);
   assert.equal(savedOrders[0].delivery.cod, false);
   assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 1);
+});
+
+test("checkout starts with contacts and an old buyer cookie cannot force login or attach an account", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  cookieValues.set("cjp_buyer", "a-session-left-by-the-removed-profile-flow");
+  const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
+  const content = CheckoutPage().props.children[1].props.children;
+  const html = renderToStaticMarkup(await content.type(content.props));
+  assert.match(html, /Контактні дані/);
+  assert.doesNotMatch(html, /Ваш профіль покупця|Email для входу|Отримати код/);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(
+    placeOrderAction({}, checkoutData({ buyerReference: "forged-account" })),
+    /redirect:https:/,
+  );
+  assert.equal(savedOrders[0].customer.externalId, undefined);
+  assert.equal(
+    requests.some(({ url }) => new URL(url).pathname.includes("/customers")),
+    false,
+  );
 });
 
 test("retrying the same checkout reuses both the CRM order and its active payment link", async () => {
@@ -762,7 +864,9 @@ test("cart shipping terms are read from the CRM without an invented threshold", 
   assert.equal(cart.freeShippingRemainder, 108000);
   assert.equal(cart.minOrderAmount, 50000);
   assert.equal(cart.minOrderRemainder, 8000);
-  const markup = renderToStaticMarkup(React.createElement(CartSummary, { cart }));
+  const markup = renderToStaticMarkup(
+    React.createElement(CartSummary, { cart }),
+  );
   assert.match(markup, /Безкоштовна доставка від 1\s500\s₴ суми товарів/);
   assert.match(markup, /Додайте ще на 1\s080\s₴/);
   assert.match(markup, /Мінімальна сума замовлення — 500\s₴/);
@@ -823,9 +927,7 @@ test("a changed checkout total asks for confirmation before creating any order o
 });
 
 test("malformed or missing quantities do not become default or truncated purchases", async () => {
-  const { addToCartAction } = load(
-    "src/features/cart/actions.ts",
-  );
+  const { addToCartAction } = load("src/features/cart/actions.ts");
   for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
     setCart([{ p: "p1", q: 2 }]);
     assert.equal((await addToCartAction({}, form(value))).status, "error");
@@ -1107,7 +1209,9 @@ test("legacy HttpOnly cart is read once and moved to the browser cart on server 
   assert.deepEqual(await readCartCookie(), [{ p: "p1", q: 2 }]);
   const { addToCartAction } = load("src/features/cart/actions.ts");
   assert.equal((await addToCartAction({}, form(1))).status, "success");
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [{ p: "p1", q: 3 }]);
+  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+    { p: "p1", q: 3 },
+  ]);
   assert.equal(cookieValues.has("cjp_cart"), false);
 });
 
@@ -1255,10 +1359,7 @@ test("a branch is confirmed against the same CRM search that offered it, across 
       total: 1,
     },
   });
-  assert.equal(
-    new URL(requests.at(-1).url).searchParams.has("q"),
-    false,
-  );
+  assert.equal(new URL(requests.at(-1).url).searchParams.has("q"), false);
 });
 
 test("a production server without SITE_URL sends buyers back to the shop's own address, never localhost", () => {

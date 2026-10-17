@@ -4,7 +4,6 @@ import { Suspense } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { readCartCookie } from "@/features/cart/cart-cookie";
-import { CartSummary } from "@/features/cart/components/cart-summary";
 import { loadCart } from "@/features/cart/queries";
 import { createCheckoutToken } from "@/features/checkout/checkout-attempt";
 import {
@@ -89,7 +88,8 @@ async function CheckoutContent() {
         <h2>Додайте товари до замовлення</h2>
         <p>
           Мінімальна сума замовлення — {formatMoney(cart.minOrderAmount)}.{" "}
-          Додайте товарів ще на {formatMoney(cart.minOrderAmount - cart.subtotal)}.
+          Додайте товарів ще на{" "}
+          {formatMoney(cart.minOrderAmount - cart.subtotal)}.
         </p>
         <Link href="/cart" className={buttonStyles({ size: "lg" })}>
           Повернутися до кошика
@@ -99,23 +99,10 @@ async function CheckoutContent() {
   }
   const checkoutToken = await createCheckoutToken();
   return (
-    <div className={styles.layout}>
-      <section className={styles.formPanel} aria-label="Дані замовлення">
-        <CheckoutForm total={cart.subtotal} capabilities={capabilities} checkoutToken={checkoutToken} />
-      </section>
-      <CartSummary cart={cart} action="none">
-        <div className={styles.items}>
-          {cart.lines.map((line) => (
-            <p className={styles.item} key={line.variantId}>
-              <span className={styles.itemName}>
-                {line.title}
-                {line.option ? ` · ${line.option}` : ""} × {line.quantity}
-              </span>
-              <strong>{formatMoney(line.lineTotal)}</strong>
-            </p>
-          ))}
-        </div>
-      </CartSummary>
-    </div>
+    <CheckoutForm
+      cart={cart}
+      capabilities={capabilities}
+      checkoutToken={checkoutToken}
+    />
   );
 }

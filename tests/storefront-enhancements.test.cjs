@@ -33,7 +33,10 @@ const userEvent = require("@testing-library/user-event").default;
 let products = [{ id: "group:model", variants: [{ id: "variant-1" }] }];
 let catalogFailure = false;
 let crmFailure = null;
-let crmResponse = { data: { id: "review-1", status: "pending" }, deduplicated: false };
+let crmResponse = {
+  data: { id: "review-1", status: "pending" },
+  deduplicated: false,
+};
 let requests = [];
 class CrmApiError extends Error {
   constructor(status) {
@@ -62,29 +65,16 @@ const { submitReviewAction } = load("src/features/reviews/actions.ts");
 const { initialReviewState } = load("src/features/reviews/action-state.ts");
 const { ReviewForm } = load("src/features/reviews/components/review-form.tsx");
 const { videoSource } = load("src/features/catalog/video.ts");
-const { getWelcomeOffer, submitOfferRequest } = load(
-  "src/features/welcome-offer/offer.server.ts",
-);
-const previousEnv = Object.fromEntries(
-  [
-    "WELCOME_OFFER_ENABLED",
-    "WELCOME_OFFER_DESCRIPTION",
-    "WELCOME_OFFER_TITLE",
-    "OBRIYM_CRM_API_KEY",
-  ].map((key) => [key, process.env[key]]),
-);
-
 afterEach(() => {
   cleanup();
   products = [{ id: "group:model", variants: [{ id: "variant-1" }] }];
   catalogFailure = false;
   crmFailure = null;
-  crmResponse = { data: { id: "review-1", status: "pending" }, deduplicated: false };
+  crmResponse = {
+    data: { id: "review-1", status: "pending" },
+    deduplicated: false,
+  };
   requests = [];
-  for (const [key, value] of Object.entries(previousEnv)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
 });
 
 function reviewData(overrides = {}) {
@@ -101,24 +91,6 @@ function reviewData(overrides = {}) {
   return data;
 }
 const REVIEW_REQUEST_ID = "f3c1d64e-e026-4423-9226-612d08f8644a";
-function enableOffer() {
-  process.env.WELCOME_OFFER_ENABLED = "true";
-  process.env.WELCOME_OFFER_DESCRIPTION = "Узгоджені умови пропозиції";
-  process.env.OBRIYM_CRM_API_KEY = "test-only-key";
-}
-function offerData(overrides = {}) {
-  const data = new FormData();
-  data.set("offerId", getWelcomeOffer()?.id ?? "");
-  for (const [key, value] of Object.entries({
-    email: "maria@example.com",
-    phone: "",
-    consent: "on",
-    ...overrides,
-  }))
-    data.set(key, value);
-  return data;
-}
-
 test("review submission validates all fields on the server and preserves corrections", async () => {
   const state = await submitReviewAction(
     "group:model",
@@ -153,15 +125,30 @@ test("review submission sends a pending CRM review with a stable retry id", asyn
   assert.equal(state.status, "submitted");
   assert.deepEqual(requests[0], {
     path: "/reviews",
-    body: { productId: "variant-1", rating: 5, authorName: "Марія", authorEmail: "maria@example.com", body: "Приємна річ для щоденних прогулянок.", externalId: REVIEW_REQUEST_ID, locale: "uk", status: "pending" },
+    body: {
+      productId: "variant-1",
+      rating: 5,
+      authorName: "Марія",
+      authorEmail: "maria@example.com",
+      body: "Приємна річ для щоденних прогулянок.",
+      externalId: REVIEW_REQUEST_ID,
+      locale: "uk",
+      status: "pending",
+    },
   });
   assert.match(state.message, /відгук отримано/i);
 });
 test("review submission refuses missing or unavailable CRM products", async () => {
   products = [];
   assert.equal(
-    (await submitReviewAction("group:model", REVIEW_REQUEST_ID, initialReviewState, reviewData()))
-      .status,
+    (
+      await submitReviewAction(
+        "group:model",
+        REVIEW_REQUEST_ID,
+        initialReviewState,
+        reviewData(),
+      )
+    ).status,
     "error",
   );
   catalogFailure = true;
@@ -192,31 +179,65 @@ test("bundle composition links only components published in the shop", async () 
     "next/cache": { cacheLife: () => {}, cacheTag: () => {} },
     "@/features/catalog/catalog-source": {
       loadCatalog: async () => ({
-        products: [{ id: "visible", slug: "visible-product", variants: [{ id: "component-1" }] }],
+        products: [
+          {
+            id: "visible",
+            slug: "visible-product",
+            variants: [{ id: "component-1" }],
+          },
+        ],
         categories: [],
       }),
       loadProducts: async () => [],
     },
     "@/features/catalog/crm-api": {
       fetchBundleDetail: async () => ({
-        id: "bundle-1", type: "bundle",
+        id: "bundle-1",
+        type: "bundle",
         bundleItems: [
-          { quantity: 2, product: { id: "component-1", name: "Шлейка", sku: "MYW-1", images: [] } },
-          { quantity: 1, product: { id: "hidden", name: "Сумка", sku: "MYW-2", images: [] } },
+          {
+            quantity: 2,
+            product: {
+              id: "component-1",
+              name: "Шлейка",
+              sku: "MYW-1",
+              images: [],
+            },
+          },
+          {
+            quantity: 1,
+            product: { id: "hidden", name: "Сумка", sku: "MYW-2", images: [] },
+          },
         ],
       }),
     },
   });
-  const { getBundleComposition } = bundleLoad("src/features/catalog/queries.ts");
-  const items = await getBundleComposition({ type: "bundle", variants: [{ id: "bundle-1" }] });
-  assert.deepEqual(items.map(({ quantity, slug }) => ({ quantity, slug })), [
-    { quantity: 2, slug: "visible-product" },
-    { quantity: 1, slug: null },
-  ]);
+  const { getBundleComposition } = bundleLoad(
+    "src/features/catalog/queries.ts",
+  );
+  const items = await getBundleComposition({
+    type: "bundle",
+    variants: [{ id: "bundle-1" }],
+  });
+  assert.deepEqual(
+    items.map(({ quantity, slug }) => ({ quantity, slug })),
+    [
+      { quantity: 2, slug: "visible-product" },
+      { quantity: 1, slug: null },
+    ],
+  );
 });
 test("review form supports keyboard rating selection and confirms CRM submission", async () => {
-  render(React.createElement(ReviewForm, { productId: "group:model", requestId: REVIEW_REQUEST_ID }));
-  assert.match(screen.getByText(/після перевірки/).textContent, /після перевірки/);
+  render(
+    React.createElement(ReviewForm, {
+      productId: "group:model",
+      requestId: REVIEW_REQUEST_ID,
+    }),
+  );
+  assert.match(
+    screen.getByText(/після перевірки/).textContent,
+    /після перевірки/,
+  );
   const user = userEvent.setup();
   const first = screen.getByRole("radio", { name: "1 з 5" });
   first.focus();
@@ -233,10 +254,7 @@ test("review form supports keyboard rating selection and confirms CRM submission
   await user.click(screen.getByRole("checkbox"));
   await user.click(screen.getByRole("button", { name: "Надіслати відгук" }));
   await waitFor(() =>
-    assert.match(
-      screen.getByRole("status").textContent,
-      /відгук отримано/i,
-    ),
+    assert.match(screen.getByRole("status").textContent, /відгук отримано/i),
   );
   assert.equal(requests.length, 1);
 });
@@ -490,8 +508,21 @@ test("a manually dismissed offer does not reopen at the automatic deadline and r
     React.createElement(WelcomeOfferDialog, {
       offer: {
         id: "test-offer",
+        locale: "uk",
+        revision: "test-revision",
+        teaser: "Запрошення",
         title: "Перше знайомство",
         description: "Узгоджені умови",
+        consentText: "Погоджуюся",
+      },
+      copy: {
+        open: "Пропозиція для першого замовлення",
+        close: "Закрити пропозицію",
+        eyebrow: "Для першого знайомства",
+        hint: "Підказка",
+        email: "Ваш email",
+        submit: "Отримати промокод",
+        pending: "Надсилаємо…",
       },
     }),
   );
@@ -507,59 +538,4 @@ test("a manually dismissed offer does not reopen at the automatic deadline and r
   act(() => t.mock.timers.tick(20000));
   assert.equal(dialog.open, false);
   window.sessionStorage.clear();
-});
-test("welcome offer stays disabled until real terms and CRM credentials exist", async () => {
-  delete process.env.WELCOME_OFFER_ENABLED;
-  assert.equal(getWelcomeOffer(), null);
-  enableOffer();
-  delete process.env.WELCOME_OFFER_DESCRIPTION;
-  assert.equal(getWelcomeOffer(), null);
-  assert.equal((await submitOfferRequest(offerData())).status, "error");
-  assert.equal(requests.length, 0);
-});
-test("offer contact requires a contact channel and explicit consent", async () => {
-  enableOffer();
-  const missing = await submitOfferRequest(offerData({ email: "", phone: "" }));
-  assert.equal(missing.status, "error");
-  assert.ok(missing.errors.email);
-  assert.ok(
-    (await submitOfferRequest(offerData({ consent: "" }))).errors.consent,
-  );
-  assert.equal(requests.length, 0);
-});
-test("offer requests are CRM website leads with stable retry keys", async () => {
-  enableOffer();
-  assert.equal((await submitOfferRequest(offerData())).status, "sent");
-  assert.equal((await submitOfferRequest(offerData())).status, "sent");
-  assert.equal(requests[0].path, "/leads");
-  assert.equal(requests[0].body.source, "website");
-  assert.equal(requests[0].body.externalId, requests[1].body.externalId);
-  assert.equal(requests[0].body.email, "maria@example.com");
-  assert.equal(requests[0].body.promoCode, undefined);
-});
-
-test("offer refuses changed terms and invalid phone-only contacts before CRM intake", async () => {
-  enableOffer();
-  const stale = offerData();
-  process.env.WELCOME_OFFER_DESCRIPTION = "Оновлені умови";
-  const changed = await submitOfferRequest(stale);
-  assert.equal(changed.status, "error");
-  assert.match(changed.message, /Умови пропозиції змінилися/);
-  const invalidPhone = await submitOfferRequest(
-    offerData({ email: "", phone: "----------" }),
-  );
-  assert.equal(invalidPhone.status, "error");
-  assert.ok(invalidPhone.errors.phone);
-  assert.equal(requests.length, 0);
-});
-test("offer requests handle CRM rate limits and malformed acknowledgments without claiming success", async () => {
-  enableOffer();
-  crmFailure = new CrmApiError(429);
-  const state = await submitOfferRequest(offerData());
-  assert.equal(state.status, "error");
-  assert.match(state.message, /Забагато/);
-  assert.equal(state.values.email, "maria@example.com");
-  crmFailure = null;
-  crmResponse = { data: {} };
-  assert.equal((await submitOfferRequest(offerData())).status, "error");
 });

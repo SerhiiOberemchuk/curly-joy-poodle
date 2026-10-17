@@ -8,6 +8,7 @@ import {
   useEffect,
   useId,
   useState,
+  useTransition,
 } from "react";
 import {
   useForm,
@@ -17,6 +18,16 @@ import {
   type SubmitHandler,
   type UseFormRegisterReturn,
 } from "react-hook-form";
+
+import type { Cart } from "@/features/cart/types";
+import { CartSummary } from "@/features/cart/components/cart-summary";
+import { quotePromotionAction } from "../promotions.actions";
+import {
+  promotionCartKey,
+  promotionInputKey,
+  type PromotionResult,
+} from "../promotions";
+import pageStyles from "@/app/checkout/checkout.module.css";
 
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
@@ -55,14 +66,15 @@ const defaultValues: CheckoutFormValues = {
 };
 
 export function CheckoutForm({
-  total,
+  cart,
   capabilities,
   checkoutToken,
 }: {
-  total: number;
+  cart: Cart;
   capabilities: CrmCapabilities;
   checkoutToken: string;
 }) {
+  const total = cart.subtotal;
   const deliveryOptions = availableDeliveries(capabilities);
   const paymentOptions = availablePayments(capabilities);
   const [state, formAction, isPending] = useActionState(
@@ -92,6 +104,34 @@ export function CheckoutForm({
 
   const delivery = useWatch({ control, name: "delivery" });
   const payment = useWatch({ control, name: "payment" });
+  const email = useWatch({ control, name: "email" });
+  const [code, setCode] = useState("");
+  const [quoteState, setQuoteState] = useState<{
+    key: string;
+    result: PromotionResult;
+  } | null>(null);
+  const [quoting, startQuote] = useTransition();
+  const cartKey = promotionCartKey(cart.lines);
+  const inputKey = promotionInputKey({ code, email, delivery }, cartKey);
+  const currentResult = quoteState?.key === inputKey ? quoteState.result : null;
+  const quote = currentResult?.ok ? currentResult.quote : undefined;
+  const payable = quote ? Math.round(Number(quote.totalAmount) * 100) : total;
+  const needsQuote = Boolean(code.trim()) && !quote;
+  const promoId = useId();
+  function applyCode() {
+    const input = { code, email, delivery };
+    startQuote(async () => {
+      const result = await quotePromotionAction({ ...input, cartKey });
+      // A changed cart arrives refreshed with the refusal; key it to that cart.
+      setQuoteState({
+        key: promotionInputKey(
+          input,
+          !result.ok && result.cartKey ? result.cartKey : cartKey,
+        ),
+        result,
+      });
+    });
+  }
 
   // Nova Poshta lists settlements it does not deliver to an address in (front-
   // line villages). Courier delivery is then switched off for that city rather
@@ -125,7 +165,13 @@ export function CheckoutForm({
   }, [state, setError]);
 
   const submit: SubmitHandler<CheckoutFormValues> = (values) => {
+    if (quoting || needsQuote) return;
     const data = new FormData();
+    if (quote) {
+      data.set("promotionCode", quote.code);
+      data.set("promotionTotal", String(payable));
+      data.set("promotionCartKey", cartKey);
+    }
     for (const [name, value] of Object.entries(values)) data.set(name, value);
     data.set("expectedSubtotal", String(total));
     data.set("checkoutToken", checkoutToken);
@@ -139,206 +185,297 @@ export function CheckoutForm({
 
   return (
     <FormProvider {...form}>
-      <form
-        action={formAction}
-        className={styles.form}
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSubmit(submit)(event);
-        }}
-      >
-        <fieldset className={styles.fieldset} disabled={isPending}>
-          <legend className={styles.legend}>
-            <span className={styles.step}>1</span> Контактні дані
-          </legend>
+      <div className={pageStyles.layout}>
+        <section className={pageStyles.formPanel} aria-label="Дані замовлення">
+          <form
+            action={formAction}
+            className={styles.form}
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSubmit(submit)(event);
+            }}
+          >
+            <fieldset className={styles.fieldset} disabled={isPending}>
+              <legend className={styles.legend}>
+                <span className={styles.step}>1</span> Контактні дані
+              </legend>
 
-          <div className={`${styles.row} ${styles.rowTwo}`}>
-            <Field
-              label="Ім’я"
-              registration={register("firstName")}
-              error={errors.firstName}
-              autoComplete="given-name"
-              maxLength={FIELD_LIMITS.firstName}
-            />
-            <Field
-              label="Прізвище"
-              registration={register("lastName")}
-              error={errors.lastName}
-              autoComplete="family-name"
-              maxLength={FIELD_LIMITS.lastName}
-            />
-          </div>
-
-          <div className={`${styles.row} ${styles.rowTwo}`}>
-            <Field
-              label="Телефон"
-              registration={register("phone")}
-              error={errors.phone}
-              type="tel"
-              inputMode="tel"
-              placeholder="+380 67 440 43 94"
-              autoComplete="tel"
-            />
-            <Field
-              label="Email"
-              registration={register("email")}
-              error={errors.email}
-              type="email"
-              inputMode="email"
-              placeholder="name@example.com"
-              autoComplete="email"
-              maxLength={FIELD_LIMITS.email}
-            />
-          </div>
-        </fieldset>
-
-        <fieldset className={styles.fieldset} disabled={isPending}>
-          <legend className={styles.legend}>
-            <span className={styles.step}>2</span> Доставка
-          </legend>
-
-          <div className={styles.options}>
-            {deliveryOptions.map((option) => {
-              const unavailable =
-                option.value === "np-courier" && courierBlocked;
-              return (
-                <label key={option.value} className={styles.option}>
-                  <input
-                    type="radio"
-                    value={option.value}
-                    // Only when another way remains: a disabled checked radio
-                    // would submit no delivery method at all.
-                    disabled={unavailable && branchOffered}
-                    {...register("delivery", {
-                      onChange: () => {
-                        for (const name of DESTINATION_FIELDS)
-                          setValue(name, "");
-                        clearErrors([...DESTINATION_FIELDS]);
-                      },
-                    })}
-                  />
-                  <span className={styles.optionBody}>
-                    <span className={styles.optionLabel}>{option.label}</span>
-                    <span className={styles.optionHint}>
-                      {unavailable
-                        ? "Недоступно: Нова пошта не доставляє кур’єром в обраний населений пункт."
-                        : option.hint}
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-
-          <NovaPoshtaFields
-            method={delivery}
-            disabled={isPending}
-            courierOffered={courierOffered}
-            onCityChange={handleCityChange}
-          />
-          {delivery === "np-courier" ? (
-            <div className={`${styles.row} ${styles.rowTwo}`}>
-              <Field
-                label="Будинок"
-                registration={register("building")}
-                error={errors.building}
-                maxLength={11}
-                autoComplete="address-line2"
-              />
-              <Field
-                label="Квартира — необов’язково"
-                registration={register("flat")}
-                error={errors.flat}
-                maxLength={35}
-              />
-            </div>
-          ) : null}
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="checkout-comment">
-              Коментар <span className={styles.optional}>— необов’язково</span>
-            </label>
-            <textarea
-              id="checkout-comment"
-              className={styles.textarea}
-              placeholder="Порода й заміри собаки, побажання до відправлення"
-              maxLength={FIELD_LIMITS.comment}
-              aria-invalid={!!errors.comment}
-              aria-describedby={
-                errors.comment ? "checkout-comment-error" : undefined
-              }
-              {...register("comment")}
-            />
-            {errors.comment?.message ? (
-              <span id="checkout-comment-error" className={styles.error}>
-                {errors.comment.message}
-              </span>
-            ) : null}
-          </div>
-        </fieldset>
-
-        <fieldset className={styles.fieldset} disabled={isPending}>
-          <legend className={styles.legend}>
-            <span className={styles.step}>3</span> Оплата
-          </legend>
-
-          <div className={styles.options}>
-            {paymentOptions.map((option) => (
-              <label key={option.value} className={styles.option}>
-                <input
-                  type="radio"
-                  value={option.value}
-                  {...register("payment")}
+              <div className={`${styles.row} ${styles.rowTwo}`}>
+                <Field
+                  label="Ім’я"
+                  registration={register("firstName")}
+                  error={errors.firstName}
+                  autoComplete="given-name"
+                  maxLength={FIELD_LIMITS.firstName}
                 />
-                <span className={styles.optionBody}>
-                  <span className={styles.optionLabel}>{option.label}</span>
-                  <span className={styles.optionHint}>{option.hint}</span>
-                </span>
+                <Field
+                  label="Прізвище"
+                  registration={register("lastName")}
+                  error={errors.lastName}
+                  autoComplete="family-name"
+                  maxLength={FIELD_LIMITS.lastName}
+                />
+              </div>
+
+              <div className={`${styles.row} ${styles.rowTwo}`}>
+                <Field
+                  label="Телефон"
+                  registration={register("phone")}
+                  error={errors.phone}
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+380 67 440 43 94"
+                  autoComplete="tel"
+                />
+                <Field
+                  label="Email"
+                  registration={register("email")}
+                  error={errors.email}
+                  type="email"
+                  inputMode="email"
+                  placeholder="name@example.com"
+                  autoComplete="email"
+                  maxLength={FIELD_LIMITS.email}
+                />
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.fieldset} disabled={isPending}>
+              <legend className={styles.legend}>
+                <span className={styles.step}>2</span> Доставка
+              </legend>
+
+              <div className={styles.options}>
+                {deliveryOptions.map((option) => {
+                  const unavailable =
+                    option.value === "np-courier" && courierBlocked;
+                  return (
+                    <label key={option.value} className={styles.option}>
+                      <input
+                        type="radio"
+                        value={option.value}
+                        // Only when another way remains: a disabled checked radio
+                        // would submit no delivery method at all.
+                        disabled={unavailable && branchOffered}
+                        {...register("delivery", {
+                          onChange: () => {
+                            for (const name of DESTINATION_FIELDS)
+                              setValue(name, "");
+                            clearErrors([...DESTINATION_FIELDS]);
+                          },
+                        })}
+                      />
+                      <span className={styles.optionBody}>
+                        <span className={styles.optionLabel}>
+                          {option.label}
+                        </span>
+                        <span className={styles.optionHint}>
+                          {unavailable
+                            ? "Недоступно: Нова пошта не доставляє кур’єром в обраний населений пункт."
+                            : option.hint}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <NovaPoshtaFields
+                method={delivery}
+                disabled={isPending}
+                courierOffered={courierOffered}
+                onCityChange={handleCityChange}
+              />
+              {delivery === "np-courier" ? (
+                <div className={`${styles.row} ${styles.rowTwo}`}>
+                  <Field
+                    label="Будинок"
+                    registration={register("building")}
+                    error={errors.building}
+                    maxLength={11}
+                    autoComplete="address-line2"
+                  />
+                  <Field
+                    label="Квартира — необов’язково"
+                    registration={register("flat")}
+                    error={errors.flat}
+                    maxLength={35}
+                  />
+                </div>
+              ) : null}
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="checkout-comment">
+                  Коментар{" "}
+                  <span className={styles.optional}>— необов’язково</span>
+                </label>
+                <textarea
+                  id="checkout-comment"
+                  className={styles.textarea}
+                  placeholder="Порода й заміри собаки, побажання до відправлення"
+                  maxLength={FIELD_LIMITS.comment}
+                  aria-invalid={!!errors.comment}
+                  aria-describedby={
+                    errors.comment ? "checkout-comment-error" : undefined
+                  }
+                  {...register("comment")}
+                />
+                {errors.comment?.message ? (
+                  <span id="checkout-comment-error" className={styles.error}>
+                    {errors.comment.message}
+                  </span>
+                ) : null}
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.fieldset} disabled={isPending}>
+              <legend className={styles.legend}>
+                <span className={styles.step}>3</span> Оплата
+              </legend>
+
+              <div className={styles.options}>
+                {paymentOptions.map((option) => (
+                  <label key={option.value} className={styles.option}>
+                    <input
+                      type="radio"
+                      value={option.value}
+                      {...register("payment")}
+                    />
+                    <span className={styles.optionBody}>
+                      <span className={styles.optionLabel}>{option.label}</span>
+                      <span className={styles.optionHint}>{option.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              {payment === "card" ? (
+                <p className={styles.paymentNotice}>
+                  Після підтвердження відкриється захищена сторінка Monobank.
+                  Дані картки вводяться там — магазин їх не бачить і не
+                  зберігає.
+                </p>
+              ) : null}
+            </fieldset>
+
+            <fieldset
+              className={styles.fieldset}
+              disabled={isPending || quoting}
+            >
+              <legend className={styles.legend}>Є промокод?</legend>
+              <label className={styles.label} htmlFor={promoId}>
+                Промокод
               </label>
+              <div className={styles.promoRow}>
+                <input
+                  id={promoId}
+                  className={styles.input}
+                  value={code}
+                  maxLength={64}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-describedby={`${promoId}-status`}
+                  onChange={(event) => setCode(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (code.trim() && !quoting) applyCode();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  disabled={!code.trim()}
+                  onClick={applyCode}
+                >
+                  {quoting ? "Перевіряємо…" : "Застосувати"}
+                </Button>
+              </div>
+              {code ? (
+                <button
+                  type="button"
+                  className={styles.removePromo}
+                  onClick={() => {
+                    setCode("");
+                    setQuoteState(null);
+                  }}
+                >
+                  Прибрати промокод
+                </button>
+              ) : null}
+              <p
+                id={`${promoId}-status`}
+                role={currentResult && !currentResult.ok ? "alert" : "status"}
+                className={
+                  currentResult && !currentResult.ok
+                    ? styles.error
+                    : styles.paymentNotice
+                }
+              >
+                {quoting
+                  ? "Перевіряємо умови промокоду…"
+                  : quote
+                    ? `Промокод застосовано. Ваша знижка — ${formatMoney(Math.round(Number(quote.discountAmount) * 100))}.`
+                    : currentResult && !currentResult.ok
+                      ? currentResult.message
+                      : needsQuote
+                        ? "Вкажіть email у контактних даних і застосуйте промокод. Після зміни контактів чи доставки перевірте його ще раз."
+                        : "Введіть код із листа. Персональний промокод діє з email, на який його отримали."}
+              </p>
+            </fieldset>
+
+            {!isPending && (hasServerError || hasErrors) ? (
+              <p className={styles.formError} role="alert">
+                {hasServerError ? state.message : "Перевірте виділені поля."}
+              </p>
+            ) : null}
+
+            <noscript>
+              <p className={styles.formError}>
+                Для вибору адреси Нової пошти увімкніть JavaScript або
+                зверніться до нас для оформлення.
+              </p>
+            </noscript>
+            <Button
+              type="submit"
+              className={styles.submit}
+              size="lg"
+              block
+              disabled={
+                isPending ||
+                quoting ||
+                needsQuote ||
+                !deliveryOptions.length ||
+                !paymentOptions.length
+              }
+            >
+              {isPending
+                ? "Оформлюємо…"
+                : `${payment === "card" ? "Перейти до оплати" : "Підтвердити замовлення"} · ${formatMoney(payable)}`}
+            </Button>
+
+            <p className={styles.consent}>
+              Натискаючи кнопку, ви погоджуєтесь з{" "}
+              <Link href="/info/terms">публічною офертою</Link> та обробкою
+              персональних даних.
+            </p>
+          </form>
+        </section>
+        <CartSummary cart={cart} action="none" promotion={quote}>
+          <div className={pageStyles.items}>
+            {cart.lines.map((line) => (
+              <p className={pageStyles.item} key={line.variantId}>
+                <span className={pageStyles.itemName}>
+                  {line.title}
+                  {line.option ? ` · ${line.option}` : ""} × {line.quantity}
+                </span>
+                <strong>{formatMoney(line.lineTotal)}</strong>
+              </p>
             ))}
           </div>
-
-          {payment === "card" ? (
-            <p className={styles.paymentNotice}>
-              Після підтвердження відкриється захищена сторінка Monobank. Дані
-              картки вводяться там — магазин їх не бачить і не зберігає.
-            </p>
-          ) : null}
-        </fieldset>
-
-        {!isPending && (hasServerError || hasErrors) ? (
-          <p className={styles.formError} role="alert">
-            {hasServerError ? state.message : "Перевірте виділені поля."}
-          </p>
-        ) : null}
-
-        <noscript>
-          <p className={styles.formError}>
-            Для вибору адреси Нової пошти увімкніть JavaScript або зверніться до
-            нас для оформлення.
-          </p>
-        </noscript>
-        <Button
-          type="submit"
-          className={styles.submit}
-          size="lg"
-          block
-          disabled={
-            isPending || !deliveryOptions.length || !paymentOptions.length
-          }
-        >
-          {isPending
-            ? "Оформлюємо…"
-            : `${payment === "card" ? "Перейти до оплати" : "Підтвердити замовлення"} · ${formatMoney(total)}`}
-        </Button>
-
-        <p className={styles.consent}>
-          Натискаючи кнопку, ви погоджуєтесь з{" "}
-          <Link href="/info/terms">публічною офертою</Link> та обробкою
-          персональних даних.
-        </p>
-      </form>
+        </CartSummary>
+      </div>
     </FormProvider>
   );
 }

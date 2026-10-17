@@ -4,23 +4,38 @@ import { buttonStyles } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 
 import type { Cart } from "../types";
+import type { PromotionQuote } from "@/features/checkout/promotions";
 import styles from "./cart-view.module.css";
 
 export function CartSummary({
   cart,
   action,
   children,
+  promotion,
 }: {
   cart: Cart;
   action?: "checkout" | "none";
   /** Optional line-item breakdown rendered above the totals. */
   children?: ReactNode;
+  promotion?: PromotionQuote;
 }) {
-  const progress = cart.freeShippingThreshold
-    ? Math.min(
-        100,
-        Math.round((cart.subtotal / cart.freeShippingThreshold) * 100),
-      )
+  const total = promotion
+    ? Math.round(Number(promotion.totalAmount) * 100)
+    : cart.subtotal;
+  const threshold = promotion
+    ? promotion.shippingDecision.threshold === null
+      ? null
+      : Math.round(Number(promotion.shippingDecision.threshold) * 100)
+    : cart.freeShippingThreshold;
+  const freeShipping = promotion
+    ? promotion.shippingDecision.state === "free"
+    : cart.freeShipping;
+  const remainder = threshold === null ? null : Math.max(0, threshold - total);
+  const shippingPending =
+    promotion &&
+    !["free", "not_free", "pickup"].includes(promotion.shippingDecision.state);
+  const progress = threshold
+    ? Math.min(100, Math.round((total / threshold) * 100))
     : 0;
 
   return (
@@ -36,31 +51,45 @@ export function CartSummary({
 
       {cart.savings > 0 ? (
         <p className={styles.summaryRow}>
-          <span>Знижка</span>
+          <span>Вигода від акційних цін</span>
           <span className={styles.savings}>−{formatMoney(cart.savings)}</span>
+        </p>
+      ) : null}
+
+      {promotion ? (
+        <p className={styles.summaryRow}>
+          <span>Промокод {promotion.code}</span>
+          <span className={styles.savings}>
+            −{formatMoney(Math.round(Number(promotion.discountAmount) * 100))}
+          </span>
         </p>
       ) : null}
 
       <p className={styles.summaryRow}>
         <span>Доставка</span>
         <span>
-          {cart.freeShipping ? "Безкоштовно" : "За тарифами перевізника"}
+          {shippingPending
+            ? "Уточнюється під час оформлення"
+            : freeShipping
+              ? "Безкоштовно"
+              : "За тарифами перевізника"}
         </span>
       </p>
 
-      {cart.freeShippingThreshold === null ? null : (
+      {threshold === null ? null : (
         <p className={styles.note}>
-          {cart.freeShippingThreshold === 0
+          {threshold === 0
             ? "Безкоштовна доставка для всіх замовлень."
-            : `Безкоштовна доставка від ${formatMoney(cart.freeShippingThreshold)} суми товарів.`}
+            : `Безкоштовна доставка від ${formatMoney(threshold)} суми товарів${promotion ? " після знижки" : ""}.`}
         </p>
       )}
 
-      {cart.freeShipping || cart.freeShippingRemainder === null ? null : (
+      {freeShipping || !remainder || shippingPending ? null : (
         <div className={styles.progress}>
           <span>
-            Додайте ще на {formatMoney(cart.freeShippingRemainder)} — і доставка
-            за наш кошт
+            {promotion
+              ? `До безкоштовної доставки залишилося ${formatMoney(remainder)} після знижок.`
+              : `Додайте ще на ${formatMoney(remainder)} — і доставка за наш кошт`}
           </span>
           <span className={styles.progressTrack}>
             <span
@@ -82,7 +111,7 @@ export function CartSummary({
 
       <p className={styles.summaryTotal}>
         <span>Разом за товари</span>
-        <span>{formatMoney(cart.subtotal)}</span>
+        <span>{formatMoney(total)}</span>
       </p>
 
       {action === "none" || cart.minOrderRemainder ? null : (
@@ -95,7 +124,7 @@ export function CartSummary({
       )}
 
       <p className={styles.note}>
-        {cart.freeShipping
+        {freeShipping
           ? "Доставку оплачує магазин."
           : "Вартість доставки Новою поштою розраховується за тарифами перевізника під час відправлення."}
       </p>

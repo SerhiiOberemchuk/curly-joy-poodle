@@ -8,6 +8,7 @@ import { QuickContact } from "@/components/layout/quick-contact";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
 import { CartStoreProvider } from "@/features/cart/cart-store";
+import { EmotionRegistry } from "@/components/layout/emotion-registry";
 import { site } from "@/lib/site";
 
 import "./globals.css";
@@ -60,23 +61,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body>
-        <NuqsAdapter>
-          <a href="#main-content" className="skip-link">
-            Перейти до вмісту
-          </a>
-          <div className={styles.shell}>
-            <FavoritesProvider>
-              <CartStoreProvider>
-                <SiteHeader />
-                <main id="main-content" className={styles.main}>
-                  {children}
-                </main>
-                <SiteFooter />
-                <QuickContact />
-              </CartStoreProvider>
-            </FavoritesProvider>
-          </div>
-        </NuqsAdapter>
+        <EmotionRegistry>
+          <NuqsAdapter>
+            <a href="#main-content" className="skip-link">
+              Перейти до вмісту
+            </a>
+            <div className={styles.shell}>
+              <FavoritesProvider>
+                <CartStoreProvider>
+                  <SiteHeader />
+                  <main id="main-content" className={styles.main}>
+                    {children}
+                  </main>
+                  <SiteFooter />
+                  <QuickContact />
+                </CartStoreProvider>
+              </FavoritesProvider>
+            </div>
+          </NuqsAdapter>
+        </EmotionRegistry>
       </body>
     </html>
   );

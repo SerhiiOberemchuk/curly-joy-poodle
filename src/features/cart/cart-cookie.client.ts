@@ -24,25 +24,25 @@ export function browserCartItemCount(): number | null {
   return parseCartCookie(raw).reduce((count, line) => count + line.q, 0);
 }
 
-/** A browser cookie write does not invoke a Server Action or re-render the route. */
-export function writeBrowserCartCookie(
-  knownVariantIds: string[],
-  desired: StoredCartLine[],
-): "saved" | "merged" | "full" | "unavailable" {
+/**
+ * Sets one line's quantity, or removes it with `null`, leaving every other
+ * stored line as it is — including lines another tab changed and lines the
+ * open page does not show. Checkout re-reads the whole cookie against fresh
+ * CRM stock. A browser cookie write does not invoke a Server Action or
+ * re-render the route.
+ */
+export function writeBrowserCartLine(
+  variantId: string,
+  quantity: number | null,
+): "saved" | "full" | "unavailable" {
   if (typeof document === "undefined") return "unavailable";
   const current = parseCartCookie(browserCookieValue());
-  const known = new Set(knownVariantIds);
-  const hasOtherLines = current.some((line) => !known.has(line.p));
-  const wanted = new Map(desired.map((line) => [line.p, line.q]));
-  const existing = new Set(current.map((line) => line.p));
-  const next = current.flatMap((line): StoredCartLine[] => {
-    if (!known.has(line.p)) return [line];
-    const quantity = wanted.get(line.p);
-    return quantity === undefined ? [] : [{ p: line.p, q: quantity }];
-  });
-  for (const line of desired) {
-    if (!existing.has(line.p)) next.push(line);
-  }
+  const next: StoredCartLine[] =
+    quantity === null
+      ? current.filter((line) => line.p !== variantId)
+      : current.some((line) => line.p === variantId)
+        ? current.map((line) => (line.p === variantId ? { p: variantId, q: quantity } : line))
+        : [...current, { p: variantId, q: quantity }];
   if (next.length > MAX_CART_LINES) return "full";
   const value = encodeURIComponent(JSON.stringify(next));
   const secure = location.protocol === "https:" ? "; Secure" : "";
@@ -50,5 +50,5 @@ export function writeBrowserCartCookie(
   if (!document.cookie.split(";").some((part) => part.trim() === `${CART_COOKIE}=${value}`))
     return "unavailable";
   window.dispatchEvent(new window.Event(CART_CHANGE_EVENT));
-  return hasOtherLines ? "merged" : "saved";
+  return "saved";
 }

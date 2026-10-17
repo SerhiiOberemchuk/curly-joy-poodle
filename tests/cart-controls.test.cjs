@@ -98,7 +98,32 @@ test("plus and minus change the displayed quantity, total and shipping immediate
   assert.deepEqual(await readCartCookie(), [
     { p: "p1", q: 4 }, { p: "p2", q: 1 },
   ]);
-  assert.match(observedStore.getState().error, /іншій вкладці/);
+  // A line added in another tab is kept for checkout, without asking for a reload.
+  assert.equal(observedStore.getState().error, null);
+  assert.ok(screen.getByRole("link", { name: "Оформити замовлення" }));
+});
+
+test("a quantity change writes only its own line over another tab's changes", async () => {
+  document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify([
+    { p: "p2", q: 3 },
+  ]))}; Path=/`;
+  const store = createCartStore();
+  store.getState().hydrate(sampleCart());
+  store.getState().setQuantity("p1", 5);
+  assert.deepEqual(await readCartCookie(), [{ p: "p2", q: 3 }, { p: "p1", q: 5 }]);
+  assert.equal(store.getState().error, null);
+});
+
+test("a change the cookie cannot hold is undone instead of shown", async () => {
+  const otherLines = Array.from({ length: 30 }, (_, index) => ({ p: `o${index}`, q: 1 }));
+  document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify(otherLines))}; Path=/`;
+  const store = createCartStore();
+  store.getState().hydrate(sampleCart());
+  store.getState().setQuantity("p1", 5);
+  assert.equal(store.getState().cart.lines[0].quantity, 4);
+  assert.match(store.getState().error, /30 позицій/);
+  assert.doesNotMatch(store.getState().error, /Оновіть сторінку/);
+  assert.deepEqual(await readCartCookie(), otherLines);
 });
 
 test("removing the last line writes an empty cart the server can read", async () => {

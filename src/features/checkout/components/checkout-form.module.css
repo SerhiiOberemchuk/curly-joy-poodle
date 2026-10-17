@@ -317,3 +317,29 @@
   border: 0;
   cursor: pointer;
 }
+.promoRow {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.promoRow input {
+  min-width: 0;
+  flex: 1;
+}
+
+.removePromo {
+  align-self: flex-start;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: #89594d;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (width < 480px) {
+  .promoRow {
+    flex-direction: column;
+  }
+}

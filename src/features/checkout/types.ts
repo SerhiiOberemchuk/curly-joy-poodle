@@ -50,6 +50,7 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   freeShipping: boolean;
+  promotion?: { code: string; expectedTotal: string };
 }
 export interface OrderReceipt {
   /** CRM externalId, protected by a server signature. */

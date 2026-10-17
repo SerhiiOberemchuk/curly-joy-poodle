@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Curly Joy · Макет першої покупки</title>
+  <style>
+    :root { color-scheme: light; --cream:#fbf8f3; --ink:#44352d; --soft:#79675b; --accent:#89594d; --line:#ead9cf; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--cream); color:var(--ink); font:16px/1.5 Arial,sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+    .review { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 24px; border-bottom:1px solid var(--line); font-size:13px; color:var(--soft); }
+    .review nav { display:flex; flex-wrap:wrap; gap:8px; }
+    .review button { padding:7px 14px; border:1px solid var(--line); border-radius:30px; background:white; color:var(--ink); }
+    .brand { display:flex; align-items:center; gap:12px; padding:30px clamp(20px,6vw,90px); }
+    .brand img { width:46px; height:46px; object-fit:contain; }
+    .brand strong { font-size:21px; }
+    main { max-width:980px; margin:40px auto; padding:0 24px; }
+    .eyebrow { color:var(--accent); font-size:12px; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:10px 0 20px; font:normal clamp(32px,5vw,54px)/1.15 Georgia,serif; }
+    .description { max-width:540px; color:var(--soft); }
+    .primary { padding:14px 24px; border:0; border-radius:30px; background:var(--accent); color:white; font-weight:600; }
+    .primary:hover { background:#684137; }
+    .offer { display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:space-between; padding:28px; margin-top:44px; border:1px solid var(--line); border-radius:24px; background:#f1e1dc; }
+    .offer p { margin:0; }
+    dialog { position:fixed; inset:0; margin:auto; width:min(490px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:42px 36px 32px; border:1px solid var(--line); border-radius:26px; background:var(--cream); color:var(--ink); box-shadow:0 24px 80px #33221930; }
+    dialog::backdrop { background:#2b1d156b; backdrop-filter:blur(3px); }
+    .close { position:absolute; top:12px; right:12px; width:36px; height:36px; background:transparent; border:0; border-radius:50%; color:var(--soft); font-size:25px; }
+    .mark { display:grid; place-items:center; width:62px; height:62px; margin-bottom:20px; border-radius:50%; background:#f1e1dc; color:var(--accent); font:normal 25px Georgia,serif; }
+    h2 { margin:0 0 12px; font:normal clamp(28px,5vw,36px)/1.18 Georgia,serif; }
+    .intro { margin:0 0 24px; color:var(--soft); }
+    .field { display:grid; gap:8px; margin:18px 0 16px; }
+    label { font-size:14px; }
+    input { width:100%; min-width:0; padding:13px 15px; border:1px solid #d8bfb2; border-radius:10px; background:white; color:var(--ink); }
+    .full { width:100%; }
+    .terms { margin:16px 0 0; color:var(--soft); font-size:12px; line-height:1.6; }
+    .dismiss { display:block; margin:16px auto 0; border:0; padding:6px 12px; background:transparent; color:var(--soft); text-decoration:underline; text-underline-offset:3px; }
+    .summary { width:min(100%,440px); margin-top:32px; padding:28px; border:1px solid var(--line); border-radius:24px; background:#f1e1dc; }
+    .summary h2 { font-size:30px; }
+    .summary>p { color:var(--soft); }
+    details { padding:18px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    summary { cursor:pointer; font-size:14px; }
+    .codeRow { display:flex; gap:8px; margin-top:14px; }
+    .codeRow .primary { border-radius:10px; padding-inline:16px; font-size:14px; }
+    .result { margin-top:14px; padding:12px 14px; border-radius:10px; background:#fffaf6; font-size:14px; }
+    .result small { display:block; margin-top:5px; color:var(--soft); }
+    .successIcon { color:#41634f; }
+    [hidden] { display:none!important; }
+    @media(max-width:520px) {
+      dialog { padding:38px 24px 24px; }
+      main { margin-top:22px; }
+      .brand { padding-block:20px; }
+      .review { padding:12px 16px; }
+      .codeRow { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="review" aria-label="Керування макетом">
+    <span>Макет інтерфейсу · без надсилання даних і запитів до CRM</span>
+    <nav aria-label="Сценарії перегляду">
+      <button type="button" id="showOffer">Відкрити попап</button>
+      <button type="button" id="showSuccess">Після надсилання</button>
+      <button type="button" id="showCart">Поле в кошику</button>
+    </nav>
+  </aside>
+  <header class="brand"><img src="../../public/images/brand/curly-joy-logo.png" alt=""><strong>Curly Joy</strong></header>
+  <main>
+    <p class="eyebrow">Для вас і вашого хвостика</p>
+    <h1>Маленькі речі для великої любові</h1>
+    <p class="description">Знайдіть улюблені речі для прогулянок, догляду та затишних моментів разом.</p>
+    <div class="offer"><p><strong>Вперше у Curly Joy?</strong><br>Маємо для вас маленький подарунок.</p><button type="button" class="primary" id="openOffer">Отримати −5%</button></div>
+    <section class="summary" id="cart" aria-labelledby="cartTitle" hidden>
+      <h2 id="cartTitle">Ваш кошик</h2>
+      <p>Контакти й доставка залишаються у звичайній формі оформлення.</p>
+      <details open>
+        <summary>Маєте промокод?</summary>
+        <form id="promoForm">
+          <label for="promo" class="field">Промокод</label>
+          <div class="codeRow"><input id="promo" name="promo" placeholder="Введіть код" autocomplete="off"><button class="primary">Застосувати</button></div>
+        </form>
+        <p class="terms">Персональний код діє для email, на який його надіслано.</p>
+      </details>
+      <p class="terms">У цьому макеті промокод не перевіряється і ціни не змінюються.</p>
+    </section>
+  </main>
+  <dialog id="offerDialog" aria-labelledby="offerTitle" aria-describedby="offerDescription">
+    <button type="button" class="close" aria-label="Закрити пропозицію">×</button>
+    <div id="requestPanel">
+      <div class="mark" aria-hidden="true">−5%</div>
+      <h2 id="offerTitle">На перше замовлення</h2>
+      <p class="intro" id="offerDescription">Залиште email — надішлемо ваш персональний промокод на знижку 5%.</p>
+      <form id="offerForm">
+        <div class="field"><label for="email">Ваш email</label><input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required maxlength="120"></div>
+        <button class="primary full" type="submit">Отримати −5%</button>
+      </form>
+      <p class="terms">На товари без акційної ціни. Використаємо email для надсилання запитаної пропозиції.</p>
+      <button type="button" class="dismiss">Продовжити покупки</button>
+    </div>
+    <div id="successPanel" hidden>
+      <div class="mark successIcon" aria-hidden="true">✓</div>
+      <h2 id="successTitle">Перевірте пошту</h2>
+      <p class="intro" id="successDescription">Персональний промокод і умови пропозиції надійдуть листом. Якщо листа немає, перевірте папку «Спам».</p>
+      <button type="button" class="primary full dismiss">До покупок</button>
+    </div>
+  </dialog>
+  <script>
+    const dialog=document.getElementById('offerDialog');
+    const request=document.getElementById('requestPanel');
+    const success=document.getElementById('successPanel');
+    function openOffer(sent=false){
+      request.hidden=sent; success.hidden=!sent;
+      dialog.setAttribute('aria-labelledby',sent?'successTitle':'offerTitle');
+      dialog.setAttribute('aria-describedby',sent?'successDescription':'offerDescription');
+      if(!dialog.open)dialog.showModal();
+    }
+    document.getElementById('openOffer').addEventListener('click',()=>openOffer());
+    document.getElementById('showOffer').addEventListener('click',()=>openOffer());
+    document.getElementById('showSuccess').addEventListener('click',()=>openOffer(true));
+    document.getElementById('showCart').addEventListener('click',()=>{document.getElementById('cart').hidden=false;document.getElementById('cart').scrollIntoView({block:'center'});});
+    document.querySelectorAll('.dismiss,.close').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+    document.getElementById('offerForm').addEventListener('submit',event=>{event.preventDefault();openOffer(true);});
+    document.getElementById('promoForm').addEventListener('submit',event=>event.preventDefault());
+  </script>
+</body>
+</html>

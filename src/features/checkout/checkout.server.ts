@@ -7,6 +7,13 @@ import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
 import { readString } from "@/lib/form";
 import { formatMoney } from "@/lib/money";
+import { CrmApiError } from "@/lib/crm-client";
+import {
+  promotionCartKey,
+  promotionCodeSchema,
+  isPromotionRefusal,
+  promotionErrorMessage,
+} from "./promotions";
 import {
   cartFingerprint,
   checkoutAttempt,
@@ -45,7 +52,12 @@ type CheckoutDestination =
 
 type CheckoutResult =
   | { ok: true; redirectTo: CheckoutDestination }
-  | { ok: false; state: CheckoutActionState; cartChanged?: boolean };
+  | {
+      ok: false;
+      state: CheckoutActionState;
+      /** The form shows a cart or options the server no longer accepts; re-render it. */
+      stale?: boolean;
+    };
 
 function failure(
   message: string,
@@ -85,21 +97,20 @@ function unavailableMethod(
       (option) => option.value === input.payment,
     )
   ) {
-    return "Обраний спосіб оплати зараз недоступний. Оновіть сторінку.";
+    return "Обраний спосіб оплати зараз недоступний. Оберіть інший.";
   }
   if (
     !availableDeliveries(capabilities).some(
       (option) => option.value === input.delivery.method,
     )
   ) {
-    return "Обраний спосіб доставки зараз недоступний. Оновіть сторінку.";
+    return "Обраний спосіб доставки зараз недоступний. Оберіть інший.";
   }
   return null;
 }
 
 type DeliveryResult =
-  | { ok: true; delivery: DeliveryDetails }
-  | { ok: false; errors: FieldErrors };
+  { ok: true; delivery: DeliveryDetails } | { ok: false; errors: FieldErrors };
 
 /**
  * Resolve submitted carrier refs against CRM. Each ref must be among the
@@ -250,7 +261,7 @@ export async function submitCheckout(
       ...failure(
         "Наявність товарів змінилася. Кошик оновлено — перевірте кількість перед оформленням.",
       ),
-      cartChanged: true,
+      stale: true,
     };
   }
 
@@ -264,7 +275,7 @@ export async function submitCheckout(
       ...failure(
         "Сума замовлення змінилася або застаріла. Перевірте оновлений підсумок і підтвердьте оформлення ще раз.",
       ),
-      cartChanged: true,
+      stale: true,
     };
   }
 
@@ -279,11 +290,11 @@ export async function submitCheckout(
       ...failure(
         "Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення.",
       ),
-      cartChanged: true,
+      stale: true,
     };
 
   const unavailable = unavailableMethod(parsed.value, capabilities);
-  if (unavailable) return failure(unavailable);
+  if (unavailable) return { ...failure(unavailable), stale: true };
   const { minOrderAmount } = hryvniaCartTerms(capabilities);
   if (minOrderAmount !== null && cart.subtotal < minOrderAmount) {
     return failure(
@@ -309,8 +320,41 @@ export async function submitCheckout(
       { ...parsed.value, delivery: resolved.delivery },
       cart,
     );
+    const rawCode = readString(formData, "promotionCode").trim();
+    if (rawCode) {
+      if (
+        readString(formData, "promotionCartKey") !==
+        promotionCartKey(cart.lines)
+      )
+        return {
+          ...failure(
+            "Кошик змінився — підсумок оновлено. Перевірте товари й застосуйте промокод ще раз.",
+          ),
+          stale: true,
+        };
+      const code = promotionCodeSchema.safeParse(rawCode);
+      const expected = z.coerce
+        .number()
+        .int()
+        .positive()
+        .max(cart.subtotal)
+        .safeParse(readString(formData, "promotionTotal") || "invalid");
+      if (!code.success || !expected.success)
+        return failure(
+          "Застосуйте промокод і перевірте підсумок перед оформленням.",
+        );
+      // CRM validates this expectation atomically with creation, including replay.
+      // A separate eligibility quote here would reject a retry of an accepted first order.
+      order.promotion = {
+        code: code.data,
+        expectedTotal: (expected.data / 100).toFixed(2),
+      };
+      order.subtotal = expected.data;
+    }
     receipt = await submitOrder(order, stored, nonce);
-  } catch {
+  } catch (error) {
+    if (error instanceof CrmApiError && isPromotionRefusal(error))
+      return failure(promotionErrorMessage(error.reason, error.details));
     return failure(
       "Не вдалося передати замовлення. Спробуйте ще раз — повторне надсилання не створить дубль.",
     );

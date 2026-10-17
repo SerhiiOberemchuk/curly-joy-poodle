@@ -5,7 +5,8 @@ import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 
 import { calculateCart } from "./calculate";
-import { writeBrowserCartCookie } from "./cart-cookie.client";
+import { writeBrowserCartLine } from "./cart-cookie.client";
+import { MAX_CART_LINES } from "./constants";
 import type { Cart } from "./types";
 
 interface CartState {
@@ -19,24 +20,26 @@ interface CartState {
 
 export function createCartStore() {
   return createStore<CartState>()((set, get) => {
-    function saveCookie() {
-      const cart = get().cart;
-      if (!cart) return;
+    /**
+     * Stores the changed line only; lines changed in another tab are kept and
+     * checkout checks the whole cart. A failed write restores `before`, so the
+     * page never shows a cart that checkout would not receive.
+     */
+    function saveLine(before: Cart, variantId: string, quantity: number | null) {
+      let result: ReturnType<typeof writeBrowserCartLine>;
       try {
-        const result = writeBrowserCartCookie(
-          get().source?.lines.map((line) => line.variantId) ?? [],
-          cart.lines.map((line) => ({ p: line.variantId, q: line.quantity })),
-        );
-        if (result === "full") {
-          set({ error: "У кошику забагато позицій. Оновіть сторінку й повторіть спробу." });
-        } else if (result === "merged") {
-          set({ error: "Кошик змінився в іншій вкладці. Оновіть сторінку, щоб перевірити товари." });
-        } else if (result === "unavailable") {
-          set({ error: "Не вдалося зберегти кошик у браузері. Дозвольте cookie та спробуйте ще раз." });
-        }
+        result = writeBrowserCartLine(variantId, quantity);
       } catch {
-        set({ error: "Не вдалося зберегти кошик у браузері. Дозвольте cookie та спробуйте ще раз." });
+        result = "unavailable";
       }
+      if (result === "saved") return;
+      set({
+        cart: before,
+        error:
+          result === "full"
+            ? `У кошику вже ${MAX_CART_LINES} позицій. Видаліть зайві товари, щоб зберегти цю зміну.`
+            : "Не вдалося зберегти кошик у браузері. Дозвольте cookie та спробуйте ще раз.",
+      });
     }
 
     return {
@@ -63,7 +66,7 @@ export function createCartStore() {
             error: null,
           };
         });
-        if (get().cart !== before) saveCookie();
+        if (before && get().cart !== before) saveLine(before, variantId, quantity);
       },
       remove: (variantId) => {
         const before = get().cart;
@@ -79,7 +82,7 @@ export function createCartStore() {
             error: null,
           };
         });
-        if (get().cart !== before) saveCookie();
+        if (before && get().cart !== before) saveLine(before, variantId, null);
       },
     };
   });

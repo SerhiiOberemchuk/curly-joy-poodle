@@ -39,7 +39,7 @@ export type NpCity = z.infer<typeof npCitySchema>;
 export type NpWarehouse = z.infer<typeof npWarehouseSchema>;
 export type NpStreet = z.infer<typeof npStreetSchema>;
 
-const moneySchema = z
+export const moneySchema = z
   .string()
   .regex(/^\d+(\.\d{1,2})?$/)
   .refine(

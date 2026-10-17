@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
 import { siteUrl } from "@/lib/origin";
-import type { Order } from "../types";
+import type { Order, OrderItem } from "../types";
 import {
   createPaymentReturnToken,
   readPaymentReturnToken,
@@ -90,6 +90,7 @@ export function orderPayload(order: Order) {
   return {
     externalId: order.number,
     currency: "UAH",
+    ...(order.promotion ? { promotion: order.promotion } : {}),
     customer: {
       ...customer,
       shippingAddress: {
@@ -114,14 +115,23 @@ export function orderPayload(order: Order) {
       cod: order.payment === "cod",
       ...(delivery.comment ? { comment: delivery.comment } : {}),
     },
-    items: order.items.map((item) => ({
-      productName: `${item.title}${item.option ? ` · ${item.option}` : ""}`,
-      ...(item.sku ? { sku: item.sku } : {}),
-      quantity: item.quantity,
-      unitPrice: (item.unitPrice / 100).toFixed(2),
-    })),
-    notes: `Оплата: ${order.payment === "card" ? "Monobank" : "накладений платіж"}.${order.freeShipping ? " Доставка коштом магазину." : " Доставка за тарифами перевізника."}`,
+    items: orderItemsPayload(order.items),
+    notes: `Оплата: ${order.payment === "card" ? "Monobank" : "накладений платіж"}.${order.promotion ? "" : order.freeShipping ? " Доставка коштом магазину." : " Доставка за тарифами перевізника."}`,
   };
+}
+
+export function orderItemsPayload(
+  items: readonly Pick<
+    OrderItem,
+    "sku" | "title" | "option" | "quantity" | "unitPrice"
+  >[],
+) {
+  return items.map((item) => ({
+    productName: `${item.title}${item.option ? ` · ${item.option}` : ""}`,
+    ...(item.sku ? { sku: item.sku } : {}),
+    quantity: item.quantity,
+    unitPrice: (item.unitPrice / 100).toFixed(2),
+  }));
 }
 export async function createCrmOrder(
   order: Order,

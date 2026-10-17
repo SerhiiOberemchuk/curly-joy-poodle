@@ -1,11 +1,14 @@
 import { Icon } from "@/components/ui/icon";
+import type { Locale } from "@/lib/i18n";
 import { site } from "@/lib/site";
+import { welcomeOfferCopy } from "../copy";
 import { getWelcomeOffer } from "../offer.server";
 import styles from "../welcome-offer.module.css";
 import { WelcomeOfferDialog } from "./welcome-offer-dialog";
 
-export function HomeWelcomeOffer() {
-  const offer = getWelcomeOffer();
+export async function HomeWelcomeOffer({ locale }: { locale: Locale }) {
+  const offer = await getWelcomeOffer(locale);
+  const copy = welcomeOfferCopy[locale];
   return (
     <section className={styles.section} aria-labelledby="welcome-title">
       <div className={styles.art} aria-hidden="true">
@@ -17,15 +20,11 @@ export function HomeWelcomeOffer() {
         </span>
       </div>
       <div className={styles.copy}>
-        <span className={styles.eyebrow}>Раді знайомству</span>
-        <h2 id="welcome-title">Ще більше радості разом</h2>
-        <p>
-          {offer
-            ? offer.description
-            : "Нові знахідки, історії наших хвостиків і натхнення для щасливого життя із собакою. Зустрінемось в Instagram?"}
-        </p>
+        <span className={styles.eyebrow}>{copy.section.eyebrow}</span>
+        <h2 id="welcome-title">{copy.section.title}</h2>
+        <p>{offer ? offer.teaser : copy.section.community}</p>
         {offer ? (
-          <WelcomeOfferDialog offer={offer} />
+          <WelcomeOfferDialog offer={offer} copy={copy.dialog} />
         ) : (
           <a
             className={styles.button}
@@ -33,7 +32,7 @@ export function HomeWelcomeOffer() {
             target="_blank"
             rel="noreferrer noopener"
           >
-            До нашої спільноти
+            {copy.section.communityLink}
             <Icon name="arrow" />
           </a>
         )}

@@ -74,7 +74,14 @@ let submissions,
   warehouseTotal,
   response;
 let statusChecks;
+let promoCalls, promoReply;
 const load = createLoader({
+  "@/features/checkout/promotions.actions": {
+    quotePromotionAction: async (input) => {
+      promoCalls.push(input);
+      return typeof promoReply === "function" ? promoReply() : promoReply;
+    },
+  },
   "next/link": {
     __esModule: true,
     default: ({ children, href }) =>
@@ -144,6 +151,8 @@ const capabilities = {
   ],
 };
 beforeEach(() => {
+  promoCalls = [];
+  promoReply = { ok: false, message: "Unavailable" };
   statusChecks = 0;
   submissions = [];
   cityQueries = [];
@@ -161,7 +170,27 @@ function setup() {
       SWRConfig,
       { value: { provider: () => new Map(), dedupingInterval: 0 } },
       React.createElement(CheckoutForm, {
-        total: 2220,
+        cart: {
+          subtotal: 2220,
+          lines: [
+            {
+              variantId: "p1",
+              title: "Test",
+              sku: "SKU-1",
+              quantity: 1,
+              unitPrice: 2220,
+              lineTotal: 2220,
+            },
+          ],
+          itemCount: 1,
+          savings: 0,
+          freeShipping: false,
+          freeShippingThreshold: null,
+          freeShippingRemainder: null,
+          minOrderAmount: null,
+          minOrderRemainder: null,
+          isEmpty: false,
+        },
         capabilities,
         checkoutToken: "test-token",
       }),
@@ -196,6 +225,104 @@ async function selectBranch(user) {
   await screen.findByRole("option", { name: BRANCH.label });
   await user.keyboard("{ArrowDown}{Enter}");
 }
+
+function successfulPromo() {
+  return {
+    ok: true,
+    quote: {
+      code: "WELCOME",
+      currency: "UAH",
+      discountAmount: "1.11",
+      totalAmount: "21.09",
+      lineDiscountAmounts: ["1.11"],
+      reservesUse: false,
+      shippingDecision: {
+        state: "not_free",
+        threshold: "22.00",
+        currency: "UAH",
+        evaluatedAmount: "21.09",
+      },
+    },
+  };
+}
+
+test("promo summary is invalidated by email changes without another CRM call", async () => {
+  promoReply = successfulPromo();
+  const user = setup();
+  fireEvent.change(screen.getByRole("textbox", { name: "Email" }), {
+    target: { value: "maria@example.com" },
+  });
+  fireEvent.change(screen.getByRole("textbox", { name: "Промокод" }), {
+    target: { value: "WELCOME" },
+  });
+  assert.equal(
+    screen.getByRole("button", { name: /Перейти до оплати/ }).disabled,
+    true,
+  );
+  await user.click(screen.getByRole("button", { name: "Застосувати" }));
+  await screen.findByText(/Промокод застосовано/);
+  assert.equal(promoCalls.length, 1);
+  assert.match(
+    screen.getByRole("button", { name: /Перейти до оплати/ }).textContent,
+    /21[,.]09/,
+  );
+  fireEvent.change(screen.getByRole("textbox", { name: "Email" }), {
+    target: { value: "other@example.com" },
+  });
+  assert.equal(screen.queryByText(/Промокод застосовано/), null);
+  assert.equal(
+    screen.getByRole("button", { name: /Перейти до оплати/ }).disabled,
+    true,
+  );
+  assert.equal(promoCalls.length, 1);
+  await user.click(screen.getByRole("button", { name: "Прибрати промокод" }));
+  assert.equal(
+    screen.getByRole("button", { name: /Перейти до оплати/ }).disabled,
+    false,
+  );
+});
+
+test("a quote that completes after an email edit cannot restore a stale discount", async () => {
+  let finish;
+  promoReply = () =>
+    new Promise((resolve) => {
+      finish = resolve;
+    });
+  const user = setup();
+  await user.type(
+    screen.getByRole("textbox", { name: "Email" }),
+    "maria@example.com",
+  );
+  await user.type(screen.getByRole("textbox", { name: "Промокод" }), "WELCOME");
+  await user.click(screen.getByRole("button", { name: "Застосувати" }));
+  await waitFor(() => assert.equal(promoCalls.length, 1));
+  await user.type(screen.getByRole("textbox", { name: "Email" }), "x");
+  await act(async () => finish(successfulPromo()));
+  assert.equal(screen.queryByText(/Промокод застосовано/), null);
+  assert.equal(
+    screen.getByRole("button", { name: /Перейти до оплати/ }).disabled,
+    true,
+  );
+});
+
+test("checkout submits the applied code and the quoted net total with the original subtotal", async () => {
+  promoReply = successfulPromo();
+  const user = setup();
+  await contacts(user);
+  await selectCity(user);
+  await selectBranch(user);
+  fireEvent.change(screen.getByRole("textbox", { name: "Промокод" }), {
+    target: { value: "WELCOME" },
+  });
+  await user.click(screen.getByRole("button", { name: "Застосувати" }));
+  const pay = screen.getByRole("button", { name: /Перейти до оплати/ });
+  await waitFor(() => assert.equal(pay.disabled, false));
+  await user.click(pay);
+  await waitFor(() => assert.equal(submissions.length, 1));
+  assert.equal(submissions[0].promotionCode, "WELCOME");
+  assert.equal(submissions[0].promotionTotal, "2109");
+  assert.equal(submissions[0].expectedSubtotal, "2220");
+});
 
 test("one branch field searches the CRM by number, submits its CRM reference with the search that offered it and supports keyboard selection", async () => {
   const user = setup();
@@ -282,6 +409,14 @@ test("courier keeps the city, requires a CRM street and building, and switching 
   assert.equal(submissions[0].branchRef, "");
   assert.equal(submissions[0].building, "12А");
   assert.equal(streetQueries.at(-1).cityRef, CITY.ref);
+  // The action can record the request before React re-enables the form.
+  await waitFor(() =>
+    assert.equal(
+      screen.getByRole("radio", { name: /Відділення або поштомат Нової пошти/ })
+        .disabled,
+      false,
+    ),
+  );
   await user.click(
     screen.getByRole("radio", { name: /Відділення або поштомат Нової пошти/ }),
   );

@@ -3,132 +3,170 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { crmRequest, CrmApiError } from "@/lib/crm-client";
 import { readString } from "@/lib/form";
+import { defaultLocale, hasLocale, type Locale } from "@/lib/i18n";
+import { CURRENCY, formatMoney } from "@/lib/money";
+import { visitorHeaders } from "@/lib/visitor";
+import { welcomeOfferCopy, type OfferFigures } from "./copy";
 import type { WelcomeOffer, OfferState } from "./types";
 
-/** A promotion is visible only once the merchant supplies its actual terms. */
-export function getWelcomeOffer(): WelcomeOffer | null {
-  const description = process.env.WELCOME_OFFER_DESCRIPTION?.trim();
-  if (
-    process.env.WELCOME_OFFER_ENABLED !== "true" ||
-    !description ||
-    !process.env.OBRIYM_CRM_API_KEY
-  )
-    return null;
-  const title =
-    process.env.WELCOME_OFFER_TITLE?.trim() ||
-    "Маленький привіт для вас і вашого хвостика";
+// The CRM's numeric(12,2) columns arrive as decimal strings.
+const decimalSchema = z
+  .string()
+  .regex(/^\d{1,10}(\.\d{1,2})?$/)
+  .transform(Number);
+
+// Only the figures: the campaign's own title, terms and consent are internal
+// CRM copy in one language, so the shop writes its own texts around them.
+const offerSchema = z.object({
+  data: z.object({
+    campaignId: z.string().min(1),
+    discountType: z.enum(["percent", "fixed"]),
+    discountValue: decimalSchema,
+    currency: z.string(),
+    maxDiscountAmount: decimalSchema.nullable(),
+    minimumAmount: decimalSchema.nullable(),
+    codeLifetimeHours: z.int().positive(),
+    endsAt: z.iso.datetime({ offset: true }).nullable(),
+    emailLocales: z.array(z.string()),
+  }),
+});
+type CrmOffer = z.infer<typeof offerSchema>["data"];
+
+const money = (amount: number) => formatMoney(Math.round(amount * 100));
+
+function formatFigures(offer: CrmOffer, locale: Locale): OfferFigures {
+  const hours = offer.codeLifetimeHours;
+  const days = hours % 24 === 0;
+  const percent = offer.discountType === "percent";
   return {
-    id: createHash("sha256")
-      .update(JSON.stringify([title, description]))
-      .digest("hex")
-      .slice(0, 16),
-    title,
-    description,
+    discount: percent
+      ? new Intl.NumberFormat(locale, {
+          style: "percent",
+          maximumFractionDigits: 2,
+        }).format(offer.discountValue / 100)
+      : money(offer.discountValue),
+    maxDiscount:
+      percent && offer.maxDiscountAmount !== null
+        ? money(offer.maxDiscountAmount)
+        : null,
+    minimum:
+      offer.minimumAmount === null ? null : money(offer.minimumAmount),
+    lifetime: new Intl.NumberFormat(locale, {
+      style: "unit",
+      unit: days ? "day" : "hour",
+      unitDisplay: "long",
+    }).format(days ? hours / 24 : hours),
+    // The campaign end is an exact instant, so the time is shown too.
+    endsAt: offer.endsAt
+      ? new Intl.DateTimeFormat(locale, {
+          dateStyle: "long",
+          timeStyle: "short",
+          timeZone: "Europe/Kyiv",
+        }).format(new Date(offer.endsAt))
+      : null,
   };
 }
 
-const offerSchema = z
-  .object({
-    email: z.union(
-      [z.email("Вкажіть коректний email.").max(120), z.literal("")],
-      { error: "Вкажіть коректний email." },
-    ),
-    phone: z.union(
-      [
-        z
-          .string()
-          .regex(/^\+?[\d\s()-]{10,20}$/, "Вкажіть коректний номер телефону.")
-          .refine(
-            (value) => /^\+?\d{10,15}$/.test(value.replace(/[\s()-]/g, "")),
-            "Вкажіть коректний номер телефону.",
-          ),
-        z.literal(""),
-      ],
-      { error: "Вкажіть коректний номер телефону." },
-    ),
-    consent: z.literal("on", {
-      error: "Потрібна згода на зв’язок щодо пропозиції.",
-    }),
-  })
-  .refine((value) => value.email || value.phone, {
-    message: "Вкажіть email або телефон.",
-    path: ["email"],
-  });
-const acceptedLead = z.object({ data: z.object({ id: z.string().min(1) }) });
+async function readOffer(
+  locale: Locale,
+): Promise<{ offer: WelcomeOffer; emailLocale: Locale | null } | null> {
+  const id = process.env.WELCOME_OFFER_CAMPAIGN_ID?.trim();
+  if (
+    process.env.WELCOME_OFFER_ENABLED !== "true" ||
+    !id ||
+    !process.env.OBRIYM_CRM_API_KEY
+  )
+    return null;
+  try {
+    const { data } = offerSchema.parse(
+      await crmRequest(`/promotions/${encodeURIComponent(id)}/capture`),
+    );
+    // The cart is priced in the shop currency; another one could never apply.
+    if (data.campaignId !== id || data.currency !== CURRENCY) return null;
+    const copy = welcomeOfferCopy[locale];
+    const figures = formatFigures(data, locale);
+    const title = copy.offer.title(figures);
+    const description = copy.offer.terms(figures);
+    const consentText = copy.offer.consent;
+    return {
+      offer: {
+        id,
+        locale,
+        revision: createHash("sha256")
+          .update(JSON.stringify([locale, title, description, consentText]))
+          .digest("hex"),
+        teaser: copy.section.offer(figures),
+        title,
+        description,
+        consentText,
+      },
+      // Without the shop's language the CRM writes in the workspace's own.
+      emailLocale: data.emailLocales.includes(locale) ? locale : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
-/** CRM lead intake; never invents a coupon or changes cart prices. */
+export async function getWelcomeOffer(
+  locale: Locale,
+): Promise<WelcomeOffer | null> {
+  return (await readOffer(locale))?.offer ?? null;
+}
+
+const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(120));
+const acceptedSchema = z.object({
+  data: z.object({ status: z.literal("accepted") }),
+});
+
 export async function submitOfferRequest(
   formData: FormData,
-): Promise<OfferState> {
-  const values = {
-    email: readString(formData, "email"),
-    phone: readString(formData, "phone"),
-    consent: readString(formData, "consent"),
-  };
-  const offer = getWelcomeOffer();
-  if (!offer)
-    return {
-      status: "error",
-      message: "Ця пропозиція зараз недоступна.",
-      errors: {},
-      values,
-    };
-  const parsed = offerSchema.safeParse(values);
-  if (readString(formData, "offerId") !== offer.id)
-    return {
-      status: "error",
-      message: "Умови пропозиції змінилися. Оновіть сторінку.",
-      errors: {},
-      values,
-    };
-  if (!parsed.success)
-    return {
-      status: "error",
-      message: "Перевірте виділені поля.",
-      errors: Object.fromEntries(
-        parsed.error.issues.map((issue) => [issue.path[0], issue.message]),
-      ),
-      values,
-    };
-  if (readString(formData, "website"))
-    return {
-      status: "error",
-      message: "Не вдалося надіслати запит.",
-      errors: {},
-      values,
-    };
-  const request = parsed.data;
-  const email = request.email.toLowerCase();
-  const phone = request.phone.replace(/[\s()-]/g, "");
-  const day = new Date().toISOString().slice(0, 10);
-  const key = createHash("sha256")
-    .update(JSON.stringify([offer.id, day, email, phone]))
-    .digest("hex");
-  try {
-    acceptedLead.parse(
-      await crmRequest("/leads", {
-        externalId: `welcome-${key}`,
-        name: "Запит на пропозицію Curly Joy",
-        source: "website",
-        ...(email ? { email } : {}),
-        ...(phone ? { phone } : {}),
-        notes: `Пропозиція: ${offer.title}\nУмови: ${offer.description}\nКлієнт погодився на зв’язок щодо цієї пропозиції.`,
-      }),
-    );
-  } catch (error) {
-    return {
-      status: "error",
-      message:
-        error instanceof CrmApiError && error.status === 429
-          ? "Забагато запитів. Спробуйте за кілька хвилин."
-          : "Не вдалося надіслати запит. Спробуйте ще раз або зв’яжіться з нами.",
-      errors: {},
-      values,
-    };
-  }
-  return {
-    status: "sent",
-    message: "Дякуємо! Ваш запит отримано. Зв’яжемося з вами щодо пропозиції.",
+): Promise<{ state: OfferState; stale?: boolean }> {
+  const email = readString(formData, "email");
+  const requested = readString(formData, "locale");
+  const locale = hasLocale(requested) ? requested : defaultLocale;
+  const { messages } = welcomeOfferCopy[locale];
+  const fail = (message: string): OfferState => ({
+    status: "error",
+    message,
     errors: {},
-  };
+    values: { email },
+  });
+  const current = await readOffer(locale);
+  if (!current || readString(formData, "offerId") !== current.offer.id)
+    return { state: fail(messages.unavailable) };
+  const { offer, emailLocale } = current;
+  // The buyer agrees only to the terms on screen; the refresh shows the new ones.
+  if (readString(formData, "offerRevision") !== offer.revision)
+    return { state: fail(messages.changed), stale: true };
+  if (readString(formData, "website"))
+    return { state: fail(messages.rejected) };
+  const parsed = emailSchema.safeParse(email);
+  if (!parsed.success) return { state: fail(messages.invalidEmail) };
+  if (readString(formData, "consent") !== "on")
+    return { state: fail(messages.consentRequired) };
+  try {
+    // The CRM answers every eligible, repeat and ineligible address identically
+    // and mails the code itself, so the shop never learns who already bought.
+    acceptedSchema.parse(
+      await crmRequest(
+        `/promotions/${encodeURIComponent(offer.id)}/capture`,
+        {
+          email: parsed.data,
+          consent: true,
+          // Stored as the consent record: exactly the text the buyer accepted.
+          consentText: offer.consentText,
+          ...(emailLocale ? { locale: emailLocale } : {}),
+        },
+        await visitorHeaders(),
+      ),
+    );
+    return { state: { status: "sent", message: messages.sent, errors: {} } };
+  } catch (error) {
+    if (error instanceof CrmApiError && error.status === 429)
+      return { state: fail(messages.throttled) };
+    if (error instanceof CrmApiError && error.status === 404)
+      return { state: fail(messages.unavailable) };
+    return { state: fail(messages.failed) };
+  }
 }

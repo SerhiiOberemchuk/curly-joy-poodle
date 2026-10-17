@@ -12,7 +12,7 @@ export async function placeOrderAction(
 ): Promise<CheckoutActionState> {
   const result = await submitCheckout(formData);
   if (!result.ok) {
-    if (result.cartChanged) refresh();
+    if (result.stale) refresh();
     return result.state;
   }
   redirect(result.redirectTo);

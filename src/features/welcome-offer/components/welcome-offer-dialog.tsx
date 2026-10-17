@@ -3,10 +3,20 @@
 import { useActionState, useCallback, useEffect, useId, useRef } from "react";
 import { Icon } from "@/components/ui/icon";
 import { requestWelcomeOfferAction } from "../actions";
-import { initialOfferState, type WelcomeOffer } from "../types";
+import {
+  initialOfferState,
+  type WelcomeOffer,
+  type WelcomeOfferDialogCopy,
+} from "../types";
 import styles from "../welcome-offer.module.css";
 
-export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
+export function WelcomeOfferDialog({
+  offer,
+  copy,
+}: {
+  offer: WelcomeOffer;
+  copy: WelcomeOfferDialogCopy;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const overflow = useRef<string | null>(null);
   const id = useId();
@@ -63,7 +73,7 @@ export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
   return (
     <>
       <button type="button" className={styles.button} onClick={show}>
-        Пропозиція для першого замовлення
+        {copy.open}
         <Icon name="arrow" />
       </button>
       <dialog
@@ -76,7 +86,7 @@ export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
         <button
           type="button"
           className={styles.close}
-          aria-label="Закрити пропозицію"
+          aria-label={copy.close}
           onClick={() => dialog.current?.close()}
         >
           <Icon name="close" />
@@ -90,7 +100,7 @@ export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
           </span>
         </div>
         <div className={styles.dialogCopy}>
-          <span className={styles.eyebrow}>Для першого знайомства</span>
+          <span className={styles.eyebrow}>{copy.eyebrow}</span>
           <h2 id={`${id}-title`}>{offer.title}</h2>
           <p id={`${id}-description`}>{offer.description}</p>
           {state.status === "sent" ? (
@@ -100,52 +110,26 @@ export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
           ) : (
             <form action={action} className={styles.form}>
               <input type="hidden" name="offerId" value={offer.id} />
-              <p className={styles.hint}>
-                Залиште email або телефон — зв’яжемося щодо пропозиції.
-              </p>
-              {(
-                [
-                  {
-                    name: "email",
-                    label: "Email",
-                    type: "email",
-                    autoComplete: "email",
-                  },
-                  {
-                    name: "phone",
-                    label: "Телефон",
-                    type: "tel",
-                    autoComplete: "tel",
-                  },
-                ] as const
-              ).map((field) => (
-                <div className={styles.field} key={field.name}>
-                  <label htmlFor={`${id}-${field.name}`}>{field.label}</label>
-                  <input
-                    id={`${id}-${field.name}`}
-                    name={field.name}
-                    type={field.type}
-                    autoComplete={field.autoComplete}
-                    maxLength={field.name === "email" ? 120 : 20}
-                    disabled={pending}
-                    defaultValue={state.values?.[field.name] ?? ""}
-                    aria-invalid={Boolean(state.errors[field.name])}
-                    aria-describedby={
-                      state.errors[field.name]
-                        ? `${id}-${field.name}-error`
-                        : undefined
-                    }
-                  />
-                  {state.errors[field.name] ? (
-                    <p
-                      id={`${id}-${field.name}-error`}
-                      className={styles.error}
-                    >
-                      {state.errors[field.name]}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+              <input
+                type="hidden"
+                name="offerRevision"
+                value={offer.revision}
+              />
+              <input type="hidden" name="locale" value={offer.locale} />
+              <p className={styles.hint}>{copy.hint}</p>
+              <div className={styles.field}>
+                <label htmlFor={`${id}-email`}>{copy.email}</label>
+                <input
+                  id={`${id}-email`}
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  maxLength={120}
+                  required
+                  disabled={pending}
+                  defaultValue={state.values?.email ?? ""}
+                />
+              </div>
               <div className={styles.honeypot} aria-hidden="true">
                 <label htmlFor={`${id}-website`}>Website</label>
                 <input
@@ -161,27 +145,15 @@ export function WelcomeOfferDialog({ offer }: { offer: WelcomeOffer }) {
                   name="consent"
                   required
                   disabled={pending}
-                  defaultChecked={state.values?.consent === "on"}
-                  aria-describedby={
-                    state.errors.consent ? `${id}-consent-error` : undefined
-                  }
                 />
-                <span>
-                  Погоджуюся на обробку контакту та зв’язок щодо цієї
-                  пропозиції.
-                </span>
+                <span>{offer.consentText}</span>
               </label>
-              {state.errors.consent ? (
-                <p className={styles.error} id={`${id}-consent-error`}>
-                  {state.errors.consent}
-                </p>
-              ) : null}
               <button
                 type="submit"
                 className={styles.button}
                 disabled={pending}
               >
-                {pending ? "Надсилаємо…" : "Отримати пропозицію"}
+                {pending ? copy.pending : copy.submit}
                 <Icon name="arrow" />
               </button>
               {state.status === "error" ? (

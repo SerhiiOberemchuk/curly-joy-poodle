@@ -1,19 +1,31 @@
 import "server-only";
 import { z } from "zod";
 
-const errorSchema = z.object({ error: z.object({ code: z.string() }) });
+const errorSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    reason: z.string().optional(),
+    details: z.unknown().optional(),
+  }),
+});
 
 export class CrmApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
+    readonly reason?: string,
+    readonly details?: Record<string, unknown>,
   ) {
     super(`CRM request failed (${status}, ${code})`);
     this.name = "CrmApiError";
   }
 }
 
-export async function crmRequest(path: string, body?: unknown): Promise<unknown> {
+export async function crmRequest(
+  path: string,
+  body?: unknown,
+  extraHeaders?: Record<string, string>,
+): Promise<unknown> {
   const key = process.env.OBRIYM_CRM_API_KEY;
   if (!key) throw new CrmApiError(503, "NOT_CONFIGURED");
   const base = (
@@ -24,6 +36,7 @@ export async function crmRequest(path: string, body?: unknown): Promise<unknown>
     headers: {
       authorization: `Bearer ${key}`,
       accept: "application/json",
+      ...extraHeaders,
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -31,11 +44,21 @@ export async function crmRequest(path: string, body?: unknown): Promise<unknown>
     signal: AbortSignal.timeout(body === undefined ? 15_000 : 30_000),
   });
   if (!response.ok) {
-    const error = errorSchema.safeParse(await response.json().catch(() => null));
+    const error = errorSchema.safeParse(
+      await response.json().catch(() => null),
+    );
     throw new CrmApiError(
       response.status,
       error.success ? error.data.error.code : "REQUEST_FAILED",
+      error.success ? error.data.error.reason : undefined,
+      error.success ? recordOf(error.data.error.details) : undefined,
     );
   }
   return response.json();
+}
+
+function recordOf(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }

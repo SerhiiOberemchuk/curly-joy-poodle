@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import styles from "@/features/home/home.module.css";
 import { HomeReviews } from "@/features/reviews/components/home-reviews";
 import { HomeWelcomeOffer } from "@/features/welcome-offer/components/home-welcome-offer";
+import { defaultLocale } from "@/lib/i18n";
 
 import {
   HomeBenefits,
@@ -41,8 +42,12 @@ export default function HomePage() {
       <HomeCategories />
       <HomeRecommendations />
       <HomePromotions />
-      <Suspense fallback={null}><HomeReviews /></Suspense>
-      <HomeWelcomeOffer />
+      <Suspense fallback={null}>
+        <HomeReviews />
+      </Suspense>
+      <Suspense fallback={null}>
+        <HomeWelcomeOffer locale={defaultLocale} />
+      </Suspense>
     </div>
   );
 }

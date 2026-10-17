@@ -38,7 +38,7 @@ export function CartClient({ initialCart }: { initialCart: Cart }) {
         {cart.lines.map((line) => <CartLineItem key={line.variantId} line={line} />)}
         {error ? <p className={styles.lineError} role="alert">{error}</p> : null}
       </div>
-      <CartSummary cart={cart} action={error ? "none" : "checkout"} />
+      <CartSummary cart={cart} action="checkout" />
     </div>
   );
 }

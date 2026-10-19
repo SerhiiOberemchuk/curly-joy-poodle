@@ -1,7 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { cacheLife } from "next/cache";
 import { z } from "zod";
 import { crmRequest, CrmApiError } from "@/lib/crm-client";
+import { crmFailureDetails } from "@/lib/crm-errors";
 import { readString } from "@/lib/form";
 import { defaultLocale, hasLocale, type Locale } from "@/lib/i18n";
 import { CURRENCY, formatMoney } from "@/lib/money";
@@ -75,19 +77,48 @@ const crmHints: Partial<Record<number, string>> = {
 
 /** What the server log needs to explain a failure; never the buyer's email. */
 function describeFailure(error: unknown): Record<string, unknown> {
-  if (error instanceof CrmApiError)
-    return {
-      status: error.status,
-      code: error.code,
-      reason: error.reason,
-      hint: crmHints[error.status],
-    };
-  if (error instanceof z.ZodError)
-    return {
-      invalidFields: error.issues.map((issue) => issue.path.join(".")),
-      hint: "Unexpected CRM answer; the offer needs obriym-crm with migration 0264.",
-    };
-  return { error };
+  return {
+    ...crmFailureDetails(error),
+    hint:
+      error instanceof CrmApiError
+        ? crmHints[error.status]
+        : error instanceof z.ZodError
+          ? "Unexpected CRM answer; the offer needs obriym-crm with migration 0264."
+          : undefined,
+  };
+}
+
+/**
+ * The campaign figures, shared by every visitor for about a minute: the CRM
+ * allows this read 120 times a minute per sales source. A failure is cached
+ * for the same minute, so an outage or a wrong ID costs one read, not one per
+ * home view.
+ */
+async function readCampaign(id: string): Promise<CrmOffer | null> {
+  "use cache: remote";
+  cacheLife("minutes");
+  try {
+    const { data } = offerSchema.parse(
+      await crmRequest(`/promotions/${encodeURIComponent(id)}/capture`),
+    );
+    // The cart is priced in the shop currency; another one could never apply.
+    if (data.campaignId === id && data.currency === CURRENCY) return data;
+    console.error(
+      "[welcome-offer] The CRM offer does not fit this shop; it is hidden.",
+      {
+        campaignId: id,
+        returnedCampaignId: data.campaignId,
+        currency: data.currency,
+        shopCurrency: CURRENCY,
+      },
+    );
+  } catch (error) {
+    console.error(
+      "[welcome-offer] The CRM offer could not be read; it is hidden.",
+      { campaignId: id, ...describeFailure(error) },
+    );
+  }
+  return null;
 }
 
 async function readOffer(
@@ -101,50 +132,28 @@ async function readOffer(
     );
     return null;
   }
-  try {
-    const { data } = offerSchema.parse(
-      await crmRequest(`/promotions/${encodeURIComponent(id)}/capture`),
-    );
-    // The cart is priced in the shop currency; another one could never apply.
-    if (data.campaignId !== id || data.currency !== CURRENCY) {
-      console.error(
-        "[welcome-offer] The CRM offer does not fit this shop; it is hidden.",
-        {
-          campaignId: id,
-          returnedCampaignId: data.campaignId,
-          currency: data.currency,
-          shopCurrency: CURRENCY,
-        },
-      );
-      return null;
-    }
-    const copy = welcomeOfferCopy[locale];
-    const figures = formatFigures(data, locale);
-    const title = copy.offer.title(figures);
-    const description = copy.offer.terms(figures);
-    const consentText = copy.offer.consent;
-    return {
-      offer: {
-        id,
-        locale,
-        revision: createHash("sha256")
-          .update(JSON.stringify([locale, title, description, consentText]))
-          .digest("hex"),
-        teaser: copy.section.offer(figures),
-        title,
-        description,
-        consentText,
-      },
-      // Without the shop's language the CRM writes in the workspace's own.
-      emailLocale: data.emailLocales.includes(locale) ? locale : null,
-    };
-  } catch (error) {
-    console.error(
-      "[welcome-offer] The CRM offer could not be read; it is hidden.",
-      { campaignId: id, ...describeFailure(error) },
-    );
-    return null;
-  }
+  const campaign = await readCampaign(id);
+  if (!campaign) return null;
+  const copy = welcomeOfferCopy[locale];
+  const figures = formatFigures(campaign, locale);
+  const title = copy.offer.title(figures);
+  const description = copy.offer.terms(figures);
+  const consentText = copy.offer.consent;
+  return {
+    offer: {
+      id,
+      locale,
+      revision: createHash("sha256")
+        .update(JSON.stringify([locale, title, description, consentText]))
+        .digest("hex"),
+      teaser: copy.section.offer(figures),
+      title,
+      description,
+      consentText,
+    },
+    // Without the shop's language the CRM writes in the workspace's own.
+    emailLocale: campaign.emailLocales.includes(locale) ? locale : null,
+  };
 }
 
 export async function getWelcomeOffer(

@@ -15,12 +15,19 @@ export function Price({
 }) {
   const discounted = compareAtAmount !== undefined && compareAtAmount > amount;
 
+  // Strike-through alone is visual: a screen reader also hears which price is current.
   return (
     <span className={`${styles.price} ${styles[size]}`}>
       {prefix ? <span className={styles.prefix}>{prefix}</span> : null}
-      <span>{formatMoney(amount)}</span>
+      <span>
+        {discounted ? <span className="visually-hidden">Ціна зі знижкою: </span> : null}
+        {formatMoney(amount)}
+      </span>
       {discounted ? (
-        <span className={styles.compare}>{formatMoney(compareAtAmount)}</span>
+        <del className={styles.compare}>
+          <span className="visually-hidden">Стара ціна: </span>
+          {formatMoney(compareAtAmount)}
+        </del>
       ) : null}
     </span>
   );

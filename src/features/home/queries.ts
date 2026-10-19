@@ -17,7 +17,7 @@ const RECOMMENDATIONS_LIMIT = 12;
  */
 export async function getHomeRecommendations(): Promise<{
   products: ProductListItem[];
-  catalogHref: "/catalog" | `/catalog?collection=${string}`;
+  catalogHref: "/catalog" | `/collection/${typeof RECOMMENDATIONS_COLLECTION}`;
 }> {
   const curated = (await getCollection(RECOMMENDATIONS_COLLECTION))
     ? await getProducts({ collection: RECOMMENDATIONS_COLLECTION })
@@ -30,7 +30,7 @@ export async function getHomeRecommendations(): Promise<{
       .slice(0, RECOMMENDATIONS_LIMIT),
     catalogHref:
       curated.length > 0
-        ? `/catalog?collection=${RECOMMENDATIONS_COLLECTION}`
+        ? `/collection/${RECOMMENDATIONS_COLLECTION}`
         : "/catalog",
   };
 }

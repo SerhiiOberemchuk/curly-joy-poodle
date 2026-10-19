@@ -1,4 +1,5 @@
 import { Icon } from "@/components/ui/icon";
+import { NewTabNote } from "@/components/ui/new-tab-note";
 import type { Locale } from "@/lib/i18n";
 import { site } from "@/lib/site";
 import { welcomeOfferCopy } from "../copy";
@@ -33,6 +34,7 @@ export async function HomeWelcomeOffer({ locale }: { locale: Locale }) {
             rel="noreferrer noopener"
           >
             {copy.section.communityLink}
+            <NewTabNote />
             <Icon name="arrow" />
           </a>
         )}

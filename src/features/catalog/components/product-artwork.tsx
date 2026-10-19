@@ -22,6 +22,8 @@ export function ProductArtwork({
           alt={decorative ? "" : image.alt}
           fill
           loading={size === "lg" ? "eager" : "lazy"}
+          // The product page's main photo is its largest paint.
+          fetchPriority={size === "lg" ? "high" : undefined}
           sizes={
             size === "sm"
               ? "80px"

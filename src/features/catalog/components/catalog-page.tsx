@@ -42,7 +42,7 @@ export function CatalogPage({
           src="/images/reference/8c922cf1-57f1-44c3-812b-073416497db8.webp"
           alt="Два пуделі Curly Joy"
           fill
-          priority
+          preload
           sizes="(min-width: 1600px) 1600px, 100vw"
           className={styles.heroImage}
         />

@@ -7,6 +7,7 @@ import {
   checkPaymentStatusAction,
   retryPaymentAction,
 } from "@/features/checkout/actions";
+import { ForgetCheckoutToken } from "@/features/checkout/components/forget-checkout-token";
 import { PaymentStatusPoller } from "@/features/checkout/components/payment-status-poller";
 import type { CrmOrder } from "@/features/checkout/crm/types";
 import { paymentLabel } from "@/features/checkout/options";
@@ -52,7 +53,8 @@ async function Receipt({
     return await Recovery({ token, unavailable: true });
   }
   if (!receipt) return await Recovery({ token });
-  const checkStatus = checkPaymentStatusAction.bind(null, token);
+  // No status on screen to compare with: the button always refreshes.
+  const checkStatus = checkPaymentStatusAction.bind(null, token, undefined);
   const retryPayment = retryPaymentAction.bind(null, token);
   let order: CrmOrder | null = null;
   let unavailable = false;
@@ -88,6 +90,11 @@ async function Receipt({
               : "Замовлення прийнято";
   return (
     <section className={styles.card}>
+      <ForgetCheckoutToken />
+      {/* Kept in place across status refreshes, so a change of state is read out. */}
+      <p className="visually-hidden" role="status">
+        {title}
+      </p>
       {!unavailable && !waiting ? (
         <span className={styles.glyph} aria-hidden="true">
           {canPay || status === "cancelled" ? "!" : "✓"}
@@ -110,6 +117,7 @@ async function Receipt({
         active={waiting || unavailable}
         orderId={receipt.number}
         token={token}
+        shown={unavailable ? "unavailable" : status}
       >
         {canPay && waiting ? (
           <form action={retryPayment}>
@@ -224,7 +232,7 @@ async function Recovery({
   unavailable?: boolean;
 }) {
   const number = token ? await readPaymentReturnToken(token) : null;
-  const checkStatus = checkPaymentStatusAction.bind(null, token);
+  const checkStatus = checkPaymentStatusAction.bind(null, token, undefined);
   return (
     <section className={styles.card}>
       <h1>
@@ -239,7 +247,12 @@ async function Recovery({
       </p>
       {number && unavailable ? (
         <>
-          <PaymentStatusPoller active orderId={number} token={token} />
+          <PaymentStatusPoller
+            active
+            orderId={number}
+            token={token}
+            shown="unavailable"
+          />
           <form action={checkStatus}>
             <Button type="submit" variant="outline">
               Оновити статус

@@ -19,6 +19,9 @@ const load = createLoader({
     default: ({ children, href, className }) => React.createElement("a", { href, className }, children),
   },
   "@/components/ui/button": { buttonStyles: () => "button" },
+  "@/features/catalog/components/product-artwork": {
+    ProductArtwork: () => React.createElement("div"),
+  },
   "server-only": {},
   "next/headers": {
     cookies: async () => ({
@@ -38,6 +41,7 @@ const { CartLineControls } = load(
 const { CartSummary } = load("src/features/cart/components/cart-summary.tsx");
 const { calculateCart } = load("src/features/cart/calculate.ts");
 const { readCartCookie } = load("src/features/cart/cart-cookie.ts");
+const { CartClient } = load("src/features/cart/components/cart-client.tsx");
 
 afterEach(() => {
   cleanup();
@@ -126,6 +130,20 @@ test("a change the cookie cannot hold is undone instead of shown", async () => {
   assert.deepEqual(await readCartCookie(), otherLines);
 });
 
+test("the first browser write keeps the rendered lines of a cart only the old HttpOnly cookie held", async () => {
+  const cart = sampleCart();
+  const legacy = calculateCart(
+    [...cart.lines, { ...cart.lines[0], variantId: "p2", quantity: 2 }],
+    { freeShippingThreshold: 150000, minOrderAmount: null },
+  );
+  const store = createCartStore();
+  store.getState().hydrate(legacy);
+  store.getState().setQuantity("p1", 5);
+  assert.deepEqual(await readCartCookie(), [{ p: "p1", q: 5 }, { p: "p2", q: 2 }]);
+  store.getState().remove("p1");
+  assert.deepEqual(await readCartCookie(), [{ p: "p2", q: 2 }]);
+});
+
 test("removing the last line writes an empty cart the server can read", async () => {
   document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify([{ p: "p1", q: 4 }]))}; Path=/`;
   const store = createCartStore();
@@ -133,4 +151,40 @@ test("removing the last line writes an empty cart the server can read", async ()
   store.getState().remove("p1");
   assert.equal(store.getState().cart.isEmpty, true);
   assert.deepEqual(await readCartCookie(), []);
+});
+
+test("removing a line keeps the focus in the cart and the status region says what changed", async () => {
+  const base = sampleCart();
+  const cart = calculateCart(
+    [
+      base.lines[0],
+      { ...base.lines[0], variantId: "p2", title: "Шлейка", sku: "MYW-00009", quantity: 1 },
+    ],
+    { freeShippingThreshold: 150000, minOrderAmount: null },
+  );
+  const heading = document.createElement("h1");
+  heading.id = "cart-title";
+  heading.tabIndex = -1;
+  document.body.append(heading);
+  render(
+    React.createElement(
+      CartStoreProvider,
+      null,
+      React.createElement(CartClient, { initialCart: cart }),
+    ),
+  );
+  const first = screen.getByRole("button", { name: "Видалити Бальзам для лапок" });
+  first.focus();
+  fireEvent.click(first);
+  assert.equal(
+    document.activeElement,
+    screen.getByRole("button", { name: "Видалити Шлейка" }),
+  );
+  assert.match(screen.getByRole("status").textContent, /«Бальзам для лапок» видалено з кошика\. Разом за товари: 320\s?₴\./);
+  fireEvent.click(screen.getByRole("button", { name: "Збільшити кількість: Шлейка" }));
+  assert.match(screen.getByRole("status").textContent, /Кількість «Шлейка»: 2/);
+  fireEvent.click(screen.getByRole("button", { name: "Видалити Шлейка" }));
+  assert.equal(document.activeElement, heading);
+  assert.match(screen.getByRole("status").textContent, /Кошик порожній\./);
+  heading.remove();
 });

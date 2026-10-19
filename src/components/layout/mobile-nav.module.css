@@ -33,7 +33,8 @@
   background: var(--color-sand);
 }
 
-@media (width >= 900px) {
+/* The header hides its own links at 900px and below; the menu takes over. */
+@media (width > 900px) {
   .toggle,
   .panel {
     display: none;

@@ -30,13 +30,19 @@ export function browserCartItemCount(): number | null {
  * open page does not show. Checkout re-reads the whole cookie against fresh
  * CRM stock. A browser cookie write does not invoke a Server Action or
  * re-render the route.
+ *
+ * `shown` is the cart the page rendered. While only the older HttpOnly cookie
+ * holds a cart, the browser cannot read it, so the first write starts from the
+ * rendered lines instead of an empty cart that would drop the others.
  */
 export function writeBrowserCartLine(
   variantId: string,
   quantity: number | null,
+  shown: readonly StoredCartLine[],
 ): "saved" | "full" | "unavailable" {
   if (typeof document === "undefined") return "unavailable";
-  const current = parseCartCookie(browserCookieValue());
+  const raw = browserCookieValue();
+  const current = raw === undefined ? [...shown] : parseCartCookie(raw);
   const next: StoredCartLine[] =
     quantity === null
       ? current.filter((line) => line.p !== variantId)

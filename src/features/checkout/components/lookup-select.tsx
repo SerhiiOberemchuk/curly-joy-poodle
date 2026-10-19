@@ -29,10 +29,19 @@ export function LookupSelect<T extends LookupOption>({
     fieldState,
   } = useController({ name, control });
   const error = fieldState.error?.message;
+  // react-select owns aria-describedby (its placeholder and live region) and
+  // drops ours, so the error and the hint join the field's accessible name.
+  const labelledBy = [
+    `${id}-label`,
+    error ? `${id}-error` : null,
+    hint ? `${id}-hint` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={styles.field}>
-      <label className={styles.label} htmlFor={id}>
+      <label id={`${id}-label`} className={styles.label} htmlFor={id}>
         {label}
       </label>
       <Select<T, false>
@@ -55,10 +64,11 @@ export function LookupSelect<T extends LookupOption>({
           singleValue: (base) => ({ ...base, whiteSpace: "normal" }),
           menu: (base) => ({ ...base, zIndex: 2 }),
         }}
-        // react-select owns aria-describedby (its placeholder and live
-        // region) and drops ours, so the error is linked as an error message.
+        aria-labelledby={labelledBy}
         aria-invalid={!!error}
         aria-errormessage={error ? `${id}-error` : undefined}
+        // Shown only when its delivery method needs it, and then mandatory.
+        required
         loadingMessage={() => "Завантажуємо…"}
         classNames={{
           container: () => styles.select,
@@ -82,7 +92,11 @@ export function LookupSelect<T extends LookupOption>({
             {error}
           </p>
         ) : null}
-        {hint ? <p className={styles.optionHint}>{hint}</p> : null}
+        {hint ? (
+          <p id={`${id}-hint`} className={styles.optionHint}>
+            {hint}
+          </p>
+        ) : null}
         {lookupError ? (
           <div role="alert">
             <p className={styles.error}>{lookupError.message}</p>

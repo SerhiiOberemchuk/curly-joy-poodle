@@ -37,7 +37,7 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
         </div>
         <div className={styles.headingActions}>
           <a className={styles.writeReview} href="#review-form">
-            Залишити відгук ↗
+            Залишити відгук <span aria-hidden="true">↗</span>
           </a>
         </div>
       </div>

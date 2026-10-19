@@ -83,6 +83,13 @@
   outline: none;
 }
 
+/* A border colour change alone is too faint to find the focus by. */
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
 .inputInvalid {
   composes: input;
   border-color: var(--color-danger);
@@ -154,7 +161,7 @@
 }
 
 .option input[type="radio"]:focus-visible {
-  outline: 3px solid rgb(137 89 77 / 22%);
+  outline: 2px solid var(--color-ink);
   outline-offset: 3px;
 }
 
@@ -261,6 +268,8 @@
 .selectFocused {
   border-color: var(--color-ink);
   background: var(--color-surface);
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }
 
 .selectInvalid {
@@ -342,4 +351,14 @@
   .promoRow {
     flex-direction: column;
   }
+}
+
+.stockNotice {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-sand);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }

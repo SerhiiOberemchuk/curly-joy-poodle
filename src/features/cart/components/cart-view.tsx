@@ -1,5 +1,7 @@
+import { buttonStyles } from "@/components/ui/button";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 
+import { retryCartAction } from "../actions";
 import { calculateCart } from "../calculate";
 import { getCart } from "../queries";
 import { CartClient } from "./cart-client";
@@ -25,8 +27,13 @@ export async function CartView() {
         <h2>Не вдалося завантажити кошик</h2>
         <p className={styles.emptyText}>
           Не вдалося перевірити ціни й наявність товарів. Ваш кошик збережено —
-          оновіть сторінку за кілька хвилин.
+          спробуйте ще раз трохи згодом.
         </p>
+        <form action={retryCartAction}>
+          <button type="submit" className={buttonStyles({ size: "lg" })}>
+            Спробувати ще раз
+          </button>
+        </form>
       </div>
     );
   }

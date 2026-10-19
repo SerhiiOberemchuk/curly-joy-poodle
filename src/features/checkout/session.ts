@@ -6,7 +6,6 @@ import type { OrderReceipt } from "./types";
 
 interface CheckoutSession {
   receipt?: OrderReceipt;
-  attempt?: { fingerprint: string; id: string };
 }
 
 export function getCheckoutSessionPassword(): string {

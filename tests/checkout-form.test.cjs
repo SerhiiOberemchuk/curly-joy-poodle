@@ -199,7 +199,7 @@ function setup() {
   return user;
 }
 async function selectCity(user, name = "Рівне", option = CITY) {
-  const city = screen.getByRole("combobox", { name: "Населений пункт" });
+  const city = screen.getByRole("combobox", { name: /^Населений пункт/ });
   await user.clear(city);
   await user.type(city, name);
   await user.click(await screen.findByRole("option", { name: option.label }));
@@ -218,7 +218,7 @@ async function contacts(user) {
 }
 async function selectBranch(user) {
   const branch = await screen.findByRole("combobox", {
-    name: "Пункт отримання",
+    name: /^Пункт отримання/,
   });
   await waitFor(() => assert.equal(branch.disabled, false));
   await user.type(branch, "5");
@@ -329,7 +329,7 @@ test("one branch field searches the CRM by number, submits its CRM reference wit
   await contacts(user);
   await selectCity(user);
   const branch = await screen.findByRole("combobox", {
-    name: "Пункт отримання",
+    name: /^Пункт отримання/,
   });
   await waitFor(() => assert.equal(branch.disabled, false));
   assert.equal(
@@ -377,8 +377,23 @@ test("changing city clears the old branch and refreshes the directory for the ne
   assert.equal(warehouseSearches.at(-1).cityRef, OTHER_CITY.ref);
   assert.equal(
     document.activeElement,
-    screen.getByRole("combobox", { name: "Пункт отримання" }),
+    screen.getByRole("combobox", { name: /^Пункт отримання/ }),
   );
+});
+
+test("finding the same city again keeps the chosen branch and submits on the first try", async () => {
+  const user = setup();
+  await contacts(user);
+  await selectCity(user);
+  await selectBranch(user);
+  await selectCity(user);
+  await user.click(screen.getByRole("radio", { name: /Накладений платіж/ }));
+  await user.click(
+    screen.getByRole("button", { name: /Підтвердити замовлення/ }),
+  );
+  await waitFor(() => assert.equal(submissions.length, 1));
+  assert.equal(submissions[0].cityRef, CITY.ref);
+  assert.notEqual(submissions[0].branchRef, "");
 });
 
 test("courier keeps the city, requires a CRM street and building, and switching back removes the courier address", async () => {
@@ -388,7 +403,7 @@ test("courier keeps the city, requires a CRM street and building, and switching 
   await selectBranch(user);
   await user.click(screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }));
   assert.ok(screen.getByText(CITY.label));
-  const street = screen.getByRole("combobox", { name: "Вулиця" });
+  const street = screen.getByRole("combobox", { name: /^Вулиця/ });
   await user.type(street, "Київ");
   await user.click(await screen.findByRole("option", { name: STREET.label }));
   await user.click(screen.getByRole("button", { name: /Перейти до оплати/ }));
@@ -455,7 +470,7 @@ test("a settlement Nova Poshta does not serve switches courier off, says why and
     ),
   );
   const branch = await screen.findByRole("combobox", {
-    name: "Пункт отримання",
+    name: /^Пункт отримання/,
   });
   await waitFor(() => assert.equal(branch.disabled, false));
   await user.click(branch);
@@ -500,10 +515,16 @@ test("server branch errors focus the searchable field and disappear after correc
   await selectBranch(user);
   await user.click(screen.getByRole("button", { name: /Перейти до оплати/ }));
   assert.ok(await screen.findByText("Цей пункт отримання недоступний"));
-  const branch = screen.getByRole("combobox", { name: "Пункт отримання" });
+  const branch = screen.getByRole("combobox", { name: /^Пункт отримання/ });
   await waitFor(() => assert.equal(document.activeElement, branch));
-  // The error is programmatically tied to the combobox, not only shown.
+  // The error is programmatically tied to the combobox, not only shown:
+  // react-select drops aria-describedby, so it is part of the field's name.
   assert.equal(branch.getAttribute("aria-invalid"), "true");
+  assert.equal(branch.getAttribute("aria-required"), "true");
+  assert.match(
+    branch.getAttribute("aria-labelledby"),
+    new RegExp(branch.getAttribute("aria-errormessage")),
+  );
   assert.equal(
     document.getElementById(branch.getAttribute("aria-errormessage"))
       ?.textContent,
@@ -523,7 +544,7 @@ test("branch search also finds an address and reports no matches in the same con
   const user = setup();
   await selectCity(user);
   const branch = await screen.findByRole("combobox", {
-    name: "Пункт отримання",
+    name: /^Пункт отримання/,
   });
   await waitFor(() => assert.equal(branch.disabled, false));
   await user.type(branch, "999");
@@ -546,8 +567,8 @@ test("pending submission disables all address controls and prevents a second ord
   await contacts(user);
   await selectCity(user);
   await selectBranch(user);
-  const branch = screen.getByRole("combobox", { name: "Пункт отримання" });
-  const city = screen.getByRole("combobox", { name: "Населений пункт" });
+  const branch = screen.getByRole("combobox", { name: /^Пункт отримання/ });
+  const city = screen.getByRole("combobox", { name: /^Населений пункт/ });
   await user.click(screen.getByRole("button", { name: /Перейти до оплати/ }));
   const button = await screen.findByRole("button", { name: "Оформлюємо…" });
   assert.equal(button.disabled, true);

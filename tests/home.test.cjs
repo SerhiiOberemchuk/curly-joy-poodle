@@ -30,6 +30,6 @@ test("recommendations link opens the same CRM catalog source as the displayed pr
   ];
   assert.deepEqual(await getHomeRecommendations(), {
     products: [curated[0]],
-    catalogHref: "/catalog?collection=curly-joy-recommends",
+    catalogHref: "/collection/curly-joy-recommends",
   });
 });

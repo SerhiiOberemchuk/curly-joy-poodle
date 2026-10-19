@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 
 import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
-import { loadCart } from "@/features/cart/queries";
+import { loadCart, matchesStored } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
 import { readString } from "@/lib/form";
@@ -32,6 +32,7 @@ import {
   availableDeliveries,
   availablePayments,
   hryvniaCartTerms,
+  sellsInHryvnia,
 } from "./options";
 import { settleCheckoutReturn } from "./payment/settlement";
 import { awaitsCardPayment, paymentNote } from "./payment/status";
@@ -89,7 +90,7 @@ function unavailableMethod(
   input: CheckoutInput,
   capabilities: CrmCapabilities,
 ): string | null {
-  if (capabilities.cart.currency !== "UAH") {
+  if (!sellsInHryvnia(capabilities)) {
     return "Оформлення в цій валюті зараз недоступне.";
   }
   if (
@@ -207,7 +208,7 @@ async function submitOrder(
   stored: readonly StoredCartLine[],
   nonce: string,
 ): Promise<OrderReceipt> {
-  order.number = await checkoutAttempt(orderPayload(order), nonce);
+  order.number = checkoutAttempt(orderPayload(order), nonce);
   const created = await createCrmOrder(order);
   const status = order.payment === "cod" ? "not-required" : "unpaid";
   const receipt: OrderReceipt = {
@@ -245,18 +246,17 @@ export async function submitCheckout(
     );
   }
 
-  const quantitiesChanged =
-    stored.length !== cart.lines.length ||
-    stored.some(
-      (item) =>
-        !cart.lines.some(
-          (line) => line.variantId === item.p && line.quantity === item.q,
-        ),
-    );
-  if (quantitiesChanged) {
-    await writeCartCookie(
-      cart.lines.map((line) => ({ p: line.variantId, q: line.quantity })),
-    );
+  const quantitiesChanged = !matchesStored(stored, cart);
+  // The checkout page shows the cart already fitted to stock, with a notice.
+  // When the form was rendered from exactly this cart, the buyer saw it: store
+  // it and go on instead of asking for a second submit.
+  const seenByBuyer =
+    readString(formData, "cartKey") === promotionCartKey(cart.lines);
+  const fitted: StoredCartLine[] = quantitiesChanged
+    ? cart.lines.map((line) => ({ p: line.variantId, q: line.quantity }))
+    : stored;
+  if (quantitiesChanged) await writeCartCookie(fitted);
+  if (quantitiesChanged && !seenByBuyer) {
     return {
       ...failure(
         "Наявність товарів змінилася. Кошик оновлено — перевірте кількість перед оформленням.",
@@ -285,13 +285,12 @@ export async function submitCheckout(
   }
 
   const nonce = await readCheckoutToken(readString(formData, "checkoutToken"));
-  if (!nonce)
-    return {
-      ...failure(
-        "Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення.",
-      ),
-      stale: true,
-    };
+  if (!nonce) {
+    const expired = failure(
+      "Сесія оформлення застаріла. Перевірте оновлену форму та повторіть оформлення.",
+    );
+    return { ...expired, state: { ...expired.state, tokenRejected: true }, stale: true };
+  }
 
   const unavailable = unavailableMethod(parsed.value, capabilities);
   if (unavailable) return { ...failure(unavailable), stale: true };
@@ -351,7 +350,7 @@ export async function submitCheckout(
       };
       order.subtotal = expected.data;
     }
-    receipt = await submitOrder(order, stored, nonce);
+    receipt = await submitOrder(order, fitted, nonce);
   } catch (error) {
     if (error instanceof CrmApiError && isPromotionRefusal(error))
       return failure(promotionErrorMessage(error.reason, error.details));

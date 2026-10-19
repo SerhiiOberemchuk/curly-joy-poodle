@@ -57,7 +57,8 @@
   gap: 0.9cqw;
   max-width: calc(50% - 8.5cqw);
   white-space: nowrap;
-  font-size: clamp(10px, 0.9cqw, 14px);
+  /* rem bounds follow the reader's own font size setting. */
+  font-size: clamp(0.625rem, 0.9cqw, 0.875rem);
 }
 .navigation a:not(.catalogButton):hover {
   color: #9b6250;
@@ -224,7 +225,7 @@
 @media (width < 1100px) and (width >= 761px) {
   .navigation {
     gap: 1cqw;
-    font-size: 0.96cqw;
+    font-size: clamp(0.625rem, 0.96cqw, 0.875rem);
   }
   .headerActions {
     gap: 0.35cqw;

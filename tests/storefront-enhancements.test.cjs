@@ -11,6 +11,7 @@ globalThis.document = dom.window.document;
 for (const name of [
   "HTMLElement",
   "HTMLInputElement",
+  "HTMLTextAreaElement",
   "HTMLFormElement",
   "MutationObserver",
   "FormData",
@@ -256,6 +257,8 @@ test("review form supports keyboard rating selection and confirms CRM submission
   await waitFor(() =>
     assert.match(screen.getByRole("status").textContent, /відгук отримано/i),
   );
+  // The submit button went away with the form; the message takes the focus.
+  assert.equal(document.activeElement, screen.getByRole("status"));
   assert.equal(requests.length, 1);
 });
 test("favorite button on a catalog card updates the shared store without navigating", async () => {
@@ -538,4 +541,41 @@ test("a manually dismissed offer does not reopen at the automatic deadline and r
   act(() => t.mock.timers.tick(20000));
   assert.equal(dialog.open, false);
   window.sessionStorage.clear();
+});
+
+test("the offer does not open by itself for someone navigating with the keyboard", (t) => {
+  window.sessionStorage.clear();
+  const { WelcomeOfferDialog } = load(
+    "src/features/welcome-offer/components/welcome-offer-dialog.tsx",
+  );
+  dom.window.HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const offer = {
+    id: "keyboard-offer",
+    locale: "uk",
+    revision: "r",
+    teaser: "",
+    title: "Перше знайомство",
+    description: "Умови",
+    consentText: "Погоджуюся",
+  };
+  const copy = {
+    open: "Пропозиція для першого замовлення",
+    close: "Закрити пропозицію",
+    eyebrow: "",
+    hint: "",
+    email: "Ваш email",
+    submit: "Отримати промокод",
+    pending: "Надсилаємо…",
+  };
+  const { container } = render(React.createElement(WelcomeOfferDialog, { offer, copy }));
+  fireEvent.keyDown(window, { key: "Tab" });
+  act(() => t.mock.timers.tick(20000));
+  assert.equal(container.querySelector("dialog").open, false);
+  cleanup();
+  const pointer = render(React.createElement(WelcomeOfferDialog, { offer, copy }));
+  act(() => t.mock.timers.tick(20000));
+  assert.equal(pointer.container.querySelector("dialog").open, true);
 });

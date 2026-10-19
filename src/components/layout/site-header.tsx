@@ -64,7 +64,10 @@ export function SiteHeader() {
     <header className={styles.header}>
       <div className={styles.topbar}>
         <span className={styles.languages}>
-          <span aria-label="Українська мова">UA</span>
+          <span>
+            <span aria-hidden="true">UA</span>
+            <span className="visually-hidden">Українська мова</span>
+          </span>
           <span aria-hidden="true">|</span>
           <span
             className={styles.futureLanguage}
@@ -75,7 +78,7 @@ export function SiteHeader() {
           </span>
         </span>
         <span className={styles.goodDay} lang="en">
-          Good day <span>♡</span>
+          Good day <span aria-hidden="true">♡</span>
         </span>
       </div>
       <div className={styles.headerBar}>
@@ -97,7 +100,10 @@ export function SiteHeader() {
             width={1024}
             height={1024}
             className={styles.logoArtwork}
-            priority
+            // Shown at 74px on phones and at most ~136px on wide screens. Left
+            // lazy (it is in view, so it loads at once): an eager image gets a
+            // preload hint that would compete with the page's main image.
+            sizes="(width <= 900px) 74px, 136px"
           />
           <span lang="en">Happy dogs. Happier people.</span>
         </Link>

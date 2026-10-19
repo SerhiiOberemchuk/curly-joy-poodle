@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useId } from "react";
+import { FormSuccess } from "@/components/ui/form-success";
 import { Icon } from "@/components/ui/icon";
 import { initialReviewState } from "../action-state";
 import { submitReviewAction } from "../actions";
@@ -29,7 +30,11 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
     },
   ] as const;
   if (state.status === "submitted") {
-    return <div className={styles.formPanel} id="review-form" role="status">{state.message}</div>;
+    return (
+      <FormSuccess className={styles.formPanel} id="review-form">
+        {state.message}
+      </FormSuccess>
+    );
   }
   return (
     <div className={styles.formPanel} id="review-form">

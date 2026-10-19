@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Icon } from "@/components/ui/icon";
+import { NewTabNote } from "@/components/ui/new-tab-note";
 import { site } from "@/lib/site";
 import styles from "./quick-contact.module.css";
 
@@ -13,7 +14,7 @@ export function QuickContact() {
         type="button"
         popoverTarget={id}
         className={styles.trigger}
-        aria-label="Зв’язатися з Curly Joy"
+        aria-label="Ми поруч — зв’язатися з Curly Joy"
       >
         <Icon name="chat" />
         <span>Ми поруч</span>
@@ -21,6 +22,7 @@ export function QuickContact() {
       <div
         id={id}
         popover="auto"
+        role="dialog"
         className={styles.panel}
         aria-labelledby={`${id}-title`}
       >
@@ -43,6 +45,7 @@ export function QuickContact() {
             <li key={contact.label}>
               <a href={contact.href} target="_blank" rel="noreferrer noopener">
                 {contact.label}
+                <NewTabNote />
                 <Icon name="arrow" />
               </a>
             </li>
@@ -54,6 +57,7 @@ export function QuickContact() {
               rel="noreferrer noopener"
             >
               Написати в Instagram
+              <NewTabNote />
               <Icon name="arrow" />
             </a>
           </li>

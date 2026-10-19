@@ -8,11 +8,14 @@ import { calculateCart } from "./calculate";
 import { writeBrowserCartLine } from "./cart-cookie.client";
 import { MAX_CART_LINES } from "./constants";
 import type { Cart } from "./types";
+import { formatMoney } from "@/lib/money";
 
 interface CartState {
   cart: Cart | null;
   source: Cart | null;
   error: string | null;
+  /** What the last change did, for a screen reader's status region. */
+  notice: string;
   hydrate: (cart: Cart) => void;
   setQuantity: (variantId: string, quantity: number) => void;
   remove: (variantId: string) => void;
@@ -28,13 +31,18 @@ export function createCartStore() {
     function saveLine(before: Cart, variantId: string, quantity: number | null) {
       let result: ReturnType<typeof writeBrowserCartLine>;
       try {
-        result = writeBrowserCartLine(variantId, quantity);
+        result = writeBrowserCartLine(
+          variantId,
+          quantity,
+          before.lines.map((line) => ({ p: line.variantId, q: line.quantity })),
+        );
       } catch {
         result = "unavailable";
       }
       if (result === "saved") return;
       set({
         cart: before,
+        notice: "",
         error:
           result === "full"
             ? `У кошику вже ${MAX_CART_LINES} позицій. Видаліть зайві товари, щоб зберегти цю зміну.`
@@ -46,7 +54,8 @@ export function createCartStore() {
       cart: null,
       source: null,
       error: null,
-      hydrate: (cart) => set({ cart, source: cart, error: null }),
+      notice: "",
+      hydrate: (cart) => set({ cart, source: cart, error: null, notice: "" }),
       setQuantity: (variantId, quantity) => {
         const before = get().cart;
         set((state) => {
@@ -56,14 +65,16 @@ export function createCartStore() {
           if (quantity < 1 || (line.maxQuantity !== null && quantity > line.maxQuantity))
             return state;
           if (quantity === line.quantity) return state;
-          return {
-            cart: calculateCart(
-              cart.lines.map((item) =>
-                item.variantId === variantId ? { ...item, quantity } : item,
-              ),
-              cart,
+          const next = calculateCart(
+            cart.lines.map((item) =>
+              item.variantId === variantId ? { ...item, quantity } : item,
             ),
+            cart,
+          );
+          return {
+            cart: next,
             error: null,
+            notice: `Кількість «${line.title}»: ${quantity}. Разом за товари: ${formatMoney(next.subtotal)}.`,
           };
         });
         if (before && get().cart !== before) saveLine(before, variantId, quantity);
@@ -72,14 +83,20 @@ export function createCartStore() {
         const before = get().cart;
         set((state) => {
           const cart = state.cart;
-          if (!cart || !cart.lines.some((item) => item.variantId === variantId))
-            return state;
+          const line = cart?.lines.find((item) => item.variantId === variantId);
+          if (!cart || !line) return state;
+          const next = calculateCart(
+            cart.lines.filter((item) => item.variantId !== variantId),
+            cart,
+          );
           return {
-            cart: calculateCart(
-              cart.lines.filter((item) => item.variantId !== variantId),
-              cart,
-            ),
+            cart: next,
             error: null,
+            notice: `«${line.title}» видалено з кошика. ${
+              next.isEmpty
+                ? "Кошик порожній."
+                : `Разом за товари: ${formatMoney(next.subtotal)}.`
+            }`,
           };
         });
         if (before && get().cart !== before) saveLine(before, variantId, null);

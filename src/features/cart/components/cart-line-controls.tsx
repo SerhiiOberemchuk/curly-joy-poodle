@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import type { CartLine } from "../types";
 import { useCartStoreApi } from "../cart-store";
 import styles from "./cart-view.module.css";
@@ -18,12 +19,21 @@ export function CartLineControls({
   }
 
   function remove() {
-    store.getState().remove(line.variantId);
+    const lines = store.getState().cart?.lines ?? [];
+    const index = lines.findIndex((item) => item.variantId === line.variantId);
+    const neighbour = lines[index + 1] ?? lines[index - 1];
+    flushSync(() => store.getState().remove(line.variantId));
+    if (store.getState().cart?.lines.some((item) => item.variantId === line.variantId))
+      return; // The change was not saved and the line stays.
+    // The removed line took the focused button with it.
+    const next = [...document.querySelectorAll<HTMLElement>("[data-cart-remove]")]
+      .find((button) => button.dataset.cartRemove === neighbour?.variantId);
+    (next ?? document.getElementById("cart-title"))?.focus();
   }
 
   return (
     <div className={styles.lineControls}>
-      <div className={styles.stepper} aria-label={`Кількість: ${line.title}`}>
+      <div className={styles.stepper} role="group" aria-label={`Кількість: ${line.title}`}>
         <button
           type="button"
           className={styles.stepperButton}
@@ -47,6 +57,7 @@ export function CartLineControls({
       <button
         type="button"
         className={styles.remove}
+        data-cart-remove={line.variantId}
         aria-label={`Видалити ${line.title}`}
         onClick={remove}
       >

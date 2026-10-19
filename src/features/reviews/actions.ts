@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { z } from "zod";
 import { getCurrentProducts } from "@/features/catalog/queries";
 import { readString } from "@/lib/form";
@@ -53,9 +54,11 @@ export async function submitReviewAction(
     };
   }
   if (!z.uuid().safeParse(requestId).success) {
+    // The form gets a fresh request id with the refreshed page; the text stays.
+    refresh();
     return {
       status: "error",
-      message: "Оновіть сторінку й повторіть спробу.",
+      message: "Не вдалося надіслати відгук. Натисніть «Надіслати відгук» ще раз.",
       errors: {},
       values,
     };
@@ -67,7 +70,7 @@ export async function submitReviewAction(
     if (!product) {
       return {
         status: "error",
-        message: "Товар більше недоступний. Оновіть сторінку.",
+        message: "Цей товар більше не продається, тому відгук до нього надіслати не можна.",
         errors: {},
         values,
       };

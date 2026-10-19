@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { sealData, unsealData } from "iron-session";
 import { z } from "zod";
 import type { StoredCartLine } from "@/features/cart/types";
-import { getCheckoutSession, getCheckoutSessionPassword } from "./session";
+import { getCheckoutSessionPassword } from "./session";
 
 const tokenSchema = z.object({ id: z.uuid(), purpose: z.literal("checkout") });
 const TOKEN_TTL = 24 * 60 * 60;
@@ -30,19 +30,15 @@ export function cartFingerprint(lines: readonly StoredCartLine[]): string {
   return createHash("sha256").update(JSON.stringify(ordered)).digest("hex");
 }
 
-export async function checkoutAttempt(
-  payload: unknown,
-  nonce: string,
-): Promise<string> {
+/**
+ * The order's idempotency key: the same form token and the same order give the
+ * same key, so retries and concurrent submits reach the CRM as one order. A new
+ * form token is a new order, even for an identical basket and address — a
+ * finished purchase this browser never saw settle must not swallow it.
+ */
+export function checkoutAttempt(payload: unknown, nonce: string): string {
   const fingerprint = createHash("sha256")
     .update(JSON.stringify(payload))
     .digest("hex");
-  const session = await getCheckoutSession();
-  if (session.attempt?.fingerprint === fingerprint) return session.attempt.id;
-
-  // Concurrent requests from the same signed form must reach CRM with the same key.
-  const id = `CJ-${createHash("sha256").update(`${nonce}:${fingerprint}`).digest("hex")}`;
-  session.attempt = { fingerprint, id };
-  await session.save();
-  return id;
+  return `CJ-${createHash("sha256").update(`${nonce}:${fingerprint}`).digest("hex")}`;
 }

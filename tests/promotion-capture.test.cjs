@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const { test, mock, beforeEach, afterEach } = require("node:test");
 const { createLoader } = require("./load-modules.cjs");
-let calls, failure, offerFailure, response, offer, revision, logs;
+let calls, failure, offerFailure, response, offer, revision, logs, lifetimes = [];
 class CrmApiError extends Error {
   constructor(status) {
     super();
@@ -10,6 +10,7 @@ class CrmApiError extends Error {
 }
 const load = createLoader({
   "server-only": {},
+  "next/cache": { cacheLife: (profile) => lifetimes.push(profile) },
   "@/lib/visitor": {
     visitorHeaders: async () => ({ "x-obriym-visitor": "hash" }),
   },
@@ -139,6 +140,13 @@ test("the shop renders its own copy around the CRM figures, never the campaign t
   const capped = await getWelcomeOffer("uk");
   assert.equal(plain(capped.title), "−12,5% на перше замовлення");
   assert.match(plain(capped.description), /Знижка — не більше 300 ₴\./);
+});
+test("the campaign read is cached for every visitor, its failures too", async () => {
+  lifetimes = [];
+  await getWelcomeOffer("uk");
+  offerFailure = new CrmApiError(404);
+  assert.equal(await getWelcomeOffer("uk"), null);
+  assert.deepEqual(lifetimes, ["minutes", "minutes"]);
 });
 test("capture sends one step with normalized email, the consent shown, the email language and visitor key", async () => {
   const shown = await getWelcomeOffer("uk");

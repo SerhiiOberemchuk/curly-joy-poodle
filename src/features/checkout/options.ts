@@ -66,6 +66,17 @@ export function availableDeliveries(capabilities: CrmCapabilities) {
  * itself for UAH. The cart, its summary and the saved order all read these, so
  * a buyer is never shown free shipping the order then charges for.
  */
+/**
+ * The shop sells in hryvnias. A workspace kept in another currency still takes
+ * these orders when it has hryvnia cart terms of its own.
+ */
+export function sellsInHryvnia(capabilities: CrmCapabilities): boolean {
+  return (
+    capabilities.cart.currency === "UAH" ||
+    capabilities.cart.byCurrency.some((entry) => entry.currency === "UAH")
+  );
+}
+
 export function hryvniaCartTerms(capabilities: CrmCapabilities): {
   freeShippingThreshold: number | null;
   minOrderAmount: number | null;

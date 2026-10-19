@@ -4,7 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { cache } from "react";
 
 import { loadCatalog, loadProducts, type Catalog } from "./catalog-source";
-import { fetchBundleDetail, fetchCollection } from "./crm-api";
+import { fetchBundleDetail, fetchCollection, fetchCollections } from "./crm-api";
 import type {
   Category,
   CollectionInfo,
@@ -76,6 +76,15 @@ async function getRecentProducts(): Promise<Product[]> {
   return loadProducts();
 }
 
+/** The published collection slugs: an unknown `?collection=` costs no CRM read. */
+export async function getCollectionSlugs(): Promise<readonly string[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(catalogTags.all);
+
+  return (await fetchCollections()).map((collection) => collection.slug);
+}
+
 async function getCollectionDetail(slug: string) {
   "use cache";
   cacheLife("minutes");
@@ -137,6 +146,7 @@ export async function getCategorySlugs(): Promise<string[]> {
 
 /** `null` when the CRM has no such collection, or it is hidden or out of season. */
 export async function getCollection(slug: string): Promise<CollectionInfo | null> {
+  if (!(await getCollectionSlugs()).includes(slug)) return null;
   const collection = await getCollectionDetail(slug);
   if (!collection) return null;
 

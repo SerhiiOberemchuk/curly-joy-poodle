@@ -96,12 +96,18 @@ export function NovaPoshtaFields({
           else if (meta.action === "menu-close") setQuery("");
         }}
         onChange={(option) => {
+          // The same city found again keeps its branch or street: the field
+          // still shows it, and clearing the value would fail the submit.
+          const sameCity = option !== null && option.ref === city?.ref;
           setCity(option);
           onCityChange(option);
           setValue("city", option?.label ?? "");
           setValue("citySearch", option ? citySearch : "");
-          for (const name of DESTINATION_FIELDS) setValue(name, "");
-          clearErrors(["city", "citySearch", ...DESTINATION_FIELDS]);
+          if (!sameCity) {
+            for (const name of DESTINATION_FIELDS) setValue(name, "");
+            clearErrors(DESTINATION_FIELDS);
+          }
+          clearErrors(["city", "citySearch"]);
           setQuery("");
         }}
       />

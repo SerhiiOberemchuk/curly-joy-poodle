@@ -371,6 +371,28 @@ test("checkout stops before saving an order if stock has decreased", async () =>
   assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 2);
 });
 
+test("a form rendered from the cart fitted to stock submits on the first try with that cart", async () => {
+  setCart([{ p: "p1", q: 5 }]);
+  products[0].stock = 2;
+  const { loadCart } = load("src/features/cart/queries.ts");
+  const { promotionCartKey } = load("src/features/checkout/promotions.ts");
+  const { cart } = await loadCart([{ p: "p1", q: 5 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(
+    placeOrderAction(
+      {},
+      checkoutData({
+        payment: "cod",
+        cartKey: promotionCartKey(cart.lines),
+        expectedSubtotal: String(cart.subtotal),
+      }),
+    ),
+    /redirect:\/checkout\/success/,
+  );
+  assert.equal(savedOrders.length, 1);
+  assert.equal(savedOrders[0].items[0].quantity, 2);
+});
+
 test("checkout does not silently submit only the surviving cart items", async () => {
   setCart([
     { p: "p1", q: 2 },
@@ -1048,6 +1070,7 @@ test("a forged checkout form token cannot create an order or charge a payment", 
     checkoutData({ checkoutToken: "forged" }),
   );
   assert.equal(result.status, "error");
+  assert.equal(result.tokenRejected, true);
   assert.equal(savedOrders.length, 0);
   assert.equal(
     requests.some((r) => r.url.endsWith("/payment-link")),
@@ -1079,6 +1102,49 @@ test("a new signed form after a completed COD purchase creates a new order while
     /redirect:\/checkout\/success/,
   );
   assert.equal(savedOrders.length, 2);
+});
+
+test("a new form after a card order this browser never saw paid creates a new order, not a replay", async () => {
+  process.env.SITE_URL = "https://curly-joy.com";
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  // The bank confirmed it in another browser; this session still holds no paid receipt.
+  setCart([{ p: "p1", q: 1 }]);
+  formToken = await load(
+    "src/features/checkout/checkout-attempt.ts",
+  ).createCheckoutToken();
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  assert.equal(savedOrders.length, 2);
+  assert.notEqual(savedOrders[0].externalId, savedOrders[1].externalId);
+});
+
+test("the payment poll re-renders the page only when the status on screen changed", async () => {
+  process.env.SITE_URL = "https://curly-joy.com";
+  setCart([{ p: "p1", q: 1 }]);
+  const { placeOrderAction, checkPaymentStatusAction } = load(
+    "src/features/checkout/actions.ts",
+  );
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  const token = new URL(link.returnUrl).searchParams.get("token");
+  const { readReceiptCookie } = load("src/features/checkout/receipt-cookie.ts");
+  await checkPaymentStatusAction(token);
+  const shown = (await readReceiptCookie()).status;
+  const before = refreshes;
+  await checkPaymentStatusAction(token, shown);
+  assert.equal(refreshes, before);
+  const order = [...crmOrders.values()][0];
+  order.payments.push({
+    id: "payment-1",
+    status: "paid",
+    amount: order.totalAmount,
+    currency: "UAH",
+    refundedAmount: null,
+    createdAt: new Date().toISOString(),
+  });
+  await checkPaymentStatusAction(token, shown);
+  assert.equal(refreshes, before + 1);
+  assert.equal((await readReceiptCookie()).status, "paid");
 });
 
 async function renderReturn(query = {}) {
@@ -1273,6 +1339,22 @@ test("the order keeps the free shipping the cart showed and checks out with one 
       .filter((path) => path.endsWith("/capabilities")).length,
     1,
   );
+});
+
+test("a workspace kept in another currency still takes hryvnia orders when it has hryvnia terms", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  capabilities.cart.currency = "EUR";
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const refused = await placeOrderAction({}, checkoutData({ payment: "cod" }));
+  assert.match(refused.message, /валюті/);
+  capabilities.cart.byCurrency = [
+    { currency: "UAH", freeShippingThreshold: null, minOrderAmount: null },
+  ];
+  await assert.rejects(
+    placeOrderAction({}, checkoutData({ payment: "cod" })),
+    /redirect:\/checkout\/success/,
+  );
+  assert.equal(savedOrders.length, 1);
 });
 
 test("the minimum order comes from the CRM's hryvnia terms", async () => {

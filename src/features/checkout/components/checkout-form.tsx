@@ -34,6 +34,7 @@ import { formatMoney } from "@/lib/money";
 
 import { initialCheckoutState } from "../action-state";
 import { placeOrderAction } from "../actions";
+import { forgetCheckoutToken, tabCheckoutToken } from "../checkout-token.client";
 import { availableDeliveries, availablePayments } from "../options";
 import type { CrmCapabilities, NpCity } from "../crm/types";
 import { DESTINATION_FIELDS, NovaPoshtaFields } from "./nova-poshta-fields";
@@ -69,10 +70,13 @@ export function CheckoutForm({
   cart,
   capabilities,
   checkoutToken,
+  stockAdjusted = false,
 }: {
   cart: Cart;
   capabilities: CrmCapabilities;
   checkoutToken: string;
+  /** The cart shown here was fitted to current stock, unlike the saved one. */
+  stockAdjusted?: boolean;
 }) {
   const total = cart.subtotal;
   const deliveryOptions = availableDeliveries(capabilities);
@@ -154,6 +158,7 @@ export function CheckoutForm({
   // Server-side errors are handed to react-hook-form so they behave like any
   // other field error: they focus the first offender and clear as it is fixed.
   useEffect(() => {
+    if (state.tokenRejected) forgetCheckoutToken();
     const entries = Object.entries(state.errors) as [CheckoutField, string][];
     entries.forEach(([field, message], index) => {
       setError(
@@ -174,7 +179,8 @@ export function CheckoutForm({
     }
     for (const [name, value] of Object.entries(values)) data.set(name, value);
     data.set("expectedSubtotal", String(total));
-    data.set("checkoutToken", checkoutToken);
+    data.set("cartKey", cartKey);
+    data.set("checkoutToken", tabCheckoutToken(checkoutToken));
     startTransition(() => formAction(data));
   };
 
@@ -187,6 +193,12 @@ export function CheckoutForm({
     <FormProvider {...form}>
       <div className={pageStyles.layout}>
         <section className={pageStyles.formPanel} aria-label="Дані замовлення">
+          {stockAdjusted ? (
+            <p className={styles.stockNotice}>
+              Наявність змінилася: ми оновили кількість товарів у замовленні.
+              Перевірте підсумок перед підтвердженням.
+            </p>
+          ) : null}
           <form
             action={formAction}
             className={styles.form}
@@ -204,6 +216,7 @@ export function CheckoutForm({
               <div className={`${styles.row} ${styles.rowTwo}`}>
                 <Field
                   label="Ім’я"
+                  required
                   registration={register("firstName")}
                   error={errors.firstName}
                   autoComplete="given-name"
@@ -211,6 +224,7 @@ export function CheckoutForm({
                 />
                 <Field
                   label="Прізвище"
+                  required
                   registration={register("lastName")}
                   error={errors.lastName}
                   autoComplete="family-name"
@@ -221,6 +235,7 @@ export function CheckoutForm({
               <div className={`${styles.row} ${styles.rowTwo}`}>
                 <Field
                   label="Телефон"
+                  required
                   registration={register("phone")}
                   error={errors.phone}
                   type="tel"
@@ -230,6 +245,7 @@ export function CheckoutForm({
                 />
                 <Field
                   label="Email"
+                  required
                   registration={register("email")}
                   error={errors.email}
                   type="email"
@@ -291,6 +307,7 @@ export function CheckoutForm({
                 <div className={`${styles.row} ${styles.rowTwo}`}>
                   <Field
                     label="Будинок"
+                    required
                     registration={register("building")}
                     error={errors.building}
                     maxLength={11}
@@ -463,17 +480,17 @@ export function CheckoutForm({
           </form>
         </section>
         <CartSummary cart={cart} action="none" promotion={quote}>
-          <div className={pageStyles.items}>
+          <ul className={pageStyles.items} aria-label="Товари в замовленні">
             {cart.lines.map((line) => (
-              <p className={pageStyles.item} key={line.variantId}>
+              <li className={pageStyles.item} key={line.variantId}>
                 <span className={pageStyles.itemName}>
                   {line.title}
                   {line.option ? ` · ${line.option}` : ""} × {line.quantity}
                 </span>
                 <strong>{formatMoney(line.lineTotal)}</strong>
-              </p>
+              </li>
             ))}
-          </div>
+          </ul>
         </CartSummary>
       </div>
     </FormProvider>
@@ -494,6 +511,7 @@ function Field({
   autoComplete?: string;
   inputMode?: "tel" | "email" | "numeric";
   maxLength?: number;
+  required?: boolean;
 }) {
   const id = useId();
   const message = error?.message;

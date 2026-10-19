@@ -67,3 +67,8 @@ export async function addToCartAction(
 
   return { status: "success", message: `${name} — у кошику` };
 }
+
+/** Reads the cart again after the CRM could not be reached, without a page reload. */
+export async function retryCartAction(): Promise<void> {
+  refresh();
+}

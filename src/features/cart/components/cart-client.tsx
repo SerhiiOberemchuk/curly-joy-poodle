@@ -14,15 +14,23 @@ export function CartClient({ initialCart }: { initialCart: Cart }) {
   const currentCart = useCartStore((state) => state.cart);
   const source = useCartStore((state) => state.source);
   const error = useCartStore((state) => state.error);
+  const notice = useCartStore((state) => state.notice);
 
   useEffect(() => {
     store.getState().hydrate(initialCart);
   }, [initialCart, store]);
 
   const cart = source === initialCart && currentCart ? currentCart : initialCart;
+  // First in both branches, so React keeps the same live region mounted.
+  const status = (
+    <p className="visually-hidden" role="status">
+      {source === initialCart ? notice : ""}
+    </p>
+  );
   if (cart.isEmpty) {
     return (
       <>
+        {status}
         <CartEmptyContent
           freeShippingThreshold={cart.freeShippingThreshold}
           minOrderAmount={cart.minOrderAmount}
@@ -33,12 +41,15 @@ export function CartClient({ initialCart }: { initialCart: Cart }) {
   }
 
   return (
-    <div className={styles.layout}>
-      <div className={styles.lines}>
-        {cart.lines.map((line) => <CartLineItem key={line.variantId} line={line} />)}
-        {error ? <p className={styles.lineError} role="alert">{error}</p> : null}
+    <>
+      {status}
+      <div className={styles.layout}>
+        <div className={styles.lines}>
+          {cart.lines.map((line) => <CartLineItem key={line.variantId} line={line} />)}
+          {error ? <p className={styles.lineError} role="alert">{error}</p> : null}
+        </div>
+        <CartSummary cart={cart} action="checkout" />
       </div>
-      <CartSummary cart={cart} action="checkout" />
-    </div>
+    </>
   );
 }

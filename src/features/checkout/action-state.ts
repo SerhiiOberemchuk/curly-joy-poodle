@@ -5,6 +5,8 @@ export interface CheckoutActionState {
   status: "idle" | "error";
   message: string;
   errors: FieldErrors;
+  /** The form token was refused: the browser drops its stored copy. */
+  tokenRejected?: true;
 }
 
 export const initialCheckoutState: CheckoutActionState = {

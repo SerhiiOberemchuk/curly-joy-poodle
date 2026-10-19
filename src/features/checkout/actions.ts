@@ -18,13 +18,22 @@ export async function placeOrderAction(
   redirect(result.redirectTo);
 }
 
-export async function checkPaymentStatusAction(token?: string): Promise<void> {
+/**
+ * `shown` is the status the waiting page displays. The poll runs every few
+ * seconds, so the page is re-rendered (another CRM read) only when the status
+ * actually changed; the "Оновити статус" button passes none and always refreshes.
+ */
+export async function checkPaymentStatusAction(
+  token?: string,
+  shown?: string,
+): Promise<void> {
+  let current = "unavailable";
   try {
-    await settleCheckoutReturn(token);
+    current = (await settleCheckoutReturn(token))?.status ?? "unavailable";
   } catch {
     // The refreshed page reports an unavailable status; never infer a successful payment.
   }
-  refresh();
+  if (current !== shown) refresh();
 }
 
 export async function retryPaymentAction(token?: string): Promise<void> {

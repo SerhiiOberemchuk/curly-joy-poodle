@@ -4,11 +4,12 @@ import { Suspense } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { readCartCookie } from "@/features/cart/cart-cookie";
-import { loadCart } from "@/features/cart/queries";
+import { loadCart, matchesStored } from "@/features/cart/queries";
 import { createCheckoutToken } from "@/features/checkout/checkout-attempt";
 import {
   availableDeliveries,
   availablePayments,
+  sellsInHryvnia,
 } from "@/features/checkout/options";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
 import { formatMoney } from "@/lib/money";
@@ -71,7 +72,7 @@ async function CheckoutContent() {
   const { cart, capabilities } = loaded;
   if (cart.isEmpty) return <EmptyCart />;
   if (
-    capabilities.cart.currency !== "UAH" ||
+    !sellsInHryvnia(capabilities) ||
     !availableDeliveries(capabilities).length ||
     !availablePayments(capabilities).length
   ) {
@@ -103,6 +104,7 @@ async function CheckoutContent() {
       cart={cart}
       capabilities={capabilities}
       checkoutToken={checkoutToken}
+      stockAdjusted={!matchesStored(stored, cart)}
     />
   );
 }

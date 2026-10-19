@@ -95,6 +95,21 @@ export async function loadCart(
   return { cart: priceCart(stored, products, capabilities), capabilities };
 }
 
+/** Whether the stored cookie already holds this priced cart, line for line. */
+export function matchesStored(
+  stored: readonly StoredCartLine[],
+  cart: Cart,
+): boolean {
+  return (
+    stored.length === cart.lines.length &&
+    stored.every((item) =>
+      cart.lines.some(
+        (line) => line.variantId === item.p && line.quantity === item.q,
+      ),
+    )
+  );
+}
+
 /** Reads the current visitor's cart. Dynamic — render it behind `<Suspense>`. */
 export async function getCart(): Promise<Cart> {
   const stored = await readCartCookie();

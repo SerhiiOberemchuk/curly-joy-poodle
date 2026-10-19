@@ -6,6 +6,7 @@ import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 import { formatMoney } from "@/lib/money";
 
 import styles from "../home.module.css";
+import { getCollectionSlugs } from "@/features/catalog/queries";
 import { getHomeCategories, getHomeRecommendations } from "../queries";
 import { ProductTile } from "./product-tile";
 import { ReferenceArtwork } from "./reference-artwork";
@@ -227,7 +228,11 @@ export async function HomeRecommendations() {
   );
 }
 
-export function HomePromotions() {
+export async function HomePromotions() {
+  // A tile opens its collection page while the CRM has it live, else the catalog.
+  const live = new Set(
+    await getCollectionSlugs().catch((): readonly string[] => []),
+  );
   return (
     <section
       className={styles.promotions}
@@ -253,7 +258,7 @@ export function HomePromotions() {
         </div>
       </Link>
       <Link
-        href="/catalog?collection=all-season"
+        href={live.has("all-season") ? "/collection/all-season" : "/catalog"}
         className={`${styles.promo} ${styles.seasonPromo}`}
       >
         <ReferenceArtwork
@@ -273,7 +278,7 @@ export function HomePromotions() {
         </div>
       </Link>
       <Link
-        href="/catalog?collection=dress-up"
+        href={live.has("dress-up") ? "/collection/dress-up" : "/catalog"}
         className={`${styles.promo} ${styles.dressPromo}`}
       >
         <ReferenceArtwork

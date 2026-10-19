@@ -12,7 +12,12 @@ function absolute(path: string): string {
   return new URL(path, site.url).toString();
 }
 
-export function productJsonLd(product: Product, category: Category | null) {
+export function productJsonLd(
+  product: Product,
+  category: Category | null,
+  /** Published reviews of this model in the shop's own CRM. */
+  rating: { average: number; count: number } | null = null,
+) {
   const url = absolute(`/product/${product.slug}`);
   const offers = product.variants.map((variant) => ({
     "@type": "Offer",
@@ -31,18 +36,35 @@ export function productJsonLd(product: Product, category: Category | null) {
     { name: product.title, path: `/product/${product.slug}` },
   ];
 
-  return [
+  const images = product.images.flatMap((image) => (image.src ? [image.src] : []));
+  // Google requires an image for a product result; the breadcrumbs still apply.
+  const productData = images.length === 0 ? [] : [
     {
       "@context": "https://schema.org",
       "@type": "Product",
       name: product.title,
       ...(product.summary ? { description: product.summary } : {}),
-      image: product.images.flatMap((image) => (image.src ? [image.src] : [])),
+      image: images,
       ...(product.variants.length === 1 ? { sku: product.variants[0].sku } : {}),
       ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
       ...(category ? { category: category.title } : {}),
+      ...(rating
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: rating.average.toFixed(1),
+              reviewCount: rating.count,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
       offers: offers.length === 1 ? offers[0] : offers,
     },
+  ];
+
+  return [
+    ...productData,
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -52,6 +74,32 @@ export function productJsonLd(product: Product, category: Category | null) {
         name: crumb.name,
         item: absolute(crumb.path),
       })),
+    },
+  ];
+}
+
+/** The shop itself, for the home page: name, logo, contacts and profiles. */
+export function storeJsonLd() {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      name: site.legalName,
+      alternateName: site.name,
+      url: site.url,
+      logo: absolute("/logo_brand.jpg"),
+      description: site.description,
+      telephone: site.phone,
+      email: site.email,
+      address: site.address,
+      sameAs: site.socials.map((social) => social.href),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: site.legalName,
+      url: site.url,
+      inLanguage: "uk",
     },
   ];
 }

@@ -8,7 +8,7 @@ import { QuickContact } from "@/components/layout/quick-contact";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
 import { CartStoreProvider } from "@/features/cart/cart-store";
-import { EmotionRegistry } from "@/components/layout/emotion-registry";
+import { openGraph } from "@/lib/metadata";
 import { site } from "@/lib/site";
 
 import "./globals.css";
@@ -23,6 +23,8 @@ const caveat = Caveat({
   variable: "--font-caveat",
   subsets: ["latin", "cyrillic"],
   display: "swap",
+  // Only decorative script notes use it; not worth a preload on every page.
+  preload: false,
 });
 
 const handwriting = Pangolin({
@@ -39,13 +41,11 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
-  openGraph: {
-    type: "website",
-    locale: site.locale,
-    siteName: site.name,
+  openGraph: openGraph({
     title: `${site.name} — ${site.tagline}`,
     description: site.description,
-  },
+  }),
+  twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
 };
 
@@ -61,25 +61,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body>
-        <EmotionRegistry>
-          <NuqsAdapter>
-            <a href="#main-content" className="skip-link">
-              Перейти до вмісту
-            </a>
-            <div className={styles.shell}>
-              <FavoritesProvider>
-                <CartStoreProvider>
-                  <SiteHeader />
-                  <main id="main-content" className={styles.main}>
-                    {children}
-                  </main>
-                  <SiteFooter />
-                  <QuickContact />
-                </CartStoreProvider>
-              </FavoritesProvider>
-            </div>
-          </NuqsAdapter>
-        </EmotionRegistry>
+        <NuqsAdapter>
+          <a href="#main-content" className="skip-link">
+            Перейти до вмісту
+          </a>
+          <div className={styles.shell}>
+            <FavoritesProvider>
+              <CartStoreProvider>
+                <SiteHeader />
+                <main id="main-content" className={styles.main}>
+                  {children}
+                </main>
+                <SiteFooter />
+                <QuickContact />
+              </CartStoreProvider>
+            </FavoritesProvider>
+          </div>
+        </NuqsAdapter>
       </body>
     </html>
   );

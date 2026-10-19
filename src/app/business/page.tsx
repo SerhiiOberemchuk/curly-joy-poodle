@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { B2bRequestForm } from "@/features/business/components/b2b-request-form";
+import { openGraph } from "@/lib/metadata";
 import { site } from "@/lib/site";
 
 import styles from "./business.module.css";
@@ -9,6 +10,13 @@ export const metadata: Metadata = {
   title: "Для бізнесу (B2B)",
   description:
     "Оптові ціни Curly Joy для зоомагазинів, грумерів, ветклінік і розплідників. Залиште запит, щоб обговорити умови співпраці.",
+  alternates: { canonical: "/business" },
+  openGraph: openGraph({
+    title: "Для бізнесу (B2B)",
+    description:
+      "Оптові ціни Curly Joy для зоомагазинів, грумерів, ветклінік і розплідників. Залиште запит, щоб обговорити умови співпраці.",
+    url: "/business",
+  }),
 };
 
 // The partner cabinet is hosted by the shop's CRM (Obriym): orders from the

@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { findInfoPage, infoPages, type InfoPage } from "@/content/info-pages";
 import { sizeGuide } from "@/content/size-guide";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
+import { openGraph } from "@/lib/metadata";
 import { formatMoney } from "@/lib/money";
 import { site } from "@/lib/site";
 
@@ -20,7 +21,18 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/info/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const page = findInfoPage(slug);
-  return page ? { title: page.title, description: page.intro } : { title: "Сторінку не знайдено" };
+  if (!page) notFound();
+  return {
+    title: page.title,
+    description: page.intro,
+    alternates: { canonical: `/info/${page.slug}` },
+    openGraph: openGraph({
+      title: page.title,
+      description: page.intro,
+      url: `/info/${page.slug}`,
+    }),
+    ...(page.draft ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 async function loadInfoPage(params: InfoParams): Promise<InfoPage> {
@@ -93,7 +105,12 @@ async function ContactsLink({ params }: { params: InfoParams }) {
   return slug !== "contacts" ? <Link href="/info/contacts">Усі контакти</Link> : null;
 }
 
-export default function Page({ params }: PageProps<"/info/[slug]">) {
+// A real 404 for an unknown slug must be decided before the first streamed
+// byte, so this page may block navigation.
+export const instant = false;
+
+export default async function Page({ params }: PageProps<"/info/[slug]">) {
+  if (!findInfoPage((await params).slug)) notFound();
   return (
     <article className={`container ${styles.article}`}>
       <header className={styles.hero}>

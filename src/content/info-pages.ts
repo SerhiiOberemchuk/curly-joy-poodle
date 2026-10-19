@@ -13,6 +13,8 @@ export interface InfoPage {
   blocks: readonly InfoBlock[];
   /** Renders the measurement table under the content. */
   showSizeTable?: boolean;
+  /** A section still being prepared: kept out of search results and the sitemap. */
+  draft?: boolean;
 }
 
 export const infoPages = [
@@ -308,6 +310,7 @@ export const infoPages = [
   {
     slug: "blog",
     title: "Блог",
+    draft: true,
     intro:
       "Розділ готуємо. Тут з’являться наші тексти про життя з собакою — про догляд, спорядження та дрібниці, які справді працюють.",
     blocks: [
@@ -331,6 +334,7 @@ export const infoPages = [
   {
     slug: "events",
     title: "Події",
+    draft: true,
     intro:
       "Зустрічі, ярмарки та спільні прогулянки Curly Joy. Найближчі дати з’являться тут, щойно узгодимо майданчики.",
     blocks: [

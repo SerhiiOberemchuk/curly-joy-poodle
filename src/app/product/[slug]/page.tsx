@@ -8,8 +8,15 @@ import { Icon } from "@/components/ui/icon";
 import { FavoriteToggle } from "@/features/favorites/favorites";
 import { ProductReviews } from "@/features/reviews/components/product-reviews";
 import { ReviewStars } from "@/features/reviews/components/review-stars";
-import { getPublishedReviews, getReviewSummary } from "@/features/reviews/crm-reviews";
+import {
+  getPublishedReviews,
+  getReviewSummary,
+  modelKeyOf,
+  ratingFromSummaries,
+  REVIEWS_PER_PAGE,
+} from "@/features/reviews/crm-reviews";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
+import { openGraph } from "@/lib/metadata";
 import { formatMoney } from "@/lib/money";
 
 import { AddToCartForm } from "@/features/cart/components/add-to-cart-form";
@@ -56,19 +63,20 @@ export async function generateMetadata({
   if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`);
 
   const photo = product.images.find((image) => image.src);
+  // A product the merchant left without a summary still gets a real snippet.
+  const description =
+    product.summary ||
+    `${product.title}${product.brand ? ` від ${product.brand}` : ""} у Curly Joy. Доставка Новою поштою по Україні.`;
   return {
     title: product.title,
-    description: product.summary || undefined,
+    description,
     alternates: { canonical: `/product/${product.slug}` },
-    openGraph: {
-      type: "website",
+    openGraph: openGraph({
       title: product.title,
-      description: product.summary || undefined,
+      description,
       url: `/product/${product.slug}`,
-      ...(photo?.src
-        ? { images: [{ url: photo.src, alt: product.title }] }
-        : {}),
-    },
+      images: photo?.src ? [{ url: photo.src, alt: product.title }] : undefined,
+    }),
   };
 }
 
@@ -106,10 +114,7 @@ async function ProductPhotos({ params }: { params: ProductParams }) {
 }
 
 async function ProductReviewLink({ productId }: { productId: string }) {
-  const modelKey = productId.startsWith("group:")
-    ? productId.slice(6)
-    : productId;
-  const summary = await getReviewSummary(modelKey).catch(() => null);
+  const summary = await getReviewSummary(modelKeyOf(productId)).catch(() => null);
   return (
     <a href="#product-reviews" className={styles.reviewLink}>
       {summary?.count ? <ReviewStars rating={summary.average ?? 0} /> : null}
@@ -127,8 +132,20 @@ async function ProductSummary({ params }: { params: ProductParams }) {
   // cart re-checks stock against the CRM either way.
   const product = await getRecentProduct(slug).catch(() => getProduct(slug));
   if (!product) notFound();
+  const [category, summary] = await Promise.all([
+    getProductCategory(product),
+    getReviewSummary(modelKeyOf(product.id)).catch(() => null),
+  ]);
+  const rating = summary ? ratingFromSummaries([summary]) : null;
   return (
     <>
+      {/* Beside the visible price and stock, from the same read, so they agree. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(productJsonLd(product, category, rating)),
+        }}
+      />
       {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
       <h1 className={styles.title} id="product-title">
         {product.title}
@@ -152,6 +169,8 @@ async function ProductSummary({ params }: { params: ProductParams }) {
 }
 
 async function ProductTrust() {
+  // The terms are cached for 30 s, too short for a prerender: read at request time.
+  await connection();
   const freeFrom =
     (await getDisplayCartTerms().catch(() => null))?.freeShippingThreshold ??
     null;
@@ -193,17 +212,15 @@ async function Reviews({ params, searchParams }: {
   await connection();
   const rawPage = (await searchParams).reviewsPage;
   const requestedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
-  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 1000
-    ? requestedPage
-    : 1;
   const product = await loadProduct(params);
-  const modelKey = product.id.startsWith("group:")
-    ? product.id.slice(6)
-    : product.id;
-  const [reviews, summary] = await Promise.all([
-    getPublishedReviews(modelKey, page).catch(() => null),
-    getReviewSummary(modelKey).catch(() => null),
-  ]);
+  const modelKey = modelKeyOf(product.id);
+  const summary = await getReviewSummary(modelKey).catch(() => null);
+  // Only pages that exist reach the CRM: each page is a separate cached read.
+  const pages = Math.max(1, Math.ceil((summary?.count ?? 0) / REVIEWS_PER_PAGE));
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0
+    ? Math.min(requestedPage, pages)
+    : 1;
+  const reviews = await getPublishedReviews(modelKey, page).catch(() => null);
   return (
     <ProductReviews
       productId={product.id}
@@ -222,12 +239,12 @@ function ReturnsLink({ sized = false }: { sized?: boolean }) {
   return sized ? (
     <Link href="/info/returns">
       <strong>Не підійшов розмір?</strong>
-      <span>Допоможемо з обміном ↗</span>
+      <span>Допоможемо з обміном <span aria-hidden="true">↗</span></span>
     </Link>
   ) : (
     <Link href="/info/returns">
       <strong>Повернення та обмін</strong>
-      <span>Умови повернення ↗</span>
+      <span>Умови повернення <span aria-hidden="true">↗</span></span>
     </Link>
   );
 }
@@ -239,20 +256,13 @@ async function ProductReturnsLink({ params }: { params: ProductParams }) {
 
 async function ProductDetails({ params }: { params: ProductParams }) {
   const product = await loadProduct(params);
-  const [category, related, composition] = await Promise.all([
-    getProductCategory(product),
+  const [related, composition] = await Promise.all([
     getRelatedProducts(product),
     getBundleComposition(product).catch(() => null),
   ]);
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: serializeJsonLd(productJsonLd(product, category)),
-        }}
-      />
       {product.descriptionHtml || product.attributes.length > 0 ? (
         <section className={styles.details} aria-label="Деталі товару">
           {product.descriptionHtml ? (
@@ -288,7 +298,7 @@ async function ProductDetails({ params }: { params: ProductParams }) {
             <p>Речі, які входять до цього набору.</p>
           </div>
           {composition === null ? (
-            <p role="status">Склад комплекту тимчасово недоступний. Спробуйте оновити сторінку пізніше.</p>
+            <p role="status">Склад комплекту зараз не вдалося завантажити.</p>
           ) : composition.length === 0 ? (
             <p>Склад комплекту ще не вказано в каталозі.</p>
           ) : (
@@ -325,7 +335,15 @@ async function ProductDetails({ params }: { params: ProductParams }) {
   );
 }
 
-export default function Page({ params, searchParams }: PageProps<"/product/[slug]">) {
+// A real 404 for an unknown slug and a 308 for a renamed product must be
+// decided before the first streamed byte, so this page may block navigation.
+export const instant = false;
+
+export default async function Page({ params, searchParams }: PageProps<"/product/[slug]">) {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) notFound();
+  if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`);
   return (
     <div className={styles.page}>
       <nav aria-label="Навігаційний ланцюжок">
@@ -360,7 +378,7 @@ export default function Page({ params, searchParams }: PageProps<"/product/[slug
           <div className={styles.shipping}>
             <Link href="/info/delivery">
               <strong>Доставка</strong>
-              <span>Способи та умови відправлення ↗</span>
+              <span>Способи та умови відправлення <span aria-hidden="true">↗</span></span>
             </Link>
             <Suspense fallback={<ReturnsLink />}>
               <ProductReturnsLink params={params} />

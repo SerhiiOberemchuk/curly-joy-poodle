@@ -20,7 +20,8 @@ export function CartCount({ serverCount }: { serverCount: number }) {
     : browserCount;
 
   return (
-    <span className={styles.count} aria-label={`Товарів у кошику: ${count}`}>
+    <span className={styles.count}>
+      <span className="visually-hidden">, товарів: </span>
       {count}
     </span>
   );

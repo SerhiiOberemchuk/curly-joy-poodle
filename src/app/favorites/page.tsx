@@ -18,7 +18,7 @@ export default async function FavoritesPage() {
     <div className={styles.page}>
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Ваш особистий список</p>
-        <h1>Улюблені <span aria-hidden="true">♡</span></h1>
+        <h1 id="favorites-title" tabIndex={-1}>Улюблені <span aria-hidden="true">♡</span></h1>
         <p>Зберігайте те, до чого хочеться повернутися. Список зберігається в цьому браузері.</p>
         <Link href="/#recommendations">До рекомендацій <span aria-hidden="true">→</span></Link>
       </header>

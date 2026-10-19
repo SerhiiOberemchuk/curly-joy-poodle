@@ -36,7 +36,7 @@ export function Section<HrefType extends string>({
             </div>
             {action ? (
               <Link href={action.href} className={styles.action}>
-                {action.label} →
+                {action.label} <span aria-hidden="true">→</span>
               </Link>
             ) : null}
           </header>

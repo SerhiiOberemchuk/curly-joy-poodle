@@ -16,7 +16,7 @@ export default function Page() {
     <div className={styles.page}>
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Майже готово</p>
-        <h1>Ваш кошик</h1>
+        <h1 id="cart-title" tabIndex={-1}>Ваш кошик</h1>
         <p>Перевірте розміри й кількість — далі залишиться лише оформити доставку.</p>
       </header>
 
@@ -31,9 +31,10 @@ export default function Page() {
 
 function CartFallback() {
   return (
-    <div className={styles.loading} aria-label="Завантажуємо кошик">
-      <span />
-      <span />
+    <div className={styles.loading} role="status">
+      <span className="visually-hidden">Завантажуємо кошик</span>
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
     </div>
   );
 }

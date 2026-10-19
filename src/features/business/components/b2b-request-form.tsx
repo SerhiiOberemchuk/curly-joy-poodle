@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FormSuccess } from "@/components/ui/form-success";
 import styles from "@/components/ui/form-fields.module.css";
 
 import { initialB2bRequestState } from "../action-state";
@@ -18,13 +19,20 @@ export function B2bRequestForm() {
     initialB2bRequestState,
   );
   const messageId = useId();
+  const form = useRef<HTMLFormElement>(null);
+
+  // Server-side errors move the focus to the first field that needs fixing.
+  useEffect(() => {
+    if (state.status !== "error") return;
+    form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
 
   if (state.status === "sent") {
     return (
-      <div className={styles.form} role="status">
+      <FormSuccess className={styles.form}>
         <p className={styles.success}>{state.message}</p>
         <Link href="/catalog">Повернутися до каталогу</Link>
-      </div>
+      </FormSuccess>
     );
   }
 
@@ -36,17 +44,19 @@ export function B2bRequestForm() {
   });
 
   return (
-    <form action={formAction} className={styles.form}>
+    <form ref={form} action={formAction} className={styles.form}>
       <div className={styles.row}>
         <Field
           {...field("companyName")}
           label="Назва компанії або ФОП"
+          required
           autoComplete="organization"
           maxLength={200}
         />
         <Field
           {...field("contactName")}
           label="Контактна особа"
+          required
           autoComplete="name"
           maxLength={120}
         />
@@ -55,6 +65,7 @@ export function B2bRequestForm() {
         <Field
           {...field("phone")}
           label="Телефон"
+          required
           type="tel"
           inputMode="tel"
           placeholder="+380 67 440 43 94"
@@ -63,6 +74,7 @@ export function B2bRequestForm() {
         <Field
           {...field("email")}
           label="Email"
+          required
           type="email"
           inputMode="email"
           placeholder="name@example.com"
@@ -142,6 +154,7 @@ function Field({
   name,
   label,
   error,
+  required,
   ...inputProps
 }: FieldProps & {
   type?: string;
@@ -149,6 +162,7 @@ function Field({
   autoComplete?: string;
   inputMode?: "tel" | "email" | "url";
   maxLength?: number;
+  required?: boolean;
 }) {
   const id = useId();
   return (
@@ -160,6 +174,8 @@ function Field({
         {...inputProps}
         id={id}
         name={name}
+        // The server checks the form: aria-required, not the browser's own bubbles.
+        aria-required={required || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={error ? styles.inputInvalid : styles.input}

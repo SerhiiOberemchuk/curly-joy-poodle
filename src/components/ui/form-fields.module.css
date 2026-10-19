@@ -51,6 +51,12 @@
   outline: none;
 }
 
+/* A border colour change alone is too faint to find the focus by. */
+.input:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
 .inputInvalid {
   composes: input;
   border-color: var(--color-danger);

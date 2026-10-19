@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useCallback, useEffect, useId, useRef } from "react";
+import { FormSuccess } from "@/components/ui/form-success";
 import { Icon } from "@/components/ui/icon";
 import { requestWelcomeOfferAction } from "../actions";
 import {
@@ -32,6 +33,13 @@ export function WelcomeOfferDialog({
   }, []);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // A modal that opens by itself would pull a keyboard user out of where
+    // they are on the page; they open the offer with its button instead.
+    let usedKeyboard = false;
+    const noteKeyboard = () => {
+      usedKeyboard = true;
+    };
+    window.addEventListener("keydown", noteKeyboard, { once: true });
     try {
       if (!window.sessionStorage.getItem(`welcome-offer:${offer.id}`))
         timer = setTimeout(() => {
@@ -42,6 +50,7 @@ export function WelcomeOfferDialog({
             return;
           }
           if (
+            usedKeyboard ||
             document.activeElement instanceof HTMLInputElement ||
             document.activeElement instanceof HTMLTextAreaElement
           )
@@ -52,6 +61,7 @@ export function WelcomeOfferDialog({
       /* The manual button still works if session storage is blocked. */
     }
     return () => {
+      window.removeEventListener("keydown", noteKeyboard);
       clearTimeout(timer);
       if (overflow.current !== null) {
         document.body.style.overflow = overflow.current;
@@ -104,9 +114,7 @@ export function WelcomeOfferDialog({
           <h2 id={`${id}-title`}>{offer.title}</h2>
           <p id={`${id}-description`}>{offer.description}</p>
           {state.status === "sent" ? (
-            <p className={styles.success} role="status">
-              {state.message}
-            </p>
+            <FormSuccess className={styles.success}>{state.message}</FormSuccess>
           ) : (
             <form action={action} className={styles.form}>
               <input type="hidden" name="offerId" value={offer.id} />

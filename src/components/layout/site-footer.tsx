@@ -6,6 +6,7 @@ import { infoNav } from "@/lib/navigation";
 import { paymentMarks, site } from "@/lib/site";
 
 import styles from "./site-footer.module.css";
+import { NewTabNote } from "@/components/ui/new-tab-note";
 
 export function SiteFooter() {
   return (
@@ -27,7 +28,7 @@ export function SiteFooter() {
             Happy dogs.
             <br />
             <span>
-              Happier people. <b>♡</b>
+              Happier people. <b aria-hidden="true">♡</b>
             </span>
           </p>
           <Link
@@ -71,6 +72,7 @@ export function SiteFooter() {
                   rel="noreferrer noopener"
                 >
                   {social.label}
+                  <NewTabNote />
                 </a>
               ))}
             </div>
@@ -133,6 +135,7 @@ export function SiteFooter() {
                 ) : mark.href ? (
                   <a href={mark.href} target="_blank" rel="noreferrer noopener">
                     {mark.label}
+                    <NewTabNote />
                   </a>
                 ) : (
                   mark.label

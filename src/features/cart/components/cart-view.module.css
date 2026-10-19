@@ -136,12 +136,13 @@
   font-size: var(--text-sm);
 }
 
-.summaryRow > span {
+.summaryRow > * {
   min-width: 0;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
-.summaryRow > span:last-child {
+.summaryRow > :last-child {
   text-align: right;
 }
 

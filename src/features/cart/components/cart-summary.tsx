@@ -44,37 +44,37 @@ export function CartSummary({
 
       {children}
 
-      <p className={styles.summaryRow}>
-        <span>Товари ({cart.itemCount} шт.)</span>
-        <span>{formatMoney(cart.subtotal)}</span>
-      </p>
+      <dl className={styles.summaryRow}>
+        <dt>Товари ({cart.itemCount} шт.)</dt>
+        <dd>{formatMoney(cart.subtotal)}</dd>
+      </dl>
 
       {cart.savings > 0 ? (
-        <p className={styles.summaryRow}>
-          <span>Вигода від акційних цін</span>
-          <span className={styles.savings}>−{formatMoney(cart.savings)}</span>
-        </p>
+        <dl className={styles.summaryRow}>
+          <dt>Вигода від акційних цін</dt>
+          <dd className={styles.savings}>−{formatMoney(cart.savings)}</dd>
+        </dl>
       ) : null}
 
       {promotion ? (
-        <p className={styles.summaryRow}>
-          <span>Промокод {promotion.code}</span>
-          <span className={styles.savings}>
+        <dl className={styles.summaryRow}>
+          <dt>Промокод {promotion.code}</dt>
+          <dd className={styles.savings}>
             −{formatMoney(Math.round(Number(promotion.discountAmount) * 100))}
-          </span>
-        </p>
+          </dd>
+        </dl>
       ) : null}
 
-      <p className={styles.summaryRow}>
-        <span>Доставка</span>
-        <span>
+      <dl className={styles.summaryRow}>
+        <dt>Доставка</dt>
+        <dd>
           {shippingPending
             ? "Уточнюється під час оформлення"
             : freeShipping
               ? "Безкоштовно"
               : "За тарифами перевізника"}
-        </span>
-      </p>
+        </dd>
+      </dl>
 
       {threshold === null ? null : (
         <p className={styles.note}>
@@ -109,10 +109,10 @@ export function CartSummary({
         </p>
       )}
 
-      <p className={styles.summaryTotal}>
-        <span>Разом за товари</span>
-        <span>{formatMoney(total)}</span>
-      </p>
+      <dl className={styles.summaryTotal}>
+        <dt>Разом за товари</dt>
+        <dd>{formatMoney(total)}</dd>
+      </dl>
 
       {action === "none" || cart.minOrderRemainder ? null : (
         <a

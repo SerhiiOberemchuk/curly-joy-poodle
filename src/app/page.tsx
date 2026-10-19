@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import styles from "@/features/home/home.module.css";
-import { HomeReviews } from "@/features/reviews/components/home-reviews";
+import { HomeInstagramShots } from "@/features/social-proof/components/home-instagram-shots";
+import { HomeReviews } from "@/features/social-proof/components/home-reviews";
+import { HomeSocialStats } from "@/features/social-proof/components/home-social-stats";
+import { SocialProofPart } from "@/features/social-proof/components/social-proof-part";
 import { HomeWelcomeOffer } from "@/features/welcome-offer/components/home-welcome-offer";
 import { defaultLocale } from "@/lib/i18n";
 
@@ -39,12 +42,16 @@ export default function HomePage() {
       <Suspense fallback={<HomeBenefits />}>
         <HomeBenefitsWithTerms />
       </Suspense>
+      <HomeSocialStats locale={defaultLocale} />
       <HomeCategories />
       <HomeRecommendations />
       <HomePromotions />
-      <Suspense fallback={null}>
-        <HomeReviews />
-      </Suspense>
+      <SocialProofPart>
+        <HomeReviews locale={defaultLocale} />
+      </SocialProofPart>
+      <SocialProofPart>
+        <HomeInstagramShots locale={defaultLocale} />
+      </SocialProofPart>
       <Suspense fallback={null}>
         <HomeWelcomeOffer locale={defaultLocale} />
       </Suspense>

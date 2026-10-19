@@ -1,0 +1,196 @@
+/* Mobile first; the palette and type follow the home page and review cards. */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 32px;
+  margin: 0;
+  padding: 18px 16px;
+  list-style: none;
+  background: #f5e9df;
+  color: #38271f;
+  font-family: Arial, Helvetica, sans-serif;
+}
+/* Both parts hidden (no data, error or below their thresholds): no empty band. */
+.stats:not(:has(li)) {
+  display: none;
+}
+.stat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+  font-size: 14px;
+}
+.statValue {
+  font:
+    400 26px/1 var(--font-home-handwriting),
+    cursive;
+  color: #603b2c;
+}
+.statText {
+  color: #756054;
+}
+.statIcon {
+  width: 22px;
+  height: 22px;
+  color: #b76c62;
+}
+
+/* Horizontal, snapping card rows: a peek of the next card invites the swipe. */
+.scroller {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(85%, 340px);
+  gap: 16px;
+  margin: 0;
+  padding: 4px 4px 16px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 4px;
+}
+.scroller > li {
+  display: flex;
+  scroll-snap-align: start;
+}
+.scroller:focus-visible {
+  outline: 2px solid #694638;
+  outline-offset: 4px;
+}
+
+.reviewCard {
+  position: relative;
+  flex: 1;
+}
+.reviewCard:hover:has(.productLink) {
+  border-color: #d7bfb2;
+}
+.reviewCard:has(.productLink:focus-visible) {
+  outline: 2px solid #694638;
+  outline-offset: 3px;
+}
+/* Two classes: must win over the shared `.cardTop` whatever the CSS order. */
+.reviewCard .reviewTop {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px 12px;
+}
+.verified {
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1ddd5;
+  color: #694638;
+  font-size: 11px;
+  font-weight: 700;
+}
+.reviewTitle {
+  margin-top: 18px;
+  font-size: 15px;
+}
+.reviewCard time {
+  font-size: 12px;
+  color: #79675b;
+}
+.reviewProduct {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e8dace;
+  color: #795446;
+  font-size: 13px;
+}
+.productLink {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The whole card leads to the product; the link text stays its name alone. */
+.productLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px 24px 38px 24px;
+}
+.productLink:focus-visible {
+  outline: none;
+}
+
+.instagram {
+  padding: 40px 16px;
+  background: #fcf7f1;
+  color: #38271f;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.instagram > .shots {
+  margin-top: 24px;
+}
+.follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: #694638;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+.follow:hover {
+  background: #58382d;
+}
+.follow svg {
+  width: 18px;
+  height: 18px;
+}
+.shots {
+  grid-auto-columns: min(62%, 260px);
+}
+.shot {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border: 1px solid #e8dace;
+  border-radius: 22px;
+  background: #fffbf6;
+}
+.shot img {
+  object-fit: cover;
+  object-position: top;
+}
+
+@media (width >= 700px) {
+  .stats {
+    gap: 16px 64px;
+    padding: 22px 40px;
+  }
+  .stat {
+    font-size: 15px;
+  }
+  .statValue {
+    font-size: 32px;
+  }
+  .scroller {
+    grid-auto-columns: calc((100% - 2 * 20px) / 3);
+    gap: 20px;
+  }
+  .shots {
+    grid-auto-columns: 240px;
+    justify-content: safe center;
+  }
+  .instagram {
+    padding: clamp(40px, 5vw, 80px) clamp(20px, 5vw, 80px);
+  }
+}
+
+@media (width >= 1200px) {
+  .scroller {
+    grid-auto-columns: calc((100% - 3 * 20px) / 4);
+  }
+  .shots {
+    grid-auto-columns: 240px;
+  }
+}

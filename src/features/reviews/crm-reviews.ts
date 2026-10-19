@@ -14,10 +14,11 @@ const reviewSchema = z.object({
   submittedAt: z.iso.datetime({ offset: true }),
   reply: z.object({ body: z.string() }).nullable(),
   status: z.literal("published"),
+  modelKey: z.string(),
   product: z.object({ id: z.string(), name: z.string() }),
 });
 
-const listSchema = z.object({
+export const reviewListSchema = z.object({
   data: z.array(reviewSchema),
   pagination: z.object({
     page: z.number().int().positive(),
@@ -44,26 +45,48 @@ const summarySchema = z.object({
 export type PublishedReview = z.infer<typeof reviewSchema>;
 export type ReviewSummary = z.infer<typeof summarySchema>["data"][number];
 
+/** The CRM's model key for a storefront product: its group, else the product itself. */
+export function modelKeyOf(productId: string): string {
+  return productId.startsWith("group:") ? productId.slice(6) : productId;
+}
+
+export const REVIEWS_PER_PAGE = 20;
+
+const STARS = ["1", "2", "3", "4", "5"] as const;
+
+/** Exact average over published reviews: the per-model `average` is rounded. */
+export function ratingFromSummaries(
+  summaries: readonly ReviewSummary[],
+): { average: number; count: number } | null {
+  let count = 0;
+  let stars = 0;
+  for (const { distribution } of summaries)
+    for (const star of STARS) {
+      count += distribution[star];
+      stars += Number(star) * distribution[star];
+    }
+  return count > 0 ? { average: stars / count, count } : null;
+}
+
 export async function getPublishedReviews(modelKey: string, page = 1) {
   "use cache: remote";
   cacheLife({ stale: 60, revalidate: 60, expire: 120 });
-  const query = new URLSearchParams({ modelKey, status: "published", perPage: "20", page: String(page), sort: "newest" });
-  return listSchema.parse(await crmRequest(`/reviews?${query}`));
+  const query = new URLSearchParams({ modelKey, status: "published", perPage: String(REVIEWS_PER_PAGE), page: String(page), sort: "newest" });
+  return reviewListSchema.parse(await crmRequest(`/reviews?${query}`));
+}
+
+/** Uncached; the CRM answers at most 100 model keys per call. */
+export async function fetchReviewSummaries(modelKeys: readonly string[]): Promise<ReviewSummary[]> {
+  const query = modelKeys.map(encodeURIComponent).join(",");
+  return summarySchema.parse(await crmRequest(`/reviews/summary?modelKeys=${query}`)).data;
 }
 
 export async function getReviewSummary(modelKey: string): Promise<ReviewSummary> {
   "use cache: remote";
   cacheLife({ stale: 60, revalidate: 60, expire: 120 });
-  const response = summarySchema.parse(await crmRequest(`/reviews/summary?modelKeys=${encodeURIComponent(modelKey)}`));
-  const summary = response.data.find((item) => item.modelKey === modelKey);
+  const summary = (await fetchReviewSummaries([modelKey])).find((item) => item.modelKey === modelKey);
   if (!summary) throw new Error("CRM did not return the review summary");
   return summary;
-}
-
-export async function getRecentPublishedReviews() {
-  "use cache: remote";
-  cacheLife({ stale: 60, revalidate: 60, expire: 120 });
-  return listSchema.parse(await crmRequest("/reviews?status=published&perPage=3&sort=newest")).data;
 }
 
 export async function submitReview(input: {

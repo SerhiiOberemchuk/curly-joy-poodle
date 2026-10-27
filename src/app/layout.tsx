@@ -47,6 +47,9 @@ export const metadata: Metadata = {
   }),
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
+  verification: {
+    google: "z1Eugw_DSjJ0xOfEMCijkOu0Wt2typcuxfchPut1pTk",
+  },
 };
 
 export const viewport: Viewport = {

@@ -14,7 +14,7 @@ export interface MessengerLink { label: string; href: string }
 
 export const site = {
   name: "Curly Joy Store",
-  /** Торгова марка. Саме вона стоїть у © футера — реквізити ФОП живуть у `legal`. */
+  /** Назва бренду у футері; статус реєстрації торговельної марки тут не стверджується. */
   legalName: "Curly Joy",
   tagline: "Офіційний дистриб'ютор GF Pet в Україні",
   description:

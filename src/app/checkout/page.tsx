@@ -12,6 +12,7 @@ import {
   sellsInHryvnia,
 } from "@/features/checkout/options";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
+import { marketingConsentEnabled } from "@/features/checkout/marketing-consent";
 import { formatMoney } from "@/lib/money";
 
 import styles from "./checkout.module.css";
@@ -105,6 +106,7 @@ async function CheckoutContent() {
       capabilities={capabilities}
       checkoutToken={checkoutToken}
       stockAdjusted={!matchesStored(stored, cart)}
+      offerMarketingConsent={marketingConsentEnabled()}
     />
   );
 }

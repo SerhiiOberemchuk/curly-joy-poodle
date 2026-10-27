@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Caveat, Montserrat, Pangolin } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { AttributionCapture } from "@/components/attribution/attribution-capture";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { QuickContact } from "@/components/layout/quick-contact";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body>
         <NuqsAdapter>
+          <AttributionCapture />
           <a href="#main-content" className="skip-link">
             Перейти до вмісту
           </a>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useId, useRef } from "react";
 
+import { AttributionField } from "@/components/attribution/attribution-field";
 import { Button } from "@/components/ui/button";
 import { FormSuccess } from "@/components/ui/form-success";
 import styles from "@/components/ui/form-fields.module.css";
@@ -45,6 +46,7 @@ export function B2bRequestForm() {
 
   return (
     <form ref={form} action={formAction} className={styles.form}>
+      <AttributionField />
       <div className={styles.row}>
         <Field
           {...field("companyName")}

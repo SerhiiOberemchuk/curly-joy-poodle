@@ -3,6 +3,8 @@ import { cacheLife } from "next/cache";
 import { z } from "zod";
 
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
+import type { CrmAttribution } from "@/lib/attribution";
+import type { CrmMarketingConsent } from "../marketing-consent";
 import { siteUrl } from "@/lib/origin";
 import type { Order, OrderItem } from "../types";
 import {
@@ -135,8 +137,19 @@ export function orderItemsPayload(
 }
 export async function createCrmOrder(
   order: Order,
+  attribution?: CrmAttribution,
+  marketingConsent?: CrmMarketingConsent,
 ): Promise<{ id: string; number: string | null }> {
-  return requestData("/orders", orderAcceptedSchema, orderPayload(order));
+  // Outside orderPayload on purpose: the order's idempotency key is derived from
+  // that payload, and the CRM keeps attribution out of its own idempotency hash.
+  const payload = orderPayload(order);
+  return requestData("/orders", orderAcceptedSchema, {
+    ...payload,
+    ...(marketingConsent
+      ? { customer: { ...payload.customer, marketingConsent } }
+      : {}),
+    ...(attribution ? { attribution } : {}),
+  });
 }
 export async function getCrmOrder(externalId: string) {
   return requestData(

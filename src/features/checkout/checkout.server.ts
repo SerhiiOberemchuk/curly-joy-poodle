@@ -5,6 +5,12 @@ import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
 import { loadCart, matchesStored } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
+import { parseSubmittedAttribution, type CrmAttribution } from "@/lib/attribution";
+import {
+  marketingConsentEnabled,
+  marketingConsentPayload,
+  type CrmMarketingConsent,
+} from "./marketing-consent";
 import { readString } from "@/lib/form";
 import { formatMoney } from "@/lib/money";
 import { CrmApiError } from "@/lib/crm-client";
@@ -207,9 +213,11 @@ async function submitOrder(
   order: Order,
   stored: readonly StoredCartLine[],
   nonce: string,
+  attribution?: CrmAttribution,
+  marketingConsent?: CrmMarketingConsent,
 ): Promise<OrderReceipt> {
   order.number = checkoutAttempt(orderPayload(order), nonce);
-  const created = await createCrmOrder(order);
+  const created = await createCrmOrder(order, attribution, marketingConsent);
   const status = order.payment === "cod" ? "not-required" : "unpaid";
   const receipt: OrderReceipt = {
     number: order.number,
@@ -350,7 +358,16 @@ export async function submitCheckout(
       };
       order.subtotal = expected.data;
     }
-    receipt = await submitOrder(order, fitted, nonce);
+    receipt = await submitOrder(
+      order,
+      fitted,
+      nonce,
+      parseSubmittedAttribution(readString(formData, "attribution")),
+      marketingConsentPayload(
+        readString(formData, "marketingConsent") === "1",
+        marketingConsentEnabled(),
+      ),
+    );
   } catch (error) {
     if (error instanceof CrmApiError && isPromotionRefusal(error))
       return failure(promotionErrorMessage(error.reason, error.details));

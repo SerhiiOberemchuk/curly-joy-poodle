@@ -34,6 +34,7 @@ import { formatMoney } from "@/lib/money";
 
 import { initialCheckoutState } from "../action-state";
 import { placeOrderAction } from "../actions";
+import { readAttribution } from "@/lib/attribution.client";
 import { forgetCheckoutToken, tabCheckoutToken } from "../checkout-token.client";
 import { availableDeliveries, availablePayments } from "../options";
 import type { CrmCapabilities, NpCity } from "../crm/types";
@@ -44,6 +45,7 @@ import {
   FIELD_LIMITS,
   type CheckoutField,
 } from "../validation";
+import { MARKETING_CONSENT_TEXT } from "../marketing-consent";
 import styles from "./checkout-form.module.css";
 
 const defaultValues: CheckoutFormValues = {
@@ -71,13 +73,17 @@ export function CheckoutForm({
   capabilities,
   checkoutToken,
   stockAdjusted = false,
+  offerMarketingConsent = false,
 }: {
   cart: Cart;
   capabilities: CrmCapabilities;
   checkoutToken: string;
   /** The cart shown here was fitted to current stock, unlike the saved one. */
   stockAdjusted?: boolean;
+  /** Server flag: show the unticked newsletter checkbox. */
+  offerMarketingConsent?: boolean;
 }) {
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const total = cart.subtotal;
   const deliveryOptions = availableDeliveries(capabilities);
   const paymentOptions = availablePayments(capabilities);
@@ -181,6 +187,10 @@ export function CheckoutForm({
     data.set("expectedSubtotal", String(total));
     data.set("cartKey", cartKey);
     data.set("checkoutToken", tabCheckoutToken(checkoutToken));
+    const attribution = readAttribution();
+    if (attribution) data.set("attribution", JSON.stringify(attribution));
+    if (offerMarketingConsent && marketingConsent)
+      data.set("marketingConsent", "1");
     startTransition(() => formAction(data));
   };
 
@@ -255,6 +265,18 @@ export function CheckoutForm({
                   maxLength={FIELD_LIMITS.email}
                 />
               </div>
+              {offerMarketingConsent ? (
+                <label className={styles.consent}>
+                  <input
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={(event) =>
+                      setMarketingConsent(event.target.checked)
+                    }
+                  />
+                  <span>{MARKETING_CONSENT_TEXT}</span>
+                </label>
+              ) : null}
             </fieldset>
 
             <fieldset className={styles.fieldset} disabled={isPending}>

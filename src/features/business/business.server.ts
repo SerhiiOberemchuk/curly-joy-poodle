@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import { CrmApiError, crmRequest } from "@/lib/crm-client";
+import { parseSubmittedAttribution } from "@/lib/attribution";
 import { readString } from "@/lib/form";
 import type { B2bRequestState } from "./action-state";
 import { b2bRequestSchema, type B2bRequestField } from "./validation";
@@ -56,6 +57,9 @@ export async function submitB2bRequest(
   }
 
   const request = parsed.data;
+  const attribution = parseSubmittedAttribution(
+    readString(formData, "attribution"),
+  );
   const notes = [
     "Запит на оптовий (B2B) доступ із сайту.",
     request.businessType ? `Тип бізнесу: ${request.businessType}` : null,
@@ -75,6 +79,7 @@ export async function submitB2bRequest(
       phone: request.phone,
       notes,
       source: "partner",
+      ...(attribution ? { attribution } : {}),
     });
   } catch (caught) {
     return {

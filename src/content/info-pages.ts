@@ -207,7 +207,7 @@ export const infoPages = [
       {
         heading: "Продавець",
         list: [
-          `${site.legal.entity}, торгова марка «${site.legalName}»`,
+          `${site.legal.entity}, магазин «${site.legalName}»`,
           `РНОКПП ${site.legal.taxId}`,
           site.address,
           `Телефон ${site.phone}, email ${site.email}`,
@@ -220,7 +220,7 @@ export const infoPages = [
     slug: "terms",
     title: "Публічна оферта",
     intro:
-      "Цей документ є офіційною пропозицією укласти договір купівлі-продажу на умовах, викладених нижче. Редакція від 23 вересня 2026 року.",
+      "Цей документ є офіційною пропозицією укласти договір купівлі-продажу на умовах, викладених нижче. Редакція від 22 жовтня 2026 року.",
     blocks: [
       {
         heading: "Реквізити продавця",
@@ -229,7 +229,7 @@ export const infoPages = [
           `РНОКПП: ${site.legal.taxId}.`,
           `Адреса: ${site.legal.fullAddress}.`,
           `Статус: ${site.legal.taxStatus} (${site.legal.extract}).`,
-          `Торгова марка: ${site.legalName}. Телефон: ${site.phone}. Email: ${site.email}.`,
+          `Назва магазину: ${site.legalName}. Телефон: ${site.phone}. Email: ${site.email}.`,
         ],
       },
       {

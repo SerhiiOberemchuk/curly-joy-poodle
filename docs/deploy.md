@@ -36,6 +36,11 @@ production отримує нові пакети тільки після розг
   `customerAccount.url` у `/capabilities`: потрібні деплой CRM, адреса
   магазину й увімкнений кабінет у налаштуваннях CRM. Змінна сайту для цього
   не потрібна.
+- Microsoft Clarity вмикається сам у Production-деплої Vercel
+  (`VERCEL_ENV`, системна змінна; у Settings → Environment Variables має бути
+  увімкнено «Automatically expose System Environment Variables»). Окремої
+  змінної не потрібно. У налаштуваннях проєкту Clarity маскування — Balanced
+  або Strict.
 - `npm run lint`, `npm test`, `npm run typecheck` проходять.
 
 ## Після деплою

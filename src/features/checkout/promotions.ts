@@ -90,6 +90,14 @@ export function promotionErrorMessage(
       return "Промокод не підходить для цього замовлення.";
     case "usage_limit_reached":
       return "Ліміт використання цього промокоду вичерпано.";
+    // The CRM names these only for a personal code entered with the email it
+    // was sent to, so the buyer learns nothing about anyone else.
+    case "code_used":
+      return "Цей промокод уже використано: він одноразовий.";
+    case "offer_used":
+      return "Ви вже скористалися цією пропозицією.";
+    case "first_purchase_only":
+      return "Ця знижка діє лише на перше замовлення з цим email.";
     case "minimum_not_met": {
       const minimum = formatMinimum(details);
       return minimum

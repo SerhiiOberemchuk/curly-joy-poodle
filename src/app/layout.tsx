@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Caveat, Montserrat, Pangolin } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { ClarityAnalytics } from "@/components/analytics/clarity-analytics";
 import { AttributionCapture } from "@/components/attribution/attribution-capture";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -67,6 +68,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <NuqsAdapter>
           <AttributionCapture />
+          {/* Only the live shop is recorded: not previews or local runs. */}
+          {process.env.VERCEL_ENV === "production" ? <ClarityAnalytics /> : null}
           <a href="#main-content" className="skip-link">
             Перейти до вмісту
           </a>

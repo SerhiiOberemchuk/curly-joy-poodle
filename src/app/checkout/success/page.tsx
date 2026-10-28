@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import {
@@ -13,7 +14,10 @@ import type { CrmOrder } from "@/features/checkout/crm/types";
 import { paymentLabel } from "@/features/checkout/options";
 import { currentReceipt } from "@/features/checkout/payment/settlement";
 import { readPaymentReceipt } from "@/features/checkout/payment/return-receipt";
-import { readPaymentReturnToken } from "@/features/checkout/payment/return-token";
+import {
+  createPaymentReturnToken,
+  readPaymentReturnToken,
+} from "@/features/checkout/payment/return-token";
 import {
   awaitsCardPayment,
   PAYMENT_SETUP_FAILED,
@@ -53,7 +57,18 @@ async function Receipt({
     return await Recovery({ token, unavailable: true });
   }
   if (!receipt) return await Recovery({ token });
-  // No status on screen to compare with: the button always refreshes.
+  if (!token) {
+    const query = new URLSearchParams({
+      token: await createPaymentReturnToken(
+        receipt.number,
+        receipt.payment,
+        receipt.cartRevision,
+      ),
+    });
+    if (paymentUnavailable) query.set("payment", "unavailable");
+    redirect(`/checkout/success?${query}`);
+  }
+  // Manual checks refresh even if the payment status has not changed.
   const checkStatus = checkPaymentStatusAction.bind(null, token, undefined);
   const retryPayment = retryPaymentAction.bind(null, token);
   let order: CrmOrder | null = null;
@@ -66,6 +81,9 @@ async function Receipt({
     unavailable = true;
   }
   const status = receipt.status;
+  const paid = !unavailable && status === "paid";
+  const takenInWork =
+    paid && (order?.status === "confirmed" || order?.status === "processing");
   const canPay =
     !unavailable &&
     order?.status !== "cancelled" &&
@@ -110,7 +128,9 @@ async function Receipt({
           ? "Не вдалося оновити статус. Ваше замовлення збережено — спробуйте ще раз."
           : setupFailed
             ? PAYMENT_SETUP_FAILED
-            : receipt.note}
+            : takenInWork
+              ? "Замовлення успішно оплачено та взято в роботу."
+              : receipt.note}
       </p>
       <PaymentStatusPoller
         key={receipt.number}
@@ -180,11 +200,17 @@ async function Receipt({
             </Button>
           </form>
         ) : null}
-        <form action={checkStatus}>
-          <Button type="submit" size="lg" variant="outline">
-            Оновити статус
+        {paid ? (
+          <Button type="button" size="lg" variant="outline" disabled>
+            Оплату підтверджено
           </Button>
-        </form>
+        ) : (
+          <form action={checkStatus}>
+            <Button type="submit" size="lg" variant="outline">
+              Оновити статус
+            </Button>
+          </form>
+        )}
         <Link
           href="/catalog"
           className={buttonStyles({ variant: "outline", size: "lg" })}
@@ -232,7 +258,9 @@ async function Recovery({
   unavailable?: boolean;
 }) {
   const number = token ? await readPaymentReturnToken(token) : null;
-  const checkStatus = checkPaymentStatusAction.bind(null, token, undefined);
+  const checkStatus = token
+    ? checkPaymentStatusAction.bind(null, token, undefined)
+    : undefined;
   return (
     <section className={styles.card}>
       <h1>
@@ -245,7 +273,7 @@ async function Recovery({
           ? "Не вдалося отримати підтвердження оплати. Якщо ви вже оплатили, не сплачуйте повторно — ми перевіряємо статус."
           : "Відкрийте посилання повернення з оплати у браузері, де оформляли замовлення. Якщо посилання застаріло, зверніться до нас — допоможемо перевірити оплату."}
       </p>
-      {number && unavailable ? (
+      {number && unavailable && token ? (
         <>
           <PaymentStatusPoller
             active

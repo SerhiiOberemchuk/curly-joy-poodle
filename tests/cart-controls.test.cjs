@@ -48,6 +48,21 @@ afterEach(() => {
   document.cookie = "cjp_cart_v2=; Path=/; Max-Age=0";
 });
 
+test("legacy cart migration preserves its lines and assigns an edit revision", async () => {
+  const { ensureBrowserCartRevision } = load("src/features/cart/cart-cookie.client.ts");
+  const { parseCartSnapshot } = load("src/features/cart/cart-cookie-data.ts");
+  const lines = [{ p: "p1", q: 2 }, { p: "p2", q: 1 }];
+  document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify(lines))}; Path=/`;
+  ensureBrowserCartRevision([]);
+  const raw = document.cookie.split("; ").find((part) => part.startsWith("cjp_cart_v2=")).slice("cjp_cart_v2=".length);
+  const snapshot = parseCartSnapshot(raw);
+  assert.deepEqual(snapshot.lines, lines);
+  assert.ok(snapshot.revision);
+  const before = document.cookie;
+  ensureBrowserCartRevision([]);
+  assert.equal(document.cookie, before);
+});
+
 function sampleCart() {
   return calculateCart(
     [{

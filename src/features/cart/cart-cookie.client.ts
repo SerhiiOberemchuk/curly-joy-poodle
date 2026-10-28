@@ -1,6 +1,6 @@
 "use client";
 
-import { parseCartCookie } from "./cart-cookie-data";
+import { parseCartCookie, parseCartSnapshot } from "./cart-cookie-data";
 import { CART_COOKIE, CART_COOKIE_MAX_AGE_SECONDS, MAX_CART_LINES } from "./constants";
 import type { StoredCartLine } from "./types";
 
@@ -22,6 +22,29 @@ export function browserCartItemCount(): number | null {
   const raw = browserCookieValue();
   if (raw === undefined) return null;
   return parseCartCookie(raw).reduce((count, line) => count + line.q, 0);
+}
+
+function writeBrowserCart(lines: readonly StoredCartLine[]): "saved" | "unavailable" {
+  const value = encodeURIComponent(JSON.stringify({ revision: crypto.randomUUID(), lines }));
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${CART_COOKIE}=${value}; Path=/; Max-Age=${CART_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+  if (!document.cookie.split(";").some((part) => part.trim() === `${CART_COOKIE}=${value}`))
+    return "unavailable";
+  window.dispatchEvent(new window.Event(CART_CHANGE_EVENT));
+  return "saved";
+}
+
+/** Migrate a legacy basket before the request captures its cookie snapshot. */
+export function ensureBrowserCartRevision(shown: readonly StoredCartLine[]): void {
+  const raw = browserCookieValue();
+  const snapshot = parseCartSnapshot(raw);
+  if (!snapshot.revision) writeBrowserCart(raw === undefined ? shown : snapshot.lines);
+}
+
+/** Check at response time, without an await that could erase a newer edit. */
+export function clearPurchasedCart(revision: string): boolean {
+  if (parseCartSnapshot(browserCookieValue()).revision !== revision) return false;
+  return writeBrowserCart([]) === "saved";
 }
 
 /**
@@ -50,11 +73,5 @@ export function writeBrowserCartLine(
         ? current.map((line) => (line.p === variantId ? { p: variantId, q: quantity } : line))
         : [...current, { p: variantId, q: quantity }];
   if (next.length > MAX_CART_LINES) return "full";
-  const value = encodeURIComponent(JSON.stringify(next));
-  const secure = location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${CART_COOKIE}=${value}; Path=/; Max-Age=${CART_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
-  if (!document.cookie.split(";").some((part) => part.trim() === `${CART_COOKIE}=${value}`))
-    return "unavailable";
-  window.dispatchEvent(new window.Event(CART_CHANGE_EVENT));
-  return "saved";
+  return writeBrowserCart(next);
 }

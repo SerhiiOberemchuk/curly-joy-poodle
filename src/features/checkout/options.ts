@@ -1,5 +1,13 @@
 import type { CrmCapabilities } from "./crm/types";
 import type { DeliveryMethod, PaymentMethod } from "./types";
+import type { Cart } from "@/features/cart/types";
+
+/** The delivery terms shown alongside the amount the buyer confirms. */
+export function shippingTermsKey(
+  cart: Pick<Cart, "freeShipping" | "freeShippingThreshold">,
+): string {
+  return JSON.stringify([cart.freeShipping, cart.freeShippingThreshold]);
+}
 
 export const deliveryOptions: ReadonlyArray<{
   value: DeliveryMethod;

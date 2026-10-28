@@ -176,6 +176,7 @@ export function validateCheckoutUrl(link: CrmPaymentLink): `https://${string}` {
 }
 export async function getOrCreatePaymentLink(
   externalId: string,
+  token?: string,
 ): Promise<`https://${string}`> {
   const path = `/orders/${encodeURIComponent(externalId)}/payment-link`;
   const returnUrl = paymentReturnUrl();
@@ -194,7 +195,7 @@ export async function getOrCreatePaymentLink(
   const data = await requestData(path, paymentLinkSchema, {
     provider: "monobank",
     ...(returnUrl
-      ? { returnUrl: await authorizedReturnUrl(returnUrl, externalId) }
+      ? { returnUrl: await authorizedReturnUrl(returnUrl, externalId, token) }
       : {}),
   });
   return validateCheckoutUrl(data);
@@ -203,9 +204,12 @@ export async function getOrCreatePaymentLink(
 async function authorizedReturnUrl(
   base: string,
   number: string,
+  token?: string,
 ): Promise<string> {
   const url = new URL(base);
-  url.searchParams.set("token", await createPaymentReturnToken(number));
+  if (token && (await readPaymentReturnToken(token)) !== number)
+    throw new CrmApiError(400, "INVALID_RETURN_TOKEN");
+  url.searchParams.set("token", token ?? await createPaymentReturnToken(number));
   return url.href;
 }
 

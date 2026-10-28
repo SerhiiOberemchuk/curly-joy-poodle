@@ -36,7 +36,12 @@ import { initialCheckoutState } from "../action-state";
 import { placeOrderAction } from "../actions";
 import { readAttribution } from "@/lib/attribution.client";
 import { forgetCheckoutToken, tabCheckoutToken } from "../checkout-token.client";
-import { availableDeliveries, availablePayments } from "../options";
+import {
+  availableDeliveries,
+  availablePayments,
+  shippingTermsKey,
+} from "../options";
+import { ensureBrowserCartRevision } from "@/features/cart/cart-cookie.client";
 import type { CrmCapabilities, NpCity } from "../crm/types";
 import { DESTINATION_FIELDS, NovaPoshtaFields } from "./nova-poshta-fields";
 import {
@@ -115,6 +120,25 @@ export function CheckoutForm({
   const delivery = useWatch({ control, name: "delivery" });
   const payment = useWatch({ control, name: "payment" });
   const email = useWatch({ control, name: "email" });
+  const availableDelivery =
+    deliveryOptions.find((option) => option.value === delivery)?.value ??
+    deliveryOptions[0]?.value;
+  const availablePayment =
+    paymentOptions.find((option) => option.value === payment)?.value ??
+    paymentOptions[0]?.value;
+  const methodsReady =
+    delivery === availableDelivery && payment === availablePayment;
+  useEffect(() => {
+    if (availableDelivery && delivery !== availableDelivery) {
+      setValue("delivery", availableDelivery);
+      for (const name of DESTINATION_FIELDS) setValue(name, "");
+      clearErrors(["delivery", ...DESTINATION_FIELDS]);
+    }
+    if (availablePayment && payment !== availablePayment) {
+      setValue("payment", availablePayment);
+      clearErrors("payment");
+    }
+  }, [delivery, payment, availableDelivery, availablePayment, setValue, clearErrors]);
   const [code, setCode] = useState("");
   const [quoteState, setQuoteState] = useState<{
     key: string;
@@ -122,7 +146,11 @@ export function CheckoutForm({
   } | null>(null);
   const [quoting, startQuote] = useTransition();
   const cartKey = promotionCartKey(cart.lines);
-  const inputKey = promotionInputKey({ code, email, delivery }, cartKey);
+  const shippingKey = shippingTermsKey(cart);
+  const inputKey = promotionInputKey(
+    { code, email, delivery },
+    `${cartKey}:${shippingKey}`,
+  );
   const currentResult = quoteState?.key === inputKey ? quoteState.result : null;
   const quote = currentResult?.ok ? currentResult.quote : undefined;
   const payable = quote ? Math.round(Number(quote.totalAmount) * 100) : total;
@@ -136,7 +164,7 @@ export function CheckoutForm({
       setQuoteState({
         key: promotionInputKey(
           input,
-          !result.ok && result.cartKey ? result.cartKey : cartKey,
+          `${!result.ok && result.cartKey ? result.cartKey : cartKey}:${shippingKey}`,
         ),
         result,
       });
@@ -176,7 +204,10 @@ export function CheckoutForm({
   }, [state, setError]);
 
   const submit: SubmitHandler<CheckoutFormValues> = (values) => {
-    if (quoting || needsQuote) return;
+    if (quoting || needsQuote || !methodsReady) return;
+    ensureBrowserCartRevision(
+      cart.lines.map((line) => ({ p: line.variantId, q: line.quantity })),
+    );
     const data = new FormData();
     if (quote) {
       data.set("promotionCode", quote.code);
@@ -185,6 +216,7 @@ export function CheckoutForm({
     }
     for (const [name, value] of Object.entries(values)) data.set(name, value);
     data.set("expectedSubtotal", String(total));
+    data.set("expectedShipping", shippingKey);
     data.set("cartKey", cartKey);
     data.set("checkoutToken", tabCheckoutToken(checkoutToken));
     const attribution = readAttribution();
@@ -485,6 +517,7 @@ export function CheckoutForm({
                 isPending ||
                 quoting ||
                 needsQuote ||
+                !methodsReady ||
                 !deliveryOptions.length ||
                 !paymentOptions.length
               }

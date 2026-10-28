@@ -2,17 +2,19 @@
 
 import { startTransition, useEffect, useState, type ReactNode } from "react";
 import useSWR from "swr";
-import { checkPaymentStatusAction } from "../actions";
+import { syncPaymentStatusAction } from "../actions";
+import { clearPurchasedCart } from "@/features/cart/cart-cookie.client";
 import styles from "./payment-status-poller.module.css";
 
 const CHECK_INTERVAL = 5000;
 const CHECK_WINDOW = 60_000;
 
-function syncPayment(token: string | undefined, shown: string) {
+function syncPayment(token: string, shown: string) {
   return new Promise<boolean>((resolve, reject) => {
     startTransition(async () => {
       try {
-        await checkPaymentStatusAction(token, shown);
+        const result = await syncPaymentStatusAction(token, shown);
+        if (result.cartRevision) clearPurchasedCart(result.cartRevision);
         resolve(true);
       } catch (error) {
         reject(error);
@@ -30,7 +32,7 @@ export function PaymentStatusPoller({
 }: {
   active: boolean;
   orderId: string;
-  token?: string;
+  token: string;
   /** The status on screen: the page refreshes only when it changes. */
   shown: string;
   children?: ReactNode;

@@ -1,7 +1,11 @@
 import "server-only";
 import { z } from "zod";
 
-import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
+import {
+  readCartCookie,
+  readCartSnapshot,
+  writeCartCookie,
+} from "@/features/cart/cart-cookie";
 import { loadCart, matchesStored } from "@/features/cart/queries";
 import type { Cart, StoredCartLine } from "@/features/cart/types";
 import type { CheckoutActionState } from "./action-state";
@@ -21,7 +25,6 @@ import {
   promotionErrorMessage,
 } from "./promotions";
 import {
-  cartFingerprint,
   checkoutAttempt,
   readCheckoutToken,
 } from "./checkout-attempt";
@@ -39,10 +42,12 @@ import {
   availablePayments,
   hryvniaCartTerms,
   sellsInHryvnia,
+  shippingTermsKey,
 } from "./options";
+import { createPaymentReturnToken } from "./payment/return-token";
 import { settleCheckoutReturn } from "./payment/settlement";
 import { awaitsCardPayment, paymentNote } from "./payment/status";
-import { writeReceiptCookie } from "./receipt-cookie";
+import { readReceiptCookie, writeReceiptCookie } from "./receipt-cookie";
 import { readPaymentReceipt } from "./payment/return-receipt";
 import type { DeliveryDetails, Order, OrderReceipt } from "./types";
 import {
@@ -82,7 +87,7 @@ function confirmationPage({
   token,
   paymentUnavailable = false,
 }: {
-  token?: string;
+  token: string;
   paymentUnavailable?: boolean;
 }): CheckoutDestination {
   const query = new URLSearchParams();
@@ -211,12 +216,20 @@ function snapshotOrder(input: CheckoutInput, cart: Cart): Order {
 
 async function submitOrder(
   order: Order,
-  stored: readonly StoredCartLine[],
   nonce: string,
   attribution?: CrmAttribution,
   marketingConsent?: CrmMarketingConsent,
-): Promise<OrderReceipt> {
+): Promise<{ receipt: OrderReceipt; token: string }> {
   order.number = checkoutAttempt(orderPayload(order), nonce);
+  const { revision } = await readCartSnapshot();
+  const previous = await readReceiptCookie();
+  const cartRevision =
+    previous?.number === order.number ? previous.cartRevision : revision;
+  const token = await createPaymentReturnToken(
+    order.number,
+    order.payment,
+    cartRevision,
+  );
   const created = await createCrmOrder(order, attribution, marketingConsent);
   const status = order.payment === "cod" ? "not-required" : "unpaid";
   const receipt: OrderReceipt = {
@@ -230,10 +243,10 @@ async function submitOrder(
     city: order.delivery.city,
     destination: order.delivery.destination,
     crmReference: created.number ?? created.id,
-    cartFingerprint: cartFingerprint(stored),
+    cartRevision,
   };
   await writeReceiptCookie(receipt);
-  return receipt;
+  return { receipt, token };
 }
 
 /** External writes begin only after a fresh basket, capabilities and address have passed validation. */
@@ -286,6 +299,14 @@ export async function submitCheckout(
       stale: true,
     };
   }
+  if (readString(formData, "expectedShipping") !== shippingTermsKey(cart)) {
+    return {
+      ...failure(
+        "Умови доставки змінилися. Перевірте оновлений підсумок і підтвердьте оформлення ще раз.",
+      ),
+      stale: true,
+    };
+  }
 
   const parsed = validateCheckout(formData);
   if (!parsed.ok) {
@@ -310,6 +331,7 @@ export async function submitCheckout(
   }
 
   let receipt: OrderReceipt;
+  let token: string;
   try {
     const resolved = await resolveDelivery(parsed.value.delivery);
     if (!resolved.ok)
@@ -358,16 +380,15 @@ export async function submitCheckout(
       };
       order.subtotal = expected.data;
     }
-    receipt = await submitOrder(
+    ({ receipt, token } = await submitOrder(
       order,
-      fitted,
       nonce,
       parseSubmittedAttribution(readString(formData, "attribution")),
       marketingConsentPayload(
         readString(formData, "marketingConsent") === "1",
         marketingConsentEnabled(),
       ),
-    );
+    ));
   } catch (error) {
     if (error instanceof CrmApiError && isPromotionRefusal(error))
       return failure(promotionErrorMessage(error.reason, error.details));
@@ -378,34 +399,36 @@ export async function submitCheckout(
 
   // A provider failure after acceptance must never invite the buyer to place the order again.
   try {
-    const current = await settleCheckoutReturn();
+    const current = await settleCheckoutReturn(token);
     if (current?.payment === "card" && awaitsCardPayment(current.status)) {
       return {
         ok: true,
-        redirectTo: await getOrCreatePaymentLink(current.number),
+        redirectTo: await getOrCreatePaymentLink(current.number, token),
       };
     }
   } catch {
     return {
       ok: true,
       redirectTo: confirmationPage({
+        token,
         paymentUnavailable: receipt.payment === "card",
       }),
     };
   }
-  return { ok: true, redirectTo: confirmationPage({}) };
+  return { ok: true, redirectTo: confirmationPage({ token }) };
 }
 
 export async function retryCheckoutPayment(
-  token?: string,
+  token: string,
 ): Promise<CheckoutDestination> {
   let receipt: OrderReceipt | null = null;
+  if (!token) return "/checkout";
   try {
     receipt = await readPaymentReceipt(token);
     if (!receipt || receipt.payment !== "card") return "/checkout";
     const current = await settleCheckoutReturn(token);
     if (current && awaitsCardPayment(current.status)) {
-      return await getOrCreatePaymentLink(current.number);
+      return await getOrCreatePaymentLink(current.number, token);
     }
   } catch {
     return confirmationPage({ token, paymentUnavailable: receipt !== null });

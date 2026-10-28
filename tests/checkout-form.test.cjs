@@ -13,6 +13,7 @@ for (const name of [
   "MutationObserver",
   "getComputedStyle",
   "FormData",
+  "location",
 ]) {
   globalThis[name] =
     typeof dom.window[name] === "function" && name === "getComputedStyle"
@@ -73,7 +74,7 @@ let submissions,
   warehouseSearches,
   warehouseTotal,
   response;
-let statusChecks;
+let statusChecks, statusReply;
 let promoCalls, promoReply;
 const load = createLoader({
   "@/features/checkout/promotions.actions": {
@@ -88,8 +89,9 @@ const load = createLoader({
       React.createElement("a", { href }, children),
   },
   "@/features/checkout/actions": {
-    checkPaymentStatusAction: async () => {
+    syncPaymentStatusAction: async () => {
       statusChecks++;
+      return typeof statusReply === "function" ? statusReply() : statusReply;
     },
     placeOrderAction: async (_state, data) => {
       submissions.push(Object.fromEntries(data));
@@ -154,6 +156,7 @@ beforeEach(() => {
   promoCalls = [];
   promoReply = { ok: false, message: "Unavailable" };
   statusChecks = 0;
+  statusReply = {};
   submissions = [];
   cityQueries = [];
   streetQueries = [];
@@ -165,38 +168,40 @@ beforeEach(() => {
 afterEach(cleanup);
 function setup() {
   const user = userEvent.setup({ document: dom.window.document });
-  render(
-    React.createElement(
-      SWRConfig,
-      { value: { provider: () => new Map(), dedupingInterval: 0 } },
-      React.createElement(CheckoutForm, {
-        cart: {
-          subtotal: 2220,
-          lines: [
-            {
-              variantId: "p1",
-              title: "Test",
-              sku: "SKU-1",
-              quantity: 1,
-              unitPrice: 2220,
-              lineTotal: 2220,
-            },
-          ],
-          itemCount: 1,
-          savings: 0,
-          freeShipping: false,
-          freeShippingThreshold: null,
-          freeShippingRemainder: null,
-          minOrderAmount: null,
-          minOrderRemainder: null,
-          isEmpty: false,
-        },
-        capabilities,
-        checkoutToken: "test-token",
-      }),
-    ),
-  );
+  render(checkoutTree());
   return user;
+}
+function checkoutTree(props = {}) {
+  return React.createElement(
+    SWRConfig,
+    { value: { provider: () => new Map(), dedupingInterval: 0 } },
+    React.createElement(CheckoutForm, {
+      cart: {
+        subtotal: 2220,
+        lines: [
+          {
+            variantId: "p1",
+            title: "Test",
+            sku: "SKU-1",
+            quantity: 1,
+            unitPrice: 2220,
+            lineTotal: 2220,
+          },
+        ],
+        itemCount: 1,
+        savings: 0,
+        freeShipping: false,
+        freeShippingThreshold: null,
+        freeShippingRemainder: null,
+        minOrderAmount: null,
+        minOrderRemainder: null,
+        isEmpty: false,
+      },
+      capabilities,
+      checkoutToken: "test-token",
+      ...props,
+    }),
+  );
 }
 async function selectCity(user, name = "Рівне", option = CITY) {
   const city = screen.getByRole("combobox", { name: /^Населений пункт/ });
@@ -245,6 +250,75 @@ function successfulPromo() {
     },
   };
 }
+
+test("refreshed capabilities select valid methods, clear the old destination and preserve contacts", async () => {
+  const user = userEvent.setup({ document: dom.window.document });
+  const view = render(checkoutTree());
+  await contacts(user);
+  await selectCity(user);
+  await selectBranch(user);
+  const refreshed = {
+    ...capabilities,
+    payments: [{ key: "cod", status: "active" }],
+    shipping: [{ key: "nova_poshta", status: "active", modes: ["doors"] }],
+  };
+  await act(async () => view.rerender(checkoutTree({ capabilities: refreshed })));
+  assert.equal(screen.queryByRole("radio", { name: /Карткою онлайн/ }), null);
+  assert.equal(screen.getByRole("radio", { name: /Накладений платіж/ }).checked, true);
+  assert.equal(screen.getByRole("radio", { name: /Кур’єр Нової пошти/ }).checked, true);
+  assert.equal(screen.queryByRole("combobox", { name: /^Пункт отримання/ }), null);
+  assert.equal(screen.getByRole("textbox", { name: "Email" }).value, "olena@example.com");
+  const street = screen.getByRole("combobox", { name: /^Вулиця/ });
+  await user.type(street, "Київ");
+  await user.click(await screen.findByRole("option", { name: STREET.label }));
+  await user.type(screen.getByRole("textbox", { name: "Будинок" }), "12");
+  await user.click(screen.getByRole("button", { name: /Підтвердити замовлення/ }));
+  await waitFor(() => assert.equal(submissions.length, 1));
+  assert.equal(submissions[0].payment, "cod");
+  assert.equal(submissions[0].delivery, "np-courier");
+  assert.equal(submissions[0].branchRef, "");
+  assert.equal(submissions[0].streetRef, STREET.ref);
+});
+
+test("a refreshed shipping rule invalidates a previously applied promotion", async () => {
+  promoReply = successfulPromo();
+  const user = userEvent.setup({ document: dom.window.document });
+  const view = render(checkoutTree());
+  await user.type(screen.getByRole("textbox", { name: "Email" }), "olena@example.com");
+  await user.type(screen.getByRole("textbox", { name: "Промокод" }), "WELCOME");
+  await user.click(screen.getByRole("button", { name: "Застосувати" }));
+  await screen.findByText(/Промокод застосовано/);
+  const cart = checkoutTree().props.children.props.cart;
+  await act(async () => view.rerender(checkoutTree({ cart: { ...cart, freeShippingThreshold: 3000 } })));
+  assert.equal(screen.queryByText(/Промокод застосовано/), null);
+  assert.equal(screen.getByRole("button", { name: /Перейти до оплати/ }).disabled, true);
+});
+
+test("a payment response clears only the cart revision it purchased", async () => {
+  const revision = require("node:crypto").randomUUID();
+  document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify({ revision, lines: [{ p: "p1", q: 1 }] }))}; Path=/`;
+  statusReply = { cartRevision: revision };
+  await act(async () => render(paymentMonitor(false)));
+  const { parseCartSnapshot } = load("src/features/cart/cart-cookie-data.ts");
+  const raw = document.cookie.split("; ").find((p) => p.startsWith("cjp_cart_v2=")).slice("cjp_cart_v2=".length);
+  assert.deepEqual(parseCartSnapshot(raw).lines, []);
+  assert.notEqual(parseCartSnapshot(raw).revision, revision);
+});
+
+test("a delayed payment response preserves a cart emptied and refilled with identical goods", async () => {
+  const revision = require("node:crypto").randomUUID();
+  document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify({ revision, lines: [{ p: "p1", q: 1 }] }))}; Path=/`;
+  let finish;
+  statusReply = () => new Promise((resolve) => { finish = resolve; });
+  await act(async () => render(paymentMonitor(false)));
+  assert.equal(typeof finish, "function");
+  const { writeBrowserCartLine } = load("src/features/cart/cart-cookie.client.ts");
+  assert.equal(writeBrowserCartLine("p1", null, []), "saved");
+  assert.equal(writeBrowserCartLine("p1", 1, []), "saved");
+  const newer = document.cookie;
+  await act(async () => finish({ cartRevision: revision }));
+  assert.equal(document.cookie, newer);
+});
 
 test("promo summary is invalidated by email changes without another CRM call", async () => {
   promoReply = successfulPromo();
@@ -622,7 +696,7 @@ function paymentMonitor(active) {
     { value: { provider: () => new Map(), dedupingInterval: 0 } },
     React.createElement(
       PaymentStatusPoller,
-      { active, orderId: "order-1" },
+      { active, orderId: "order-1", token: "return-token", shown: "pending" },
       React.createElement("button", null, "Перейти до оплати"),
     ),
   );

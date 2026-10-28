@@ -3,7 +3,6 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { sealData, unsealData } from "iron-session";
 import { z } from "zod";
-import type { StoredCartLine } from "@/features/cart/types";
 import { getCheckoutSessionPassword } from "./session";
 
 const tokenSchema = z.object({ id: z.uuid(), purpose: z.literal("checkout") });
@@ -23,11 +22,6 @@ export async function readCheckoutToken(token: string): Promise<string | null> {
   });
   const parsed = tokenSchema.safeParse(decoded);
   return parsed.success ? parsed.data.id : null;
-}
-
-export function cartFingerprint(lines: readonly StoredCartLine[]): string {
-  const ordered = [...lines].sort((a, b) => a.p.localeCompare(b.p));
-  return createHash("sha256").update(JSON.stringify(ordered)).digest("hex");
 }
 
 /**

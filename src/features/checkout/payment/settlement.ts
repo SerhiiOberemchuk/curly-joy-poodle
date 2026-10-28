@@ -1,8 +1,6 @@
 import "server-only";
-import { readCartCookie, writeCartCookie } from "@/features/cart/cart-cookie";
-import { cartFingerprint } from "../checkout-attempt";
 import { getCrmOrder } from "../crm";
-import { writeReceiptCookie } from "../receipt-cookie";
+import { readReceiptCookie, writeReceiptCookie } from "../receipt-cookie";
 import { readPaymentReceipt } from "./return-receipt";
 import type { CrmOrder } from "../crm/types";
 import type { OrderReceipt } from "../types";
@@ -31,13 +29,8 @@ export async function settleCheckoutReturn(token?: string): Promise<OrderReceipt
   const receipt = await readPaymentReceipt(token);
   if (!receipt) return null;
   const { receipt: current } = await currentReceipt(receipt);
-  await writeReceiptCookie(current);
-  // A buyer may have started a new basket while paying for the previous one.
-  if (
-    (current.status === "paid" || current.payment === "cod") &&
-    cartFingerprint(await readCartCookie()) === current.cartFingerprint
-  ) {
-    await writeCartCookie([]);
-  }
+  if (JSON.stringify(await readReceiptCookie()) !== JSON.stringify(current))
+    await writeReceiptCookie(current);
+  // Cart clearing happens in the browser against its revision at response time.
   return current;
 }

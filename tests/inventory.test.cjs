@@ -86,13 +86,16 @@ function product(overrides = {}) {
   };
 }
 function setCart(lines) {
-  cookieValues.set("cjp_cart_v2", JSON.stringify(lines));
+  cookieValues.set("cjp_cart_v2", JSON.stringify({revision:require("node:crypto").randomUUID(),lines}));
 }
 function form(quantity, variantId = "p1") {
   const data = new FormData();
   data.set("variantId", variantId);
   data.set("quantity", String(quantity));
   return data;
+}
+function cartLines() {
+  return load("src/features/cart/cart-cookie-data.ts").parseCartCookie(cookieValues.get("cjp_cart_v2"));
 }
 async function renderProduct() {
   const { getRecentProduct } = load("src/features/catalog/queries.ts");
@@ -303,7 +306,7 @@ test("cumulative additions cannot exceed stock or silently change the request", 
   setCart([{ p: "p1", q: 20 }]);
   const { addToCartAction } = load("src/features/cart/actions.ts");
   assert.equal((await addToCartAction({}, form(6))).status, "error");
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 20);
+  assert.equal(cartLines()[0].q, 20);
   assert.equal((await addToCartAction({}, form(5))).status, "success");
 });
 
@@ -368,7 +371,7 @@ test("checkout stops before saving an order if stock has decreased", async () =>
   assert.equal(result.status, "error");
   assert.match(result.message, /Наявність товарів змінилася/);
   assert.equal(savedOrders.length, 0);
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 2);
+  assert.equal(cartLines()[0].q, 2);
 });
 
 test("a form rendered from the cart fitted to stock submits on the first try with that cart", async () => {
@@ -402,7 +405,7 @@ test("checkout does not silently submit only the surviving cart items", async ()
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+  assert.deepEqual(cartLines(), [
     { p: "p2", q: 1 },
   ]);
 });
@@ -415,7 +418,7 @@ test("CRM failure prevents additions and checkout without changing the cart", as
   assert.equal((await addToCartAction({}, form(1))).status, "error");
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+  assert.deepEqual(cartLines(), [
     { p: "p1", q: 12 },
   ]);
 });
@@ -450,6 +453,7 @@ test("checkout with sufficient current stock saves the full quantity above ten",
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   const data = new FormData();
   data.set("expectedSubtotal", "840000");
+  data.set("expectedShipping", "[false,null]");
   data.set("checkoutToken", formToken);
   for (const [key, value] of Object.entries({
     firstName: "Test",
@@ -494,13 +498,14 @@ test("duplicate cookie lines cannot bypass the per-product stock check", async (
   assert.equal((await placeOrderAction({}, new FormData())).status, "error");
   assert.equal(savedOrders.length, 0);
   assert.equal(refreshes, 1);
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+  assert.deepEqual(cartLines(), [
     { p: "p1", q: 3 },
   ]);
 });
 
 function checkoutData(overrides = {}) {
-  const stored = JSON.parse(cookieValues.get("cjp_cart_v2") ?? "[]");
+  const stored = cartLines();
+  const { freeShippingThreshold } = load("src/features/checkout/options.ts").hryvniaCartTerms(capabilities);
   const quotedTotal = stored.reduce(
     (sum, line) =>
       sum +
@@ -510,6 +515,7 @@ function checkoutData(overrides = {}) {
   );
   const values = {
     expectedSubtotal: String(quotedTotal),
+    expectedShipping: JSON.stringify([freeShippingThreshold !== null && quotedTotal >= freeShippingThreshold, freeShippingThreshold]),
     checkoutToken: formToken,
     firstName: "Test",
     lastName: "Customer",
@@ -603,7 +609,7 @@ test("checkout uses carrier labels and refs validated on the server", async () =
   assert.equal(savedOrders[0].delivery.branch, "Branch 1");
   assert.equal(savedOrders[0].delivery.branchRef, BRANCH_REF);
   assert.equal(savedOrders[0].delivery.cod, false);
-  assert.equal(JSON.parse(cookieValues.get("cjp_cart_v2"))[0].q, 1);
+  assert.equal(cartLines()[0].q, 1);
 });
 
 test("checkout starts with contacts and an old buyer cookie cannot force login or attach an account", async () => {
@@ -741,7 +747,9 @@ test("a provider failure retains the accepted order and retries payment without 
   assert.equal(savedOrders.length, 1);
   assert.ok(cookieValues.has("cjp_cart_v2"));
   failPayment = false;
-  await assert.rejects(retryPaymentAction(), /redirect:https:/);
+  const receipt = await load("src/features/checkout/receipt-cookie.ts").readReceiptCookie();
+  const token = await load("src/features/checkout/payment/return-token.ts").createPaymentReturnToken(receipt.number);
+  await assert.rejects(retryPaymentAction(token), /redirect:https:/);
   assert.equal(savedOrders.length, 1);
 });
 
@@ -811,7 +819,7 @@ test("a changed basket survives payment settlement for the previous order", asyn
     "src/features/checkout/payment/settlement.ts",
   );
   assert.equal((await settleCheckoutReturn()).status, "paid");
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+  assert.deepEqual(cartLines(), [
     { p: "p1", q: 2 },
   ]);
 });
@@ -899,19 +907,18 @@ test("confirmation page waits for CRM payment, then shows paid, and never claims
   setCart([{ p: "p1", q: 1 }]);
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
-  const { default: Page } = load("src/app/checkout/success/page.tsx");
-  const receiptElement = Page({ searchParams: Promise.resolve({}) }).props
-    .children.props.children;
   async function renderReceipt() {
-    return renderToStaticMarkup(
-      await receiptElement.type(receiptElement.props),
-    );
+    return renderReturn();
   }
   const pending = await renderReceipt();
   assert.match(pending, /Очікуємо підтвердження банку/);
   assert.match(pending, /Перевіряємо оплату…/);
   assert.match(pending, /class="spinner"/);
   assert.doesNotMatch(pending, /Перейти до оплати/);
+  assert.equal(
+    new JSDOM(pending).window.document.querySelector("button").disabled,
+    false,
+  );
   const order = [...crmOrders.values()][0];
   order.payments.push({
     id: "payment-1",
@@ -925,10 +932,25 @@ test("confirmation page waits for CRM payment, then shows paid, and never claims
   assert.match(paid, /Оплачено/);
   assert.match(paid, /Оплату підтверджено/);
   assert.doesNotMatch(paid, /class="spinner"/);
+  assert.doesNotMatch(paid, /Оновити статус|Перейти до оплати|взято в роботу/);
+  const paidButton = new JSDOM(paid).window.document.querySelector("button");
+  assert.equal(paidButton.disabled, true);
+  assert.equal(paidButton.closest("form"), null);
+  for (const status of ["confirmed", "processing"]) {
+    order.status = status;
+    assert.match(
+      await renderReceipt(),
+      /Замовлення успішно оплачено та взято в роботу/,
+    );
+  }
   failApi = true;
   const unavailable = await renderReceipt();
   assert.match(unavailable, /Статус тимчасово недоступний/);
   assert.doesNotMatch(unavailable, /Оплачено|Оплату підтверджено/);
+  assert.doesNotMatch(unavailable, /успішно оплачено|взято в роботу/);
+  const retryButton = new JSDOM(unavailable).window.document.querySelector("button");
+  assert.equal(retryButton.textContent, "Оновити статус");
+  assert.equal(retryButton.disabled, false);
 });
 
 test("a changed checkout total asks for confirmation before creating any order or payment", async () => {
@@ -953,7 +975,7 @@ test("malformed or missing quantities do not become default or truncated purchas
   for (const value of ["", "abc", "2abc", "2.9", "1e3", "9007199254740992"]) {
     setCart([{ p: "p1", q: 2 }]);
     assert.equal((await addToCartAction({}, form(value))).status, "error");
-    assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+    assert.deepEqual(cartLines(), [
       { p: "p1", q: 2 },
     ]);
   }
@@ -1151,8 +1173,140 @@ async function renderReturn(query = {}) {
   const { default: Page } = load("src/app/checkout/success/page.tsx");
   const element = Page({ searchParams: Promise.resolve(query) }).props.children
     .props.children;
-  return renderToStaticMarkup(await element.type(element.props));
+  try {
+    return renderToStaticMarkup(await element.type(element.props));
+  } catch(error) {
+    if (!error.message.startsWith("redirect:/checkout/success?")) throw error;
+    return renderReturn(Object.fromEntries(new URL(error.message.slice(9),"https://shop.test").searchParams));
+  }
 }
+
+async function confirmationUrl(data) {
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  let url;
+  await assert.rejects(placeOrderAction({}, data), (error) => {
+    assert.ok(error.message.startsWith("redirect:/checkout/success?"));
+    url = new URL(error.message.slice(9), "https://shop.test");
+    return true;
+  });
+  return url;
+}
+
+test("a pay button stays bound to its order after another tab creates a newer order", async () => {
+  failPayment = true;
+  setCart([{ p: "p1", q: 1 }]);
+  const first = await confirmationUrl(checkoutData());
+  const token = first.searchParams.get("token");
+  const orderA = [...crmOrders.values()][0];
+  setCart([{ p: "p1", q: 2 }]);
+  await confirmationUrl(checkoutData());
+  const orderB = [...crmOrders.values()][1];
+  assert.notEqual(orderA.externalId, orderB.externalId);
+  assert.equal(first.searchParams.get("payment"), "unavailable");
+  const page = await renderReturn(Object.fromEntries(first.searchParams));
+  assert.match(page, /Перейти до оплати/);
+  assert.match(page, /420/);
+  failPayment = false;
+  const before = requests.length;
+  const { retryPaymentAction, syncPaymentStatusAction } = load("src/features/checkout/actions.ts");
+  await assert.rejects(retryPaymentAction(token), /redirect:https:/);
+  const invoice = requests.slice(before).find((r) => r.url.endsWith("/payment-link") && r.options.body);
+  assert.equal(new URL(invoice.url).pathname.split("/").at(-2), orderA.externalId);
+  assert.equal(orderB.payments.length, 0);
+  orderA.status = "confirmed";
+  orderA.payments[0].status = "paid";
+  await syncPaymentStatusAction(token, "pending");
+  assert.equal((await load("src/features/checkout/receipt-cookie.ts").readReceiptCookie()).number, orderA.externalId);
+  assert.deepEqual(cartLines(), [{ p: "p1", q: 2 }]);
+  const count = requests.length;
+  assert.deepEqual(await syncPaymentStatusAction(undefined), {});
+  await assert.rejects(retryPaymentAction(), /redirect:\/checkout$/);
+  assert.equal(requests.length, count);
+});
+
+test("COD confirmation retains its payment method when opened without the checkout cookie", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const url = await confirmationUrl(checkoutData({ payment: "cod" }));
+  cookieValues.delete("cjp_checkout");
+  const page = await renderReturn(Object.fromEntries(url.searchParams));
+  assert.match(page, /Оплатіть його при отриманні/);
+  assert.doesNotMatch(page, /Перейти до оплати/);
+  const receipt = await load("src/features/checkout/payment/return-receipt.ts").readPaymentReceipt(url.searchParams.get("token"));
+  assert.equal(receipt.payment, "cod");
+  assert.equal(receipt.cartRevision, JSON.parse(cookieValues.get("cjp_cart_v2")).revision);
+});
+
+test("a legacy tokenless confirmation redirects to a proof for the displayed order", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  failPayment = true;
+  await confirmationUrl(checkoutData());
+  const { default: Page } = load("src/app/checkout/success/page.tsx");
+  const element = Page({ searchParams: Promise.resolve({ payment: "unavailable" }) }).props.children.props.children;
+  await assert.rejects(element.type(element.props), asyncRedirect);
+  function asyncRedirect(error) {
+    const url = new URL(error.message.slice(9), "https://shop.test");
+    assert.equal(url.pathname, "/checkout/success");
+    assert.equal(url.searchParams.get("payment"), "unavailable");
+    assert.ok(url.searchParams.get("token"));
+    return true;
+  }
+});
+
+test("a changed free-shipping rule requires confirmation before any order or invoice is created", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  capabilities.cart.freeShippingThreshold = 400;
+  const shown = checkoutData();
+  capabilities.cart.freeShippingThreshold = 500;
+  const { placeOrderAction } = load("src/features/checkout/actions.ts");
+  const result = await placeOrderAction({}, shown);
+  assert.equal(result.status, "error");
+  assert.match(result.message, /Умови доставки змінилися/);
+  assert.equal(savedOrders.length, 0);
+  assert.equal(requests.some((r) => r.url.endsWith("/payment-link")), false);
+  assert.equal(refreshes, 1);
+  await assert.rejects(placeOrderAction({}, checkoutData()), /redirect:https:/);
+  assert.match(savedOrders[0].notes, /Доставка за тарифами перевізника/);
+});
+
+test("settlement returns only the purchased revision and never overwrites a newer identical cart", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  const revision = JSON.parse(cookieValues.get("cjp_cart_v2")).revision;
+  failPayment = true;
+  const url = await confirmationUrl(checkoutData());
+  const order = [...crmOrders.values()][0];
+  order.payments = [{ id: "paid", status: "paid", amount: order.totalAmount, currency: "UAH", refundedAmount: null, createdAt: new Date().toISOString() }];
+  setCart([]);
+  setCart([{ p: "p1", q: 1 }]);
+  const newer = cookieValues.get("cjp_cart_v2");
+  assert.notEqual(JSON.parse(newer).revision, revision);
+  const { syncPaymentStatusAction } = load("src/features/checkout/actions.ts");
+  assert.deepEqual(await syncPaymentStatusAction(url.searchParams.get("token"), "paid"), { cartRevision: revision });
+  assert.equal(cookieValues.get("cjp_cart_v2"), newer);
+});
+
+test("a payment check cannot clear a legacy unversioned basket", async () => {
+  cookieValues.set("cjp_cart_v2", JSON.stringify([{ p: "p1", q: 1 }]));
+  const url = await confirmationUrl(checkoutData({ payment: "cod" }));
+  const result = await load("src/features/checkout/actions.ts").syncPaymentStatusAction(url.searchParams.get("token"), "not-required");
+  assert.equal(result.cartRevision, undefined);
+  assert.deepEqual(cartLines(), [{ p: "p1", q: 1 }]);
+});
+
+test("replaying an accepted form keeps its original cart revision", async () => {
+  setCart([{ p: "p1", q: 1 }]);
+  failPayment = true;
+  const data = checkoutData();
+  const first = await confirmationUrl(data);
+  const { readPaymentReturnProof } = load("src/features/checkout/payment/return-token.ts");
+  const original = await readPaymentReturnProof(first.searchParams.get("token"));
+  setCart([{ p: "p1", q: 1 }]);
+  const newerRevision = JSON.parse(cookieValues.get("cjp_cart_v2")).revision;
+  const repeated = await confirmationUrl(data);
+  const proof = await readPaymentReturnProof(repeated.searchParams.get("token"));
+  assert.equal(savedOrders.length, 1);
+  assert.equal(proof.cartRevision, original.cartRevision);
+  assert.notEqual(proof.cartRevision, newerRevision);
+});
 
 test("a confirmation without a session or a valid return proof renders recovery, not 404", async () => {
   assert.match(await renderReturn(), /Не вдалося відкрити замовлення/);
@@ -1275,7 +1429,7 @@ test("legacy HttpOnly cart is read once and moved to the browser cart on server 
   assert.deepEqual(await readCartCookie(), [{ p: "p1", q: 2 }]);
   const { addToCartAction } = load("src/features/cart/actions.ts");
   assert.equal((await addToCartAction({}, form(1))).status, "success");
-  assert.deepEqual(JSON.parse(cookieValues.get("cjp_cart_v2")), [
+  assert.deepEqual(cartLines(), [
     { p: "p1", q: 3 },
   ]);
   assert.equal(cookieValues.has("cjp_cart"), false);
@@ -1381,7 +1535,7 @@ test("a bank that cannot be opened leaves an unpaid order with a pay button, not
   const { placeOrderAction } = load("src/features/checkout/actions.ts");
   await assert.rejects(
     placeOrderAction({}, checkoutData()),
-    /redirect:\/checkout\/success\?payment=unavailable$/,
+    /redirect:\/checkout\/success\?token=.+&payment=unavailable$/,
   );
   const page = await renderReturn({ payment: "unavailable" });
   assert.match(page, /Не вдалося відкрити оплату/);

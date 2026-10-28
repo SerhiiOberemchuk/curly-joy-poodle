@@ -24,18 +24,33 @@ export async function placeOrderAction(
  * actually changed; the "Оновити статус" button passes none and always refreshes.
  */
 export async function checkPaymentStatusAction(
-  token?: string,
+  token: string,
   shown?: string,
 ): Promise<void> {
+  await syncPaymentStatusAction(token, shown);
+}
+
+/** Returns only the revision of the purchased basket, never a cart mutation. */
+export async function syncPaymentStatusAction(
+  token: string,
+  shown?: string,
+): Promise<{ cartRevision?: string }> {
+  if (typeof token !== "string" || !token) return {};
   let current = "unavailable";
+  let cartRevision: string | undefined;
   try {
-    current = (await settleCheckoutReturn(token))?.status ?? "unavailable";
+    const receipt = await settleCheckoutReturn(token);
+    current = receipt?.status ?? "unavailable";
+    if (receipt?.status === "paid" || receipt?.payment === "cod")
+      cartRevision = receipt.cartRevision;
   } catch {
     // The refreshed page reports an unavailable status; never infer a successful payment.
   }
   if (current !== shown) refresh();
+  return { cartRevision };
 }
 
-export async function retryPaymentAction(token?: string): Promise<void> {
+export async function retryPaymentAction(token: string): Promise<void> {
+  if (typeof token !== "string" || !token) redirect("/checkout");
   redirect(await retryCheckoutPayment(token));
 }

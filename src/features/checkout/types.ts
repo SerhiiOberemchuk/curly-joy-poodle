@@ -64,5 +64,6 @@ export interface OrderReceipt {
   city: string;
   destination: string;
   crmReference: string | null;
-  cartFingerprint: string;
+  /** Absent on older receipts and recovery in another session: never clear its cart. */
+  cartRevision?: string;
 }

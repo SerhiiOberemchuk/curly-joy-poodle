@@ -9,7 +9,6 @@ import styles from "../home.module.css";
 import { getCollectionSlugs } from "@/features/catalog/queries";
 import { getHomeCategories, getHomeRecommendations } from "../queries";
 import { ProductTile } from "./product-tile";
-import { ReferenceArtwork } from "./reference-artwork";
 
 /** A hand-drawn heart after a heading: decoration, not part of its name. */
 function Heart() {
@@ -191,7 +190,6 @@ export async function HomeRecommendations() {
 
   return (
     <section
-      id="recommendations"
       className={styles.recommendations}
       aria-labelledby="recommendations-title"
     >
@@ -242,8 +240,11 @@ export async function HomePromotions() {
         href="/catalog?sort=newest"
         className={`${styles.promo} ${styles.newPromo}`}
       >
-        <ReferenceArtwork
-          window={[20, 1272, 325, 160]}
+        <Image
+          src="/images/home/promo-new-v2.webp"
+          alt=""
+          fill
+          sizes="(max-width: 900px) calc(100vw - 28px), (min-width: 1600px) 510px, 33vw"
           className={styles.promoImage}
         />
         <div className={styles.promoCopy}>
@@ -261,8 +262,11 @@ export async function HomePromotions() {
         href={live.has("all-season") ? "/collection/all-season" : "/catalog"}
         className={`${styles.promo} ${styles.seasonPromo}`}
       >
-        <ReferenceArtwork
-          window={[358, 1272, 310, 163]}
+        <Image
+          src="/images/home/promo-season-v2.webp"
+          alt=""
+          fill
+          sizes="(max-width: 900px) calc(100vw - 28px), (min-width: 1600px) 510px, 33vw"
           className={styles.promoImage}
         />
         <div className={styles.promoCopy}>
@@ -281,8 +285,11 @@ export async function HomePromotions() {
         href={live.has("dress-up") ? "/collection/dress-up" : "/catalog"}
         className={`${styles.promo} ${styles.dressPromo}`}
       >
-        <ReferenceArtwork
-          window={[681, 1272, 322, 160]}
+        <Image
+          src="/images/home/promo-together-v2.webp"
+          alt=""
+          fill
+          sizes="(max-width: 900px) calc(100vw - 28px), (min-width: 1600px) 510px, 33vw"
           className={styles.promoImage}
         />
         <div className={styles.promoCopy}>

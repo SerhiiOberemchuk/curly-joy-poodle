@@ -10,7 +10,6 @@
   gap: var(--space-3);
   overflow-x: auto;
   padding: 4px;
-  scrollbar-width: thin;
 }
 
 .videos {

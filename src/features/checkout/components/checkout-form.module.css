@@ -69,7 +69,7 @@
   min-width: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   background: var(--color-cream);
   transition:
     border-color var(--transition),
@@ -261,7 +261,7 @@
 .selectControl {
   min-height: 48px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   background: var(--color-cream);
 }
 
@@ -363,7 +363,7 @@
   line-height: 1.5;
 }
 
-.consent {
+.marketingConsent {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
@@ -371,7 +371,7 @@
   cursor: pointer;
 }
 
-.consent input {
+.marketingConsent input {
   flex: 0 0 auto;
   width: 18px;
   height: 18px;

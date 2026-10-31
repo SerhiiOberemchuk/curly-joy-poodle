@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui/icon";
 import { FavoritesLink } from "./favorites-link";
 import styles from "./site-header.module.css";
 import { SiteSearch } from "./site-search";
+import { StickyHeader } from "./sticky-header";
 
 const businessLink: NavLink = {
   href: "/business",
@@ -61,76 +62,75 @@ async function MobileMenu() {
 
 export function SiteHeader() {
   return (
-    <header className={styles.header}>
-      <div className={styles.topbar}>
-        <span className={styles.languages}>
-          <span>
-            <span aria-hidden="true">UA</span>
-            <span className="visually-hidden">Українська мова</span>
+    <StickyHeader
+      topbar={
+        <>
+          <span className={styles.languages}>
+            <span>
+              <span aria-hidden="true">UA</span>
+              <span className="visually-hidden">Українська мова</span>
+            </span>
+            <span aria-hidden="true">|</span>
+            <span
+              className={styles.futureLanguage}
+              title="Англійська версія з’явиться пізніше"
+              lang="en"
+            >
+              EN
+            </span>
           </span>
-          <span aria-hidden="true">|</span>
-          <span
-            className={styles.futureLanguage}
-            title="Англійська версія з’явиться пізніше"
-            lang="en"
-          >
-            EN
+          <span className={styles.goodDay} lang="en">
+            Good day <span aria-hidden="true">♡</span>
           </span>
-        </span>
-        <span className={styles.goodDay} lang="en">
-          Good day <span aria-hidden="true">♡</span>
-        </span>
-      </div>
-      <div className={styles.headerBar}>
-        <nav className={styles.navigation} aria-label="Головне меню">
-          <Link className={styles.catalogButton} href="/catalog">
-            <Icon name="menu" />
-            Каталог
-          </Link>
-          {headerNav.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
-          <Image
-            src="/logo_brand.jpg"
-            alt=""
-            width={1024}
-            height={1024}
-            className={styles.logoArtwork}
-            // Shown at 74px on phones and at most ~136px on wide screens. Left
-            // lazy (it is in view, so it loads at once): an eager image gets a
-            // preload hint that would compete with the page's main image.
-            sizes="(width <= 900px) 74px, 136px"
-          />
-          <span lang="en">Happy dogs. Happier people.</span>
+        </>
+      }
+    >
+      <nav className={styles.navigation} aria-label="Головне меню">
+        <Link className={styles.catalogButton} href="/catalog">
+          <Icon name="menu" />
+          Каталог
         </Link>
-        <div className={styles.headerActions}>
-          <SiteSearch />
-          <Link
-            className={`${styles.iconButton} ${styles.tooltipAction}`}
-            href={businessLink.href}
-            aria-label={businessLink.label}
-          >
-            <Icon name="briefcase" />
-            <span className={styles.actionTooltip}>{businessLink.label}</span>
+        {headerNav.map((item) => (
+          <Link key={item.href} href={item.href}>
+            {item.label}
           </Link>
-          <Suspense fallback={null}>
-            <AccountAction />
+        ))}
+      </nav>
+      <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
+        <Image
+          src="/images/brand/logo-brand-clean.png"
+          alt=""
+          width={1024}
+          height={1024}
+          className={styles.logoArtwork}
+          loading="eager"
+          sizes="(width <= 1100px) 74px, 136px"
+        />
+        <span lang="en">Happy dogs. Happier people.</span>
+      </Link>
+      <div className={styles.headerActions}>
+        <SiteSearch />
+        <Link
+          className={`${styles.iconButton} ${styles.tooltipAction}`}
+          href={businessLink.href}
+          aria-label={businessLink.label}
+        >
+          <Icon name="briefcase" />
+          <span className={styles.actionTooltip}>{businessLink.label}</span>
+        </Link>
+        <Suspense fallback={null}>
+          <AccountAction />
+        </Suspense>
+        <FavoritesLink />
+        <Suspense fallback={<CartIndicatorFallback />}>
+          <CartIndicator />
+        </Suspense>
+        <div className={styles.mobileMenu}>
+          <Suspense fallback={<MobileNav links={mobileLinks} />}>
+            <MobileMenu />
           </Suspense>
-          <FavoritesLink />
-          <Suspense fallback={<CartIndicatorFallback />}>
-            <CartIndicator />
-          </Suspense>
-          <div className={styles.mobileMenu}>
-            <Suspense fallback={<MobileNav links={mobileLinks} />}>
-              <MobileMenu />
-            </Suspense>
-          </div>
         </div>
       </div>
-    </header>
+    </StickyHeader>
   );
 }

@@ -87,7 +87,7 @@ export function storeJsonLd() {
       name: site.legalName,
       alternateName: site.name,
       url: site.url,
-      logo: absolute("/logo_brand.jpg"),
+      logo: absolute("/images/brand/logo-brand-clean.png"),
       description: site.description,
       telephone: site.phone,
       email: site.email,

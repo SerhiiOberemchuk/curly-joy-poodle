@@ -10,6 +10,7 @@ export interface WelcomeOffer {
   title: string;
   description: string;
   consentText: string;
+  fields: { fullName: "hidden" | "optional" | "required"; phone: "hidden" | "optional" | "required" };
 }
 export interface WelcomeOfferDialogCopy {
   open: string;
@@ -17,15 +18,18 @@ export interface WelcomeOfferDialogCopy {
   eyebrow: string;
   hint: string;
   email: string;
+  fullName: string;
+  phone: string;
+  optional: string;
   submit: string;
   pending: string;
 }
-export type OfferField = "email" | "consent";
+export type OfferField = "email" | "consent" | "fullName" | "phone";
 export interface OfferState {
   status: "idle" | "error" | "sent";
   message: string;
   errors: Partial<Record<OfferField, string>>;
-  values?: { email: string };
+  values?: { email: string; fullName?: string; phone?: string };
 }
 export const initialOfferState: OfferState = {
   status: "idle",

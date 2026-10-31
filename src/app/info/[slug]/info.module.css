@@ -2,7 +2,7 @@
 .hero, .content { max-width: var(--container-narrow); margin-inline: auto; }
 .hero { margin-block-end: var(--space-7); text-align: center; }
 .eyebrow { margin-block-end: var(--space-3); color: var(--color-accent); font-size: var(--text-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-.title { font-size: var(--text-4xl); }
+.title { font: 400 var(--text-4xl)/1.1 var(--font-home-handwriting), cursive; color: #603b2c; }
 .intro { margin-block-start: var(--space-4); color: var(--color-ink-soft); font-size: var(--text-lg); }
 .heroSkeleton { min-height: 140px; }
 .blocksSkeleton { min-height: 360px; }

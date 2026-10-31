@@ -17,8 +17,6 @@ export async function generateStaticParams() {
   return (slugs.length > 0 ? slugs : [EMPTY_CATALOG_SLUG]).map((category) => ({ category }));
 }
 
-const DEFAULT_TAGLINE = "Речі, які ми обрали для щасливого життя разом.";
-
 /** The CRM text, or one line for a category the merchant left without it. */
 function categoryDescription(category: { title: string; description: string | null }) {
   return category.description ?? `Усі товари категорії «${category.title}» в одному місці.`;
@@ -76,7 +74,6 @@ export default async function Page({
           <CategoryTitle params={params} />
         </Suspense>
       }
-      tagline={DEFAULT_TAGLINE}
       description={
         <Suspense fallback={"\u00a0"}>
           <CategoryDescription params={params} />

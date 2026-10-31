@@ -517,6 +517,7 @@ test("a manually dismissed offer does not reopen at the automatic deadline and r
         title: "Перше знайомство",
         description: "Узгоджені умови",
         consentText: "Погоджуюся",
+        fields: { fullName: "hidden", phone: "hidden" },
       },
       copy: {
         open: "Пропозиція для першого замовлення",
@@ -560,6 +561,7 @@ test("the offer does not open by itself for someone navigating with the keyboard
     title: "Перше знайомство",
     description: "Умови",
     consentText: "Погоджуюся",
+        fields: { fullName: "hidden", phone: "hidden" },
   };
   const copy = {
     open: "Пропозиція для першого замовлення",
@@ -578,4 +580,15 @@ test("the offer does not open by itself for someone navigating with the keyboard
   const pointer = render(React.createElement(WelcomeOfferDialog, { offer, copy }));
   act(() => t.mock.timers.tick(20000));
   assert.equal(pointer.container.querySelector("dialog").open, true);
+});
+
+
+test("the offer renders the CRM-required name and omits a hidden phone field", () => {
+  const { WelcomeOfferDialog } = load("src/features/welcome-offer/components/welcome-offer-dialog.tsx");
+  const { container } = render(React.createElement(WelcomeOfferDialog, {
+    offer: { id: "fields-offer", locale: "uk", revision: "r", teaser: "", title: "Знижка", description: "Умови", consentText: "Погоджуюся", fields: { fullName: "required", phone: "hidden" } },
+    copy: { open: "Відкрити", close: "Закрити", eyebrow: "", hint: "", email: "Email", fullName: "Ім’я", phone: "Телефон", optional: "необов’язково", submit: "Отримати", pending: "Надсилаємо" },
+  }));
+  assert.equal(screen.getByLabelText("Ім’я").required, true);
+  assert.equal(container.querySelector('input[name="phone"]'), null);
 });

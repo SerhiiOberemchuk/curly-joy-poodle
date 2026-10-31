@@ -20,10 +20,9 @@ export const metadata: Metadata = {
 export default function Page({ searchParams }: PageProps<"/catalog">) {
   return (
     <CatalogPage
-      eyebrow="Каталог Curly Joy"
-      title="Усе для життя разом"
-      tagline="Вибираємо речі, якими із задоволенням користувалися б самі — якби мали лапи."
-      description="Одяг для будь-якої погоди, речі для прогулянок, подорожей і затишних днів удома. Усі товари зібрані в одному місці, щоб потрібне знаходилося легко."
+      eyebrow="Curly Joy"
+      title="Каталог"
+      description="Одяг, амуніція та аксесуари для прогулянок і затишних днів удома."
       searchParams={searchParams}
     />
   );

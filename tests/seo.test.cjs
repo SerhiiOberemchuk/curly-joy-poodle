@@ -72,7 +72,7 @@ test("the home page describes the shop with its real contacts and profiles", () 
   const [store, website] = storeJsonLd();
   assert.equal(store["@type"], "OnlineStore");
   assert.equal(store.name, "Curly Joy");
-  assert.equal(store.logo, "https://curly-joy.com/logo_brand.jpg");
+  assert.equal(store.logo, "https://curly-joy.com/images/brand/logo-brand-clean.png");
   assert.ok(store.sameAs.includes("https://www.instagram.com/curly_joy_poodle"));
   assert.equal(website["@type"], "WebSite");
 });

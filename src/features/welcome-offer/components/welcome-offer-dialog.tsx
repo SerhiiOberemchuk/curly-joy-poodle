@@ -138,6 +138,14 @@ export function WelcomeOfferDialog({
                   defaultValue={state.values?.email ?? ""}
                 />
               </div>
+              {(["fullName", "phone"] as const).map((field) => offer.fields[field] === "hidden" ? null : (
+                <div className={styles.field} key={field}>
+                  <label htmlFor={`${id}-${field}`}>{copy[field]}{offer.fields[field] === "optional" ? ` (${copy.optional})` : ""}</label>
+                  <input id={`${id}-${field}`} name={field} type={field === "phone" ? "tel" : "text"}
+                    autoComplete={field === "phone" ? "tel" : "name"} maxLength={field === "phone" ? 50 : 180}
+                    required={offer.fields[field] === "required"} disabled={pending} defaultValue={state.values?.[field] ?? ""} />
+                </div>
+              ))}
               <div className={styles.honeypot} aria-hidden="true">
                 <label htmlFor={`${id}-website`}>Website</label>
                 <input

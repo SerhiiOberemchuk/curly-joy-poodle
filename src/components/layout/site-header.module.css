@@ -1,11 +1,27 @@
 .header {
+  --header-topbar-height: max(30px, 3.2cqw);
+  --header-expanded-height: max(72px, 6.35cqw);
   position: relative;
   z-index: 10;
-  background: #fcf8f4;
+  flex-shrink: 0;
+  /* Keep the document flow stable while the painted navigation shrinks. */
+  height: calc(var(--header-topbar-height) + var(--header-expanded-height));
+  pointer-events: none;
+}
+.header[data-sticky] {
+  position: sticky;
+  top: calc(-1 * var(--header-topbar-height));
+}
+.sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
 }
 .topbar {
-  height: 3.2cqw;
-  min-height: 30px;
+  height: var(--header-topbar-height);
+  pointer-events: auto;
   background: #f2e3da;
   display: flex;
   align-items: center;
@@ -47,9 +63,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 6.35cqw;
+  height: var(--header-expanded-height);
+  min-height: var(--header-expanded-height);
   padding: 0.8cqw 2%;
   gap: 2cqw;
+  background: #fcf8f4;
+  pointer-events: auto;
+  transition: height 180ms ease-out, min-height 180ms ease-out,
+    padding 180ms ease-out, box-shadow 180ms ease-out;
 }
 .navigation {
   display: flex;
@@ -58,12 +79,13 @@
   max-width: calc(50% - 8.5cqw);
   white-space: nowrap;
   /* rem bounds follow the reader's own font size setting. */
-  font-size: clamp(0.625rem, 0.9cqw, 0.875rem);
+  font-size: clamp(0.75rem, 0.9cqw, 0.875rem);
 }
 .navigation a:not(.catalogButton):hover {
   color: #9b6250;
 }
 .catalogButton {
+  min-height: 44px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -99,12 +121,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: top 180ms ease-out, width 180ms ease-out, padding 180ms ease-out;
 }
 .logoArtwork {
   width: 8.5cqw;
   height: auto;
   border-radius: 50%;
   object-fit: contain;
+  transition: width 180ms ease-out;
 }
 .logo > span:last-child {
   margin-top: 0.7cqw;
@@ -112,6 +136,10 @@
   font-size: 0.66cqw;
   letter-spacing: 0.07em;
   white-space: nowrap;
+  max-height: 20px;
+  overflow: hidden;
+  transition: opacity 180ms ease-out, max-height 180ms ease-out,
+    margin-top 180ms ease-out, visibility 180ms;
 }
 .headerActions {
   display: flex;
@@ -222,22 +250,33 @@
   display: none;
 }
 
-@media (width < 1100px) and (width >= 761px) {
-  .navigation {
-    gap: 1cqw;
-    font-size: clamp(0.625rem, 0.96cqw, 0.875rem);
-  }
-  .headerActions {
-    gap: 0.35cqw;
-  }
-  .search {
-    width: 16cqw;
-  }
+.header[data-compact] .headerBar {
+  height: var(--header-height);
+  min-height: var(--header-height);
+  padding-block: 6px;
+  box-shadow: 0 1px 0 var(--color-line);
+}
+.header[data-compact] .logo {
+  top: 10px;
+  width: 72px;
+  padding: 0;
+}
+.header[data-compact] .logoArtwork {
+  width: 52px;
+}
+.header[data-compact] .logo > span:last-child {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
 }
 
-@media (width <= 900px) {
+@media (width <= 1100px) {
+  .header {
+    --header-topbar-height: 30px;
+    --header-expanded-height: 112px;
+  }
   .topbar {
-    height: 30px;
     padding-inline: 18px;
   }
   .goodDay {
@@ -247,7 +286,6 @@
     font-size: 21px;
   }
   .headerBar {
-    min-height: 112px;
     padding: 0 14px 48px;
   }
   .navigation > a:not(.catalogButton) {
@@ -295,7 +333,7 @@
     padding-inline: 8px;
   }
   .search input {
-    font-size: 13px;
+    font-size: 16px;
   }
   .iconButton {
     min-width: 30px;
@@ -318,6 +356,15 @@
   .mobileMenu nav {
     z-index: 30;
   }
+  .header[data-compact] .headerBar {
+    padding: 0 14px 44px;
+  }
+  .header[data-compact] .logo {
+    top: 2px;
+  }
+  .header[data-compact] .logoArtwork {
+    width: 50px;
+  }
 }
 
 @media (width <= 360px) {
@@ -337,5 +384,15 @@
   }
   .logo > span:last-child {
     font-size: 5px;
+  }
+  .header[data-compact] .headerBar {
+    padding-inline: 10px;
+  }
+}
+
+@media (height <= 500px) {
+  .header[data-sticky] {
+    position: relative;
+    top: auto;
   }
 }

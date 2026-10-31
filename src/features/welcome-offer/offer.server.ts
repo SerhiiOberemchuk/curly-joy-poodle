@@ -22,6 +22,8 @@ const decimalSchema = z
 const offerSchema = z.object({
   data: z.object({
     campaignId: z.string().min(1),
+    firstPurchaseOnly: z.boolean().default(true),
+    fields: z.object({ fullName: z.enum(["hidden", "optional", "required"]), phone: z.enum(["hidden", "optional", "required"]) }).default({ fullName: "hidden", phone: "hidden" }),
     discountType: z.enum(["percent", "fixed"]),
     discountValue: decimalSchema,
     currency: z.string(),
@@ -41,6 +43,7 @@ function formatFigures(offer: CrmOffer, locale: Locale): OfferFigures {
   const days = hours % 24 === 0;
   const percent = offer.discountType === "percent";
   return {
+    firstPurchaseOnly: offer.firstPurchaseOnly,
     discount: percent
       ? new Intl.NumberFormat(locale, {
           style: "percent",
@@ -144,12 +147,13 @@ async function readOffer(
       id,
       locale,
       revision: createHash("sha256")
-        .update(JSON.stringify([locale, title, description, consentText]))
+        .update(JSON.stringify([locale, title, description, consentText, campaign.fields, campaign.firstPurchaseOnly]))
         .digest("hex"),
       teaser: copy.section.offer(figures),
       title,
       description,
       consentText,
+      fields: campaign.fields,
     },
     // Without the shop's language the CRM writes in the workspace's own.
     emailLocale: campaign.emailLocales.includes(locale) ? locale : null,
@@ -171,6 +175,8 @@ export async function submitOfferRequest(
   formData: FormData,
 ): Promise<{ state: OfferState; stale?: boolean }> {
   const email = readString(formData, "email");
+  const fullName = readString(formData, "fullName");
+  const phone = readString(formData, "phone");
   const requested = readString(formData, "locale");
   const locale = hasLocale(requested) ? requested : defaultLocale;
   const { messages } = welcomeOfferCopy[locale];
@@ -178,7 +184,7 @@ export async function submitOfferRequest(
     status: "error",
     message,
     errors: {},
-    values: { email },
+    values: { email, fullName, phone },
   });
   const current = await readOffer(locale);
   if (!current || readString(formData, "offerId") !== current.offer.id)
@@ -193,6 +199,9 @@ export async function submitOfferRequest(
   if (!parsed.success) return { state: fail(messages.invalidEmail) };
   if (readString(formData, "consent") !== "on")
     return { state: fail(messages.consentRequired) };
+  const contact = z.object({ fullName: z.string().max(180), phone: z.string().max(50) }).safeParse({ fullName, phone });
+  if (!contact.success || (offer.fields.fullName === "required" && !fullName) || (offer.fields.phone === "required" && !phone))
+    return { state: fail(messages.requiredFields) };
   try {
     // The CRM answers every eligible, repeat and ineligible address identically
     // and mails the code itself, so the shop never learns who already bought.
@@ -201,6 +210,8 @@ export async function submitOfferRequest(
         `/promotions/${encodeURIComponent(offer.id)}/capture`,
         {
           email: parsed.data,
+          ...(offer.fields.fullName !== "hidden" && fullName ? { fullName } : {}),
+          ...(offer.fields.phone !== "hidden" && phone ? { phone } : {}),
           consent: true,
           // Stored as the consent record: exactly the text the buyer accepted.
           consentText: offer.consentText,

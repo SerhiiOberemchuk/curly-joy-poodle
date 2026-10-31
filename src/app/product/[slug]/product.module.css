@@ -266,6 +266,7 @@
   display: grid;
   gap: 5px;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .bundleItemCopy a,
 .bundleItemCopy strong {
@@ -326,7 +327,7 @@
 }
 
 @media (width < 600px) {
-  .bundle { grid-template-columns: 1fr; padding: 22px 18px; border-radius: 24px; }
+  .bundle { grid-template-columns: minmax(0, 1fr); padding: 22px 18px; border-radius: 24px; }
   .bundleItem { gap: 12px; }
   .bundleItem img, .bundlePlaceholder { width: 68px; height: 68px; }
   .page {

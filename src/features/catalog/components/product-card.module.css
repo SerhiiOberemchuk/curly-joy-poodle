@@ -119,3 +119,12 @@
   border-radius: 999px;
   background: #f6eae3;
 }
+
+@container (width < 240px) {
+  .body { padding: 4px 12px 14px; gap: 8px; }
+  .title { font-size: 15px; overflow-wrap: anywhere; }
+  .line { font-size: 10px; letter-spacing: 0.04em; }
+  .summary { font-size: 12px; }
+  .favorite { top: 4px; right: 4px; }
+  .soldOut { font-size: 11px; text-align: center; padding: 8px; }
+}

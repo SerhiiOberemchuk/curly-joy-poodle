@@ -1,0 +1,11 @@
+{
+  "source": "public/logo_brand.jpg",
+  "output": "public/images/brand/logo-brand-clean.png",
+  "width": 1024,
+  "height": 1024,
+  "transparentPixels": 673013,
+  "decontaminatedEdgePixels": 10170,
+  "unchangedProtectedPixels": 361807,
+  "protectedPixelsVerified": true,
+  "resampled": false
+}

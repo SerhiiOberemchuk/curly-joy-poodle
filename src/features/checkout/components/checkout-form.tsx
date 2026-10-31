@@ -298,7 +298,7 @@ export function CheckoutForm({
                 />
               </div>
               {offerMarketingConsent ? (
-                <label className={styles.consent}>
+                <label className={styles.marketingConsent}>
                   <input
                     type="checkbox"
                     checked={marketingConsent}

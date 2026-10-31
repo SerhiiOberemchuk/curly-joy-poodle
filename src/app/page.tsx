@@ -44,9 +44,25 @@ export default function HomePage() {
         <HomeBenefitsWithTerms />
       </Suspense>
       <HomeSocialStats locale={defaultLocale} />
-      <HomeCategories />
-      <HomeRecommendations />
-      <HomePromotions />
+      <Suspense
+        fallback={
+          <p className={styles.catalogLoading} role="status">
+            Готуємо категорії…
+          </p>
+        }
+      >
+        <HomeCategories />
+      </Suspense>
+      <div id="recommendations" className={styles.recommendationsAnchor}>
+        <Suspense
+          fallback={<p className={styles.catalogLoading} role="status">Готуємо рекомендовані товари…</p>}
+        >
+          <HomeRecommendations />
+        </Suspense>
+      </div>
+      <Suspense fallback={null}>
+        <HomePromotions />
+      </Suspense>
       <SocialProofPart>
         <HomeReviews locale={defaultLocale} />
       </SocialProofPart>

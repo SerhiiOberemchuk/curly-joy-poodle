@@ -52,7 +52,6 @@ export default async function Page({
     <CatalogPage
       eyebrow="Добірка Curly Joy"
       title={collection.title}
-      tagline="Речі, які ми обрали для щасливого життя разом."
       description={collectionDescription(collection)}
       searchParams={searchParams}
       collection={collection.slug}

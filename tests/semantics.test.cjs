@@ -8,20 +8,24 @@ const dom = new JSDOM("<!doctype html><html><body></body></html>", {
 });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
-for (const name of ["HTMLElement", "Node", "MutationObserver", "Event"])
+for (const name of ["HTMLElement", "Element", "Node", "MutationObserver", "Event"])
   globalThis[name] = dom.window[name];
+globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const React = require("react");
-const { render, screen, cleanup, fireEvent } = require("@testing-library/react");
+const { render, screen, cleanup } = require("@testing-library/react");
+const userEvent = require("@testing-library/user-event").default;
 
 const load = createLoader({});
 const { SortSelect } = load("src/features/catalog/components/sort-select.tsx");
 const { Price } = load("src/components/ui/price.tsx");
+const { ChoiceSelect } = load("src/components/ui/choice-select.tsx");
 
 afterEach(cleanup);
 
-test("sorting is a native select named by its visible label", () => {
+test("sorting keeps its label and supports keyboard selection and Escape", async () => {
   const changes = [];
+  const user = userEvent.setup({ document });
   render(
     React.createElement(SortSelect, {
       value: "featured",
@@ -29,9 +33,30 @@ test("sorting is a native select named by its visible label", () => {
     }),
   );
   const select = screen.getByRole("combobox", { name: "Сортування" });
-  assert.equal(select.tagName, "SELECT");
-  fireEvent.change(select, { target: { value: "price-asc" } });
+  await user.click(select);
+  assert.ok(screen.getByRole("listbox"));
+  await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
   assert.deepEqual(changes, ["price-asc"]);
+  assert.equal(screen.queryByRole("listbox"), null);
+  await user.click(select);
+  await user.keyboard("{Escape}");
+  assert.equal(screen.queryByRole("listbox"), null);
+  assert.equal(document.activeElement, select);
+});
+
+test("a named choice submits its default and updated value in native FormData", async () => {
+  const user = userEvent.setup({ document });
+  const { container } = render(React.createElement("form", null,
+    React.createElement(ChoiceSelect, {
+      label: "Тип бізнесу", name: "businessType", defaultValue: "shop",
+      options: [{ value: "shop", label: "Зоомагазин" }, { value: "groom", label: "Грумінг-салон" }],
+    }),
+  ));
+  const form = container.querySelector("form");
+  assert.equal(new dom.window.FormData(form).get("businessType"), "shop");
+  await user.click(screen.getByRole("combobox", { name: "Тип бізнесу" }));
+  await user.click(screen.getByRole("option", { name: "Грумінг-салон" }));
+  assert.equal(new dom.window.FormData(form).get("businessType"), "groom");
 });
 
 test("a discounted price tells which amount is current and which is old", () => {

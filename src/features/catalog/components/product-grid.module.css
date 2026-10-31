@@ -22,3 +22,10 @@
 .grid > li > * {
   flex: 1;
 }
+
+@media (360px <= width < 560px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}

@@ -26,7 +26,8 @@
 }
 
 .title {
-  font-size: var(--text-2xl);
+  font: 400 clamp(32px, 4vw, 52px)/1.12 var(--font-home-handwriting, sans-serif);
+  color: #603b2c;
 }
 
 .description {

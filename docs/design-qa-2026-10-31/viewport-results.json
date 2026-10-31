@@ -1,0 +1,327 @@
+[
+  {
+    "page": "home",
+    "width": 320,
+    "height": 740,
+    "client": 305,
+    "h1": 1,
+    "menuVisible": true,
+    "scroll": 305
+  },
+  {
+    "page": "home",
+    "width": 390,
+    "height": 844,
+    "client": 375,
+    "h1": 1,
+    "menuVisible": true,
+    "scroll": 375
+  },
+  {
+    "page": "home",
+    "width": 768,
+    "height": 1024,
+    "client": 753,
+    "h1": 1,
+    "menuVisible": true,
+    "scroll": 753
+  },
+  {
+    "page": "home",
+    "width": 1024,
+    "height": 768,
+    "client": 1009,
+    "h1": 1,
+    "menuVisible": true,
+    "scroll": 1009
+  },
+  {
+    "page": "home",
+    "width": 1440,
+    "height": 900,
+    "client": 1425,
+    "h1": 1,
+    "menuVisible": false,
+    "scroll": 1425
+  },
+  {
+    "page": "/catalog",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Усе для життя разом"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/catalog/aksesuary",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Аксесуари"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/cart",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Ваш кошик"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/checkout",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Оформлення замовлення"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/business",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Співпраця з Curly Joy"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/favorites",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Улюблені ♡"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/info/about",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Про нас"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/info/sizes",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Як виміряти собаку"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/info/delivery",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Способи доставки"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/info/contacts",
+    "width": 390,
+    "client": 375,
+    "error": false,
+    "h1": [
+      "Контакти"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/catalog",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Усе для життя разом"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/cart",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Ваш кошик"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/checkout",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Оформлення замовлення"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/business",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Співпраця з Curly Joy"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/favorites",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Улюблені ♡"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/info/sizes",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Як виміряти собаку"
+    ],
+    "scroll": 1425
+  },
+  {
+    "page": "/catalog",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Усе для життя разом"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/cart",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Ваш кошик"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/checkout",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Оформлення замовлення"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/business",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Співпраця з Curly Joy"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/info/sizes",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Як виміряти собаку"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/catalog",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Усе для життя разом"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/cart",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Ваш кошик"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/checkout",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Оформлення замовлення"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/business",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Співпраця з Curly Joy"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/info/sizes",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Як виміряти собаку"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/product/nabir-groom-myw-00030",
+    "width": 320,
+    "client": 305,
+    "h1": [
+      "Набір Groom"
+    ],
+    "scroll": 305
+  },
+  {
+    "page": "/product/nabir-groom-myw-00030",
+    "width": 390,
+    "client": 375,
+    "h1": [
+      "Набір Groom"
+    ],
+    "scroll": 375
+  },
+  {
+    "page": "/product/nabir-groom-myw-00030",
+    "width": 768,
+    "client": 753,
+    "h1": [
+      "Набір Groom"
+    ],
+    "scroll": 753
+  },
+  {
+    "page": "/product/nabir-groom-myw-00030",
+    "width": 1440,
+    "client": 1425,
+    "h1": [
+      "Набір Groom"
+    ],
+    "scroll": 1425
+  }
+]

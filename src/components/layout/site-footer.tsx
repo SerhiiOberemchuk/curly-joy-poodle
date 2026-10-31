@@ -52,7 +52,7 @@ export function SiteFooter() {
               className={styles.brandLogo}
             >
               <Image
-                src="/logo_brand.jpg"
+                src="/images/brand/logo-brand-clean.png"
                 alt=""
                 width={1024}
                 height={1024}

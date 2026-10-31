@@ -38,7 +38,7 @@
   min-width: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   background: var(--color-cream);
   transition:
     border-color var(--transition),

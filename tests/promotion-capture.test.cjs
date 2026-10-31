@@ -113,7 +113,7 @@ test("the shop renders its own copy around the CRM figures, never the campaign t
   assert.match(shown.teaser, /знижку 5% для першого замовлення/);
   assert.equal(
     plain(shown.description),
-    "Промокод діє 3 дні після надсилання листа, але не довше ніж до 31 жовтня 2026 р. о 02:00. Мінімальна сума замовлення — 800 ₴. Застосуйте код з тим самим email, на який він прийде.",
+    "Промокод діє 3 дні від заявки, але не довше ніж до 31 жовтня 2026 р. о 02:00. Мінімальна сума замовлення — 800 ₴. Застосуйте код з тим самим email, на який він прийде.",
   );
   assert.match(shown.consentText, /^Погоджуюся, щоб Curly Joy/);
   assert.equal(
@@ -134,7 +134,7 @@ test("the shop renders its own copy around the CRM figures, never the campaign t
   assert.equal(plain(fixed.title), "−150 ₴ на перше замовлення");
   assert.equal(
     plain(fixed.description),
-    "Промокод діє 36 годин після надсилання листа. Застосуйте код з тим самим email, на який він прийде.",
+    "Промокод діє 36 годин від заявки. Застосуйте код з тим самим email, на який він прийде.",
   );
   Object.assign(offer, { discountType: "percent", discountValue: "12.50" });
   const capped = await getWelcomeOffer("uk");
@@ -257,4 +257,21 @@ test("a hidden offer explains itself in the server log without the buyer's email
     JSON.stringify(logs.mock.calls.map((call) => call.arguments)),
     /maria/i,
   );
+});
+
+
+test("configured contact fields are validated, forwarded and included in the offer revision", async () => {
+  offer.fields = { fullName: "required", phone: "optional" };
+  const shown = await getWelcomeOffer("uk");
+  assert.notEqual(shown.revision, revision);
+  revision = shown.revision;
+  assert.equal((await submitOfferRequest(data())).state.status, "error");
+  assert.equal((await submitOfferRequest(data({ fullName: "Марія", phone: "+380671234567" }))).state.status, "sent");
+  const sent = calls.findLast((call) => call.body);
+  assert.equal(sent.body.fullName, "Марія");
+  assert.equal(sent.body.phone, "+380671234567");
+  offer.firstPurchaseOnly = false;
+  const existing = await getWelcomeOffer("uk");
+  assert.equal(plain(existing.title), "−5% на замовлення");
+  assert.doesNotMatch(existing.teaser, /першого/);
 });

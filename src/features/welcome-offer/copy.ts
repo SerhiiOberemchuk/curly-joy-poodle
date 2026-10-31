@@ -4,6 +4,7 @@ import type { WelcomeOfferDialogCopy } from "./types";
 
 /** Campaign figures the CRM enforces, already formatted for the locale. */
 export interface OfferFigures {
+  firstPurchaseOnly: boolean;
   discount: string;
   maxDiscount: string | null;
   minimum: string | null;
@@ -32,6 +33,7 @@ interface WelcomeOfferCopy {
     changed: string;
     rejected: string;
     invalidEmail: string;
+    requiredFields: string;
     consentRequired: string;
     throttled: string;
     failed: string;
@@ -42,26 +44,29 @@ const uk: WelcomeOfferCopy = {
   section: {
     eyebrow: "Раді знайомству",
     title: "Ще більше радості разом",
-    offer: ({ discount }) =>
-      `Залиште email — надішлемо персональний промокод на знижку ${discount} для першого замовлення.`,
+    offer: ({ discount, firstPurchaseOnly }) =>
+      `Залиште контакти — надішлемо персональний промокод на знижку ${discount}${firstPurchaseOnly ? " для першого замовлення" : ""}.`,
     community:
       "Нові знахідки, історії наших хвостиків і натхнення для щасливого життя із собакою. Зустрінемось в Instagram?",
     communityLink: "До нашої спільноти",
   },
   dialog: {
-    open: "Пропозиція для першого замовлення",
+    open: "Отримати персональну знижку",
     close: "Закрити пропозицію",
-    eyebrow: "Для першого знайомства",
+    eyebrow: "Персональна пропозиція",
     hint: "Отримайте персональний промокод на email. Створювати обліковий запис не потрібно.",
     email: "Ваш email",
+    fullName: "Ваше ім’я",
+    phone: "Ваш телефон",
+    optional: "необов’язково",
     submit: "Отримати промокод",
     pending: "Надсилаємо…",
   },
   offer: {
-    title: ({ discount }) => `−${discount} на перше замовлення`,
+    title: ({ discount, firstPurchaseOnly }) => `−${discount}${firstPurchaseOnly ? " на перше замовлення" : " на замовлення"}`,
     terms: ({ lifetime, endsAt, minimum, maxDiscount }) =>
       [
-        `Промокод діє ${lifetime} після надсилання листа${endsAt ? `, але не довше ніж до ${endsAt}` : ""}.`,
+        `Промокод діє ${lifetime} від заявки${endsAt ? `, але не довше ніж до ${endsAt}` : ""}.`,
         minimum && `Мінімальна сума замовлення — ${minimum}.`,
         maxDiscount && `Знижка — не більше ${maxDiscount}.`,
         "Застосуйте код з тим самим email, на який він прийде.",
@@ -69,7 +74,7 @@ const uk: WelcomeOfferCopy = {
         .filter(Boolean)
         .join(" "),
     consent:
-      "Погоджуюся, щоб Curly Joy зберіг мій email і надіслав на нього персональний промокод для першого замовлення.",
+      "Погоджуюся, щоб Curly Joy обробив надані контактні дані та надіслав персональний промокод на мій email.",
   },
   messages: {
     sent: "Перевірте пошту: якщо пропозиція доступна для цієї адреси, лист із промокодом уже в дорозі. Використайте той самий email під час оформлення.",
@@ -78,6 +83,7 @@ const uk: WelcomeOfferCopy = {
       "Умови пропозиції оновилися. Перегляньте їх і надішліть запит ще раз.",
     rejected: "Не вдалося надіслати запит.",
     invalidEmail: "Вкажіть коректний email.",
+    requiredFields: "Заповніть обов’язкові поля форми.",
     consentRequired: "Потрібна згода на обробку email для цієї пропозиції.",
     throttled: "Забагато спроб. Зачекайте кілька хвилин і спробуйте ще раз.",
     failed: "Не вдалося завершити запит. Спробуйте ще раз пізніше.",

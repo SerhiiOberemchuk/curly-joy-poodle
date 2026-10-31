@@ -5,6 +5,7 @@ import { useActionState, useEffect, useId, useRef } from "react";
 
 import { AttributionField } from "@/components/attribution/attribution-field";
 import { Button } from "@/components/ui/button";
+import { ChoiceSelect } from "@/components/ui/choice-select";
 import { FormSuccess } from "@/components/ui/form-success";
 import styles from "@/components/ui/form-fields.module.css";
 
@@ -85,9 +86,14 @@ export function B2bRequestForm() {
         />
       </div>
       <div className={styles.row}>
-        <SelectField
+        <ChoiceSelect
+          key={state.values?.businessType ?? ""}
           {...field("businessType")}
           label="Тип бізнесу — необов’язково"
+          options={[
+            { value: "", label: "Не вказано" },
+            ...BUSINESS_TYPES.map((type) => ({ value: type, label: type })),
+          ]}
         />
         <Field
           {...field("city")}
@@ -182,37 +188,6 @@ function Field({
         aria-describedby={error ? `${id}-error` : undefined}
         className={error ? styles.inputInvalid : styles.input}
       />
-      {error ? (
-        <span id={`${id}-error`} className={styles.error}>
-          {error}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function SelectField({ name, label, error, ...selectProps }: FieldProps) {
-  const id = useId();
-  return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={id}>
-        {label}
-      </label>
-      <select
-        {...selectProps}
-        id={id}
-        name={name}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className={error ? styles.inputInvalid : styles.input}
-      >
-        <option value="">Не вказано</option>
-        {BUSINESS_TYPES.map((type) => (
-          <option key={type} value={type}>
-            {type}
-          </option>
-        ))}
-      </select>
       {error ? (
         <span id={`${id}-error`} className={styles.error}>
           {error}

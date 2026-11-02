@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonStyles } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { formatMoney } from "@/lib/money";
 
 import styles from "./cart-view.module.css";
@@ -14,7 +15,9 @@ export function CartEmptyContent({
 }) {
   return (
     <div className={styles.empty}>
-      <span className={styles.emptyGlyph} aria-hidden="true">🛒</span>
+      <span className={styles.emptyGlyph} aria-hidden="true">
+        <Icon name="cart" />
+      </span>
       <h2>Кошик порожній</h2>
       <p className={styles.emptyText}>
         Перегляньте каталог і додайте товари, які вам сподобалися.

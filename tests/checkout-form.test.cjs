@@ -830,3 +830,18 @@ test("mobile menu stays closed after browser back and Escape also works on the t
     screen.getByRole("button", { name: "Відкрити меню" }),
   );
 });
+
+test("the phone field keeps +38 in front, groups the local number and drops extra digits", () => {
+  const { formatPhoneInput, normalizePhone } = load("src/features/checkout/validation.ts");
+  assert.equal(formatPhoneInput("+38 "), "+38 ");
+  assert.equal(formatPhoneInput("+38 6"), "+38 06");
+  assert.equal(formatPhoneInput("+38 0674404394"), "+38 067 440 43 94");
+  assert.equal(formatPhoneInput("+38 067 440 43 945"), "+38 067 440 43 94");
+  assert.equal(formatPhoneInput("+380674404394"), "+38 067 440 43 94");
+  assert.equal(formatPhoneInput("0674404394"), "+38 067 440 43 94");
+  assert.equal(normalizePhone(formatPhoneInput("674404394")), "+380674404394");
+  assert.equal(formatPhoneInput("+38"), "+38 ");
+  let typed = "+38 ";
+  for (const key of "+380671234567") typed = formatPhoneInput(typed + key);
+  assert.equal(typed, "+38 067 123 45 67");
+});

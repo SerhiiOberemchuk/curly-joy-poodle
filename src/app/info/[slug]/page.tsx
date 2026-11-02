@@ -60,7 +60,7 @@ async function InfoBlocks({ params }: { params: InfoParams }) {
     : null;
   const freeShippingThreshold = deliveryTerms?.freeShippingThreshold ?? null;
 
-  return (
+  const content = (
     <>
       {page.blocks.map((block) => (
         <section className={styles.block} key={block.heading}>
@@ -97,6 +97,15 @@ async function InfoBlocks({ params }: { params: InfoParams }) {
         </section>
       ) : null}
     </>
+  );
+  // A section still being prepared reads as one notice, not a finished page.
+  return page.draft ? (
+    <div className={styles.draft}>
+      <p className={styles.draftTag}>Розділ готуємо</p>
+      {content}
+    </div>
+  ) : (
+    content
   );
 }
 

@@ -11,12 +11,16 @@
   padding: 0 clamp(20px, 3vw, 48px) 80px;
 }
 
+.crumbs {
+  padding-top: 20px;
+}
+
 .heading {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
   align-items: end;
   gap: 40px;
-  padding-block: 32px 24px;
+  padding-block: 12px 24px;
   border-bottom: 1px solid #eadbd2;
 }
 
@@ -58,8 +62,10 @@
   padding-bottom: 8px;
 }
 
-.page:has(.searchHeading) .catalog > nav {
-  display: none;
+.searchQuery {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #6b554a;
 }
 
 @media (width <= 760px) {
@@ -67,10 +73,14 @@
     padding-inline: 14px;
   }
 
+  .crumbs {
+    padding-top: 12px;
+  }
+
   .heading {
     grid-template-columns: 1fr;
     gap: 12px;
-    padding-block: 24px 20px;
+    padding-block: 8px 20px;
   }
 
   .description {

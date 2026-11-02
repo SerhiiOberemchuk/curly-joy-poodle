@@ -10,7 +10,8 @@ export function Price({
 }: {
   amount: number;
   compareAtAmount?: number;
-  size?: "sm" | "md" | "lg";
+  /** `card`: the old price stacks above the current one. */
+  size?: "sm" | "md" | "lg" | "card";
   prefix?: string;
 }) {
   const discounted = compareAtAmount !== undefined && compareAtAmount > amount;
@@ -18,8 +19,8 @@ export function Price({
   // Strike-through alone is visual: a screen reader also hears which price is current.
   return (
     <span className={`${styles.price} ${styles[size]}`}>
-      {prefix ? <span className={styles.prefix}>{prefix}</span> : null}
       <span>
+        {prefix ? <span className={styles.prefix}>{prefix} </span> : null}
         {discounted ? <span className="visually-hidden">Ціна зі знижкою: </span> : null}
         {formatMoney(amount)}
       </span>

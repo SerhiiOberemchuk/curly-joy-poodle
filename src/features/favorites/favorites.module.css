@@ -13,3 +13,35 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  border: 1px dashed #dcc6b8;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+  color: var(--color-ink-soft);
+}
+
+.empty svg {
+  width: 32px;
+  height: 32px;
+  color: #c5867b;
+}
+
+.empty a {
+  font-weight: 600;
+  color: var(--color-accent-dark);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}

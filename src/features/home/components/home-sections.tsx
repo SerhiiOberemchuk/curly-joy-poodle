@@ -7,8 +7,8 @@ import { formatMoney } from "@/lib/money";
 
 import styles from "../home.module.css";
 import { getCollectionSlugs } from "@/features/catalog/queries";
+import { ProductGrid } from "@/features/catalog/components/product-grid";
 import { getHomeCategories, getHomeRecommendations } from "../queries";
-import { ProductTile } from "./product-tile";
 
 /** A hand-drawn heart after a heading: decoration, not part of its name. */
 function Heart() {
@@ -50,24 +50,7 @@ export function HomeHero() {
             Переглянути категорії
           </Link>
         </div>
-        <span className={styles.smallDogs} lang="en" aria-hidden="true">
-          Small dogs
-          <br />
-          <span>
-            Big happiness <b>♡</b>
-          </span>
-        </span>
       </div>
-      <span className={styles.happyTogether} lang="en" aria-hidden="true">
-        Happy
-        <br />
-        together
-        <br />
-        <b>♥</b>
-      </span>
-      <span className={styles.bedBrand} lang="en" aria-hidden="true">
-        CURLY JOY
-      </span>
     </section>
   );
 }
@@ -135,51 +118,42 @@ export async function HomeCategories() {
       className={styles.categories}
       aria-labelledby="categories-title"
     >
-      <div className={styles.categoriesHeading}>
-        <h2 id="categories-title">
-          Життя із собакою <Heart />
-        </h2>
+      <div className={styles.sectionHead}>
         <div>
-          <p>Різні історії. Одне велике щастя.</p>
-          <span>Оберіть категорію та знайдіть те, що потрібно вашій собаці.</span>
+          <h2 id="categories-title">
+            Життя із собакою <Heart />
+          </h2>
+          <p>Оберіть категорію та знайдіть те, що потрібно вашій собаці.</p>
         </div>
-        <span className={styles.dogNote} lang="en" aria-hidden="true">
-          Dogs
-          <br />
-          make life
-          <br />
-          better <b>♡</b>
-        </span>
       </div>
-      <div className={styles.categoryGrid}>
+      {/* A row that scrolls sideways once there are more categories than fit. */}
+      <ul className={styles.categoryRow}>
         {categories.map((category) => (
-          <Link
-            key={category.id}
-            href={`/catalog/${category.slug}`}
-            className={styles.categoryCard}
-          >
-            <span className={styles.categoryImage} aria-hidden="true">
-              {category.coverUrl ? (
-                <Image
-                  src={category.coverUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 50vw, 400px"
-                />
-              ) : null}
-            </span>
-            <div className={styles.categoryCaption}>
-              <div>
-                <h3>{category.title}</h3>
-                {category.description ? <p>{category.description}</p> : null}
-              </div>
-              <span className={styles.categoryArrow} aria-hidden="true">
-                <Icon name="arrow" />
+          <li key={category.id}>
+            <Link
+              href={`/catalog/${category.slug}`}
+              className={styles.categoryCard}
+            >
+              <span className={styles.categoryImage} aria-hidden="true">
+                {category.coverUrl ? (
+                  <Image
+                    src={category.coverUrl}
+                    alt=""
+                    fill
+                    sizes="(max-width: 900px) 50vw, 380px"
+                  />
+                ) : null}
               </span>
-            </div>
-          </Link>
+              <span className={styles.categoryCaption}>
+                <span className={styles.categoryTitle}>{category.title}</span>
+                <span className={styles.categoryArrow} aria-hidden="true">
+                  <Icon name="arrow" />
+                </span>
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
@@ -187,41 +161,57 @@ export async function HomeCategories() {
 export async function HomeRecommendations() {
   const { products: recommendations, catalogHref } =
     await getHomeRecommendations();
+  const cta =
+    catalogHref === "/catalog" ? "Переглянути каталог" : "Переглянути добірку";
 
   return (
     <section
       className={styles.recommendations}
       aria-labelledby="recommendations-title"
     >
-      <div className={styles.recommendationCopy}>
-        <h2 id="recommendations-title">
-          Товари
-          <br />
-          для собак <Heart />
-        </h2>
-        <p>
-          Для прогулянок, подорожей
-          <br />
-          і затишних днів удома.
-        </p>
+      <div className={styles.sectionHead}>
+        <div>
+          <h2 id="recommendations-title">
+            Товари для собак <Heart />
+          </h2>
+          <p>Для прогулянок, подорожей і затишних днів удома.</p>
+        </div>
         <Link className={styles.button} href={catalogHref}>
-          {catalogHref === "/catalog"
-            ? "Переглянути каталог"
-            : "Переглянути добірку"}{" "}
-          <Icon name="arrow" />
+          {cta} <Icon name="arrow" />
         </Link>
       </div>
-      <div className={styles.productResults}>
-        {recommendations.length > 0 ? (
-          <div className={styles.productGrid}>
-            {recommendations.map((product) => (
-              <ProductTile key={product.id} product={product} />
-            ))}
+      {recommendations.length > 0 ? (
+        <>
+          <ProductGrid products={recommendations} wide />
+          <div className={styles.sectionFoot}>
+            <Link className={styles.button} href={catalogHref}>
+              До каталогу <Icon name="arrow" />
+            </Link>
           </div>
-        ) : (
-          <p className={styles.emptyResults}>Зараз немає товарів для показу.</p>
-        )}
+        </>
+      ) : (
+        <p className={styles.emptyResults}>Зараз немає товарів для показу.</p>
+      )}
+    </section>
+  );
+}
+
+/** Invites shops, groomers and clinics to the wholesale programme (/business). */
+export function HomeBusiness() {
+  return (
+    <section className={styles.business} aria-labelledby="business-title">
+      <div className={styles.businessCopy}>
+        <p className={styles.eyebrow}>Для бізнесу</p>
+        <h2 id="business-title">Хочете стати партнером Curly Joy?</h2>
+        <p>
+          Зоомагазинам, грумерам, ветклінікам і розплідникам — оптові ціни на
+          товари, які ми обираємо й перевіряємо самі. Залиште заявку, і менеджер
+          зв’яжеться з вами, щоб узгодити умови.
+        </p>
       </div>
+      <Link className={styles.button} href="/business">
+        Заповнити заявку <Icon name="arrow" />
+      </Link>
     </section>
   );
 }

@@ -276,6 +276,9 @@ test("favorite button on a catalog card updates the shared store without navigat
     "@/features/catalog/components/product-artwork": {
       ProductArtwork: () => React.createElement("div"),
     },
+    "@/features/catalog/components/card-cart-button": {
+      CardCartButton: () => null,
+    },
   });
   const { ProductCard } = cardLoad(
     "src/features/catalog/components/product-card.tsx",
@@ -290,6 +293,7 @@ test("favorite button on a catalog card updates the shared store without navigat
     priceFrom: 10000,
     options: [],
     inStock: false,
+    variantId: "variant-1",
   };
   render(
     React.createElement(
@@ -591,4 +595,46 @@ test("the offer renders the CRM-required name and omits a hidden phone field", (
   }));
   assert.equal(screen.getByLabelText("Ім’я").required, true);
   assert.equal(container.querySelector('input[name="phone"]'), null);
+});
+
+test("a product with several CRM photos gets arrows, a counter and thumbnails that switch the main photo", () => {
+  const galleryLoad = createLoader({
+    "@/features/catalog/components/product-artwork": {
+      ProductArtwork: ({ image }) =>
+        React.createElement("img", { alt: image.alt, src: image.src }),
+    },
+  });
+  const { ProductGallery } = galleryLoad(
+    "src/features/catalog/components/product-gallery.tsx",
+  );
+  const images = ["a", "b", "c"].map((name) => ({
+    src: `https://example.com/${name}.jpg`,
+    alt: `Фото ${name}`,
+  }));
+  const { container } = render(React.createElement(ProductGallery, { images }));
+  const main = () => container.querySelector("img").getAttribute("src");
+  const counter = () => container.querySelector("[aria-live]").textContent;
+
+  assert.equal(main(), "https://example.com/a.jpg");
+  assert.equal(counter(), "Фото 1 / 3");
+  assert.equal(screen.getByRole("group", { name: "Зображення товару" }).querySelectorAll("button").length, 3);
+  fireEvent.click(screen.getByRole("button", { name: "Наступне фото" }));
+  assert.equal(main(), "https://example.com/b.jpg");
+  fireEvent.click(screen.getByRole("button", { name: "Попереднє фото" }));
+  fireEvent.click(screen.getByRole("button", { name: "Попереднє фото" }));
+  // From the first photo «previous» wraps round to the last one.
+  assert.equal(main(), "https://example.com/c.jpg");
+  assert.equal(counter(), "Фото 3 / 3");
+  fireEvent.click(screen.getByRole("button", { name: "Фото a — фото 1" }));
+  assert.equal(main(), "https://example.com/a.jpg");
+  assert.equal(
+    screen.getByRole("button", { name: "Фото a — фото 1" }).getAttribute("aria-pressed"),
+    "true",
+  );
+  cleanup();
+
+  // One photo, as the CRM sends today: no arrows, no counter, no thumbnails.
+  render(React.createElement(ProductGallery, { images: images.slice(0, 1) }));
+  assert.equal(screen.queryByRole("button", { name: "Наступне фото" }), null);
+  assert.equal(screen.queryByRole("group", { name: "Зображення товару" }), null);
 });

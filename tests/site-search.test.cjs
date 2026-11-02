@@ -12,8 +12,34 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const React = require("react");
 const { render, screen, fireEvent, cleanup, act } = require("@testing-library/react");
-let pathname, params, submissions;
+let pathname, params, submissions, lookups;
 const load = createLoader({
+  "@/features/catalog/search.actions": {
+    searchSuggestionsAction: async (query) => {
+      lookups.push(query);
+      return {
+        ok: true,
+        total: 7,
+        items: [{
+          id: "p1",
+          slug: "pukhodirka",
+          title: "Пуходірка Emmy&Lily",
+          image: { src: null, alt: "" },
+          priceFrom: 95000,
+          priced: "exact",
+        }],
+      };
+    },
+  },
+  "next/link": {
+    __esModule: true,
+    default: ({ href, children, onClick, ...props }) => React.createElement("a", {
+      ...props,
+      href: typeof href === "string" ? href : `${href.pathname}?q=${href.query.q}`,
+      onClick: (event) => { event.preventDefault(); onClick?.(event); },
+    }, children),
+  },
+  "next/image": { __esModule: true, default: () => null },
   "next/navigation": {
     usePathname: () => pathname,
     useSearchParams: () => params,
@@ -26,6 +52,8 @@ const load = createLoader({
         action,
         onSubmit: (event) => {
           onSubmit?.(event);
+          // Like next/form: a prevented submission does not navigate.
+          if (event.defaultPrevented) return;
           event.preventDefault();
           submissions.push({
             query: new dom.window.FormData(event.currentTarget).get("q"),
@@ -44,6 +72,7 @@ beforeEach(() => {
   pathname = "/";
   params = new URLSearchParams();
   submissions = [];
+  lookups = [];
   mock.timers.enable({ apis: ["setTimeout", "Date"] });
 });
 afterEach(() => {
@@ -51,7 +80,8 @@ afterEach(() => {
   mock.timers.reset();
 });
 
-test("header search waits for two trimmed characters and a 400 ms pause", () => {
+test("catalog search waits for two trimmed characters and a 400 ms pause", () => {
+  pathname = "/catalog";
   render(React.createElement(SiteSearch));
   const input = screen.getByRole("searchbox", { name: "Пошук товарів" });
   change(input, " п ");
@@ -61,11 +91,12 @@ test("header search waits for two trimmed characters and a 400 ms pause", () => 
   tick(399);
   assert.equal(submissions.length, 0);
   tick(1);
-  assert.deepEqual(submissions, [{ query: "пу", replace: false, scroll: false }]);
+  assert.deepEqual(submissions, [{ query: "пу", replace: true, scroll: false }]);
   assert.equal(input.form.getAttribute("action"), "/catalog");
 });
 
 test("continued typing sends only the last value and shortening cancels a pending search", () => {
+  pathname = "/catalog";
   render(React.createElement(SiteSearch));
   const input = screen.getByRole("searchbox");
   change(input, "пу");
@@ -82,6 +113,7 @@ test("continued typing sends only the last value and shortening cancels a pendin
 });
 
 test("manual submission stays immediate and cancels the pending automatic submission", () => {
+  pathname = "/catalog";
   render(React.createElement(SiteSearch));
   const input = screen.getByRole("searchbox");
   change(input, "пуходірка");
@@ -90,6 +122,33 @@ test("manual submission stays immediate and cancels the pending automatic submis
   assert.equal(submissions.length, 1);
   tick(500);
   assert.equal(submissions.length, 1);
+});
+
+test("outside the catalog typing suggests products instead of leaving the page", async () => {
+  render(React.createElement(SiteSearch));
+  const input = screen.getByRole("searchbox");
+  act(() => input.focus());
+  change(input, "пухо");
+  tick(1000);
+  assert.equal(submissions.length, 0);
+  await act(async () => {});
+  assert.deepEqual(lookups, ["пухо"]);
+  assert.ok(screen.getByRole("link", { name: /Пуходірка Emmy&Lily/ }));
+  const all = screen.getByRole("link", { name: /Дивитись усі результати \(7\)/ });
+  assert.equal(all.getAttribute("href"), "/catalog?q=пухо");
+  fireEvent.keyDown(input, { key: "Escape" });
+  assert.equal(screen.queryByRole("link", { name: /Пуходірка/ }), null);
+  fireEvent.submit(input.form);
+  assert.deepEqual(submissions, [{ query: "пухо", replace: false, scroll: false }]);
+});
+
+test("an empty search outside the catalog stays on the page", () => {
+  render(React.createElement(SiteSearch));
+  const input = screen.getByRole("searchbox");
+  change(input, "  ");
+  fireEvent.submit(input.form);
+  assert.equal(submissions.length, 0);
+  assert.equal(document.activeElement, input);
 });
 
 test("clearing catalog search restores all products without adding history entries", () => {
@@ -116,6 +175,7 @@ test("clearing a draft outside the catalog does not navigate", () => {
 });
 
 test("IME composition waits until the complete text is committed", () => {
+  pathname = "/catalog";
   render(React.createElement(SiteSearch));
   const input = screen.getByRole("searchbox");
   fireEvent.compositionStart(input);
@@ -128,8 +188,9 @@ test("IME composition waits until the complete text is committed", () => {
 });
 
 test("leaving the search, changing page or unmounting cancels a pending search", () => {
+  pathname = "/catalog";
   const view = render(React.createElement(SiteSearch));
-  const input = screen.getByRole("searchbox");
+  let input = screen.getByRole("searchbox");
   change(input, "пу");
   fireEvent.blur(input, { relatedTarget: document.body });
   tick(500);
@@ -139,6 +200,9 @@ test("leaving the search, changing page or unmounting cancels a pending search",
   view.rerender(React.createElement(SiteSearch));
   tick(500);
   assert.equal(submissions.length, 0);
+  pathname = "/catalog";
+  view.rerender(React.createElement(SiteSearch));
+  input = screen.getByRole("searchbox");
   change(input, "пуходірка");
   view.unmount();
   tick(500);
@@ -149,7 +213,7 @@ test("direct URLs seed the field, active drafts survive responses, and navigatio
   pathname = "/catalog";
   params = new URLSearchParams({ q: "пуходірка" });
   const view = render(React.createElement(SiteSearch));
-  const input = screen.getByRole("searchbox");
+  let input = screen.getByRole("searchbox");
   assert.equal(input.value, "пуходірка");
   act(() => input.focus());
   change(input, "парфуми");
@@ -164,5 +228,6 @@ test("direct URLs seed the field, active drafts survive responses, and navigatio
   change(input, "пуходірка");
   pathname = "/";
   view.rerender(React.createElement(SiteSearch));
+  input = screen.getByRole("searchbox");
   assert.equal(input.value, "");
 });

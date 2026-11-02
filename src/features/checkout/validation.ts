@@ -11,6 +11,30 @@ export const FIELD_LIMITS = {
   comment: 500,
 } as const;
 
+/** What the phone field starts with: every number the shop serves is Ukrainian. */
+export const PHONE_PREFIX = "+38 ";
+
+/**
+ * Formats the phone field while it is typed: a fixed +38, then the local
+ * number «0XX XXX XX XX». Digits beyond the ten local ones are dropped and a
+ * local number always starts with 0, so the field cannot hold a number of the
+ * wrong length. `normalizePhone` still validates the result on submit and on
+ * the server.
+ */
+export function formatPhoneInput(raw: string): string {
+  // Deleting into the prefix keeps it: the field clears itself on blur.
+  if (PHONE_PREFIX.startsWith(raw)) return PHONE_PREFIX;
+  const typed = raw.startsWith(PHONE_PREFIX) ? raw.slice(PHONE_PREFIX.length) : raw;
+  let local = typed.replace(/\D/g, "");
+  if (local.startsWith("380")) local = local.slice(2);
+  // The country code typed again out of habit: wait for its 0.
+  else if (local === "3" || local === "38") return PHONE_PREFIX + local;
+  if (local && !local.startsWith("0")) local = `0${local}`;
+  local = local.slice(0, 10);
+  const groups = [local.slice(0, 3), local.slice(3, 6), local.slice(6, 8), local.slice(8, 10)];
+  return PHONE_PREFIX + groups.filter(Boolean).join(" ");
+}
+
 export function normalizePhone(raw: string): string | null {
   if (!/^[+\d\s()-]+$/.test(raw)) return null;
   const digits = raw.replace(/\D/g, "");

@@ -2,7 +2,34 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 40px;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+.back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
 }
 
 .form .submit {
@@ -14,7 +41,7 @@
   min-inline-size: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-5);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
@@ -43,14 +70,14 @@
 
 .row {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3) var(--space-4);
 }
 
 .field {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 4px;
 }
 
 .label {
@@ -218,14 +245,24 @@
 }
 
 .consent {
+  max-width: 46ch;
+  margin-inline: auto;
   font-size: var(--text-xs);
   color: var(--color-ink-muted);
   text-align: center;
 }
 
 .consent a {
+  font-weight: 700;
+  color: var(--color-ink-soft);
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color var(--transition);
+}
+
+.consent a:hover {
+  color: var(--color-accent-dark);
+  text-decoration-thickness: 2px;
 }
 
 @media (width >= 560px) {
@@ -365,9 +402,10 @@
 
 .marketingConsent {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -375,5 +413,22 @@
   flex: 0 0 auto;
   width: 18px;
   height: 18px;
-  margin: 2px 0 0;
+  margin: 0;
+}
+
+.marketingConsent:hover input:not(:checked) {
+  border-color: var(--color-accent);
+}
+
+/* Phones: the steps sit straight on the page, without a frame per step. */
+@media (width < 640px) {
+  .fieldset {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .form {
+    gap: var(--space-6);
+  }
 }

@@ -29,8 +29,12 @@ export function StickyHeader({ topbar, children }: { topbar: ReactNode; children
       data-compact={compact || undefined}
     >
       <span ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
-      <div className={styles.topbar}>{topbar}</div>
-      <div className={styles.headerBar}>{children}</div>
+      <div className={styles.topbar}>
+        <div className={styles.topbarInner}>{topbar}</div>
+      </div>
+      <div className={styles.headerBar}>
+        <div className={styles.headerInner}>{children}</div>
+      </div>
     </header>
   );
 }

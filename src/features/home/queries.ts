@@ -1,15 +1,17 @@
 import "server-only";
 
 import {
-  getCategories,
+  getCategoryTiles,
   getCollection,
   getProducts,
+  type CategoryTile,
 } from "@/features/catalog/queries";
-import type { Category, ProductListItem } from "@/features/catalog/types";
+import type { ProductListItem } from "@/features/catalog/types";
 
 /** CRM collection the merchant curates for «Curly Joy рекомендує». */
 export const RECOMMENDATIONS_COLLECTION = "curly-joy-recommends";
-const RECOMMENDATIONS_LIMIT = 12;
+/** Four rows of five on a wide screen: enough to browse without leaving home. */
+const RECOMMENDATIONS_LIMIT = 20;
 
 /**
  * The «Curly Joy рекомендує» shelf: the CRM collection when the merchant has
@@ -35,25 +37,7 @@ export async function getHomeRecommendations(): Promise<{
   };
 }
 
-export interface HomeCategory extends Category {
-  /** The category's own picture, or a product photo from it until one is set. */
-  coverUrl: string | null;
-}
-
 /** Top-level CRM categories for the «Життя із собакою» tiles. */
-export async function getHomeCategories(): Promise<HomeCategory[]> {
-  const categories = (await getCategories()).filter(
-    (category) => category.parentId === null,
-  );
-
-  return Promise.all(
-    categories.map(async (category) => {
-      if (category.imageUrl)
-        return { ...category, coverUrl: category.imageUrl };
-      const products = await getProducts({ category: category.slug });
-      const cover =
-        products.find((product) => product.image.src)?.image.src ?? null;
-      return { ...category, coverUrl: cover };
-    }),
-  );
+export async function getHomeCategories(): Promise<CategoryTile[]> {
+  return getCategoryTiles(null);
 }

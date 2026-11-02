@@ -1,10 +1,15 @@
+/* Columns follow the space the grid has, with or without a filter column. */
+.frame {
+  container-type: inline-size;
+}
+
 .grid {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .empty {
@@ -17,15 +22,35 @@
 
 .grid > li {
   display: flex;
+  min-width: 0;
 }
 
 .grid > li > * {
   flex: 1;
 }
 
-@media (360px <= width < 560px) {
+@container (width < 300px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (width >= 680px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@container (width >= 900px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Full-width shelves (home, favourites) fit a fifth card on wide screens. */
+@container (width >= 1180px) {
+  .wide {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

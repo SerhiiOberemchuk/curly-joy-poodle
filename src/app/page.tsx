@@ -13,6 +13,7 @@ import { openGraph } from "@/lib/metadata";
 import {
   HomeBenefits,
   HomeBenefitsWithTerms,
+  HomeBusiness,
   HomeHero,
   HomeCategories,
   HomePromotions,
@@ -40,10 +41,6 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeJsonLd()) }}
       />
       <HomeHero />
-      <Suspense fallback={<HomeBenefits />}>
-        <HomeBenefitsWithTerms />
-      </Suspense>
-      <HomeSocialStats locale={defaultLocale} />
       <Suspense
         fallback={
           <p className={styles.catalogLoading} role="status">
@@ -53,6 +50,9 @@ export default function HomePage() {
       >
         <HomeCategories />
       </Suspense>
+      <Suspense fallback={null}>
+        <HomePromotions />
+      </Suspense>
       <div id="recommendations" className={styles.recommendationsAnchor}>
         <Suspense
           fallback={<p className={styles.catalogLoading} role="status">Готуємо рекомендовані товари…</p>}
@@ -60,15 +60,17 @@ export default function HomePage() {
           <HomeRecommendations />
         </Suspense>
       </div>
-      <Suspense fallback={null}>
-        <HomePromotions />
+      <Suspense fallback={<HomeBenefits />}>
+        <HomeBenefitsWithTerms />
       </Suspense>
+      <HomeSocialStats locale={defaultLocale} />
       <SocialProofPart>
         <HomeReviews locale={defaultLocale} />
       </SocialProofPart>
       <SocialProofPart>
         <HomeInstagramShots locale={defaultLocale} />
       </SocialProofPart>
+      <HomeBusiness />
       <Suspense fallback={null}>
         <HomeWelcomeOffer locale={defaultLocale} />
       </Suspense>

@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 import { welcomeOfferCopy } from "../copy";
 import { getWelcomeOffer } from "../offer.server";
 import styles from "../welcome-offer.module.css";
-import { WelcomeOfferDialog } from "./welcome-offer-dialog";
+import { WelcomeOfferDialog, WelcomeOfferForm } from "./welcome-offer-dialog";
 
 export async function HomeWelcomeOffer({ locale }: { locale: Locale }) {
   const offer = await getWelcomeOffer(locale);
@@ -22,21 +22,29 @@ export async function HomeWelcomeOffer({ locale }: { locale: Locale }) {
       </div>
       <div className={styles.copy}>
         <span className={styles.eyebrow}>{copy.section.eyebrow}</span>
-        <h2 id="welcome-title">{copy.section.title}</h2>
-        <p>{offer ? offer.teaser : copy.section.community}</p>
         {offer ? (
-          <WelcomeOfferDialog offer={offer} copy={copy.dialog} />
+          <>
+            {/* The offer itself is the headline: what the buyer gets. */}
+            <h2 id="welcome-title">{offer.title}</h2>
+            <p>{offer.teaser}</p>
+            <WelcomeOfferForm offer={offer} copy={copy.dialog} />
+            <WelcomeOfferDialog offer={offer} copy={copy.dialog} trigger={false} />
+          </>
         ) : (
-          <a
-            className={styles.button}
-            href={site.socials[0].href}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {copy.section.communityLink}
-            <NewTabNote />
-            <Icon name="arrow" />
-          </a>
+          <>
+            <h2 id="welcome-title">{copy.section.title}</h2>
+            <p>{copy.section.community}</p>
+            <a
+              className={styles.button}
+              href={site.socials[0].href}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {copy.section.communityLink}
+              <NewTabNote />
+              <Icon name="arrow" />
+            </a>
+          </>
         )}
       </div>
     </section>

@@ -3,13 +3,12 @@
   --home-pink: #f1ddd5;
   --home-paper: #fcf7f1;
   --home-script: var(--font-caveat), cursive;
-  container-type: inline-size;
+  /* Full width, so the header, footer and coloured bands reach both edges of
+     a wide screen; the content itself stays within 1600 px (`.main`). */
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1600px;
   min-height: 100dvh;
-  margin-inline: auto;
   background: var(--home-paper);
   color: #38271f;
   font-family: Arial, Helvetica, sans-serif;
@@ -18,5 +17,8 @@
 
 .main {
   flex: 1;
+  width: 100%;
   min-width: 0;
+  max-width: 1600px;
+  margin-inline: auto;
 }

@@ -24,6 +24,7 @@ import {
 } from "@/features/checkout/payment/status";
 import type { PaymentStatus } from "@/features/checkout/types";
 import { formatMoney } from "@/lib/money";
+import { StatusRefresh } from "@/features/checkout/components/status-refresh";
 import styles from "./success.module.css";
 
 export const metadata: Metadata = {
@@ -205,16 +206,9 @@ async function Receipt({
             Оплату підтверджено
           </Button>
         ) : (
-          <form action={checkStatus}>
-            <Button type="submit" size="lg" variant="outline">
-              Оновити статус
-            </Button>
-          </form>
+          <StatusRefresh action={checkStatus} size="lg" className={styles.refresh} />
         )}
-        <Link
-          href="/catalog"
-          className={buttonStyles({ variant: "outline", size: "lg" })}
-        >
+        <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
           До каталогу
         </Link>
       </div>
@@ -258,9 +252,6 @@ async function Recovery({
   unavailable?: boolean;
 }) {
   const number = token ? await readPaymentReturnToken(token) : null;
-  const checkStatus = token
-    ? checkPaymentStatusAction.bind(null, token, undefined)
-    : undefined;
   return (
     <section className={styles.card}>
       <h1>
@@ -281,11 +272,10 @@ async function Recovery({
             token={token}
             shown="unavailable"
           />
-          <form action={checkStatus}>
-            <Button type="submit" variant="outline">
-              Оновити статус
-            </Button>
-          </form>
+          <StatusRefresh
+            action={checkPaymentStatusAction.bind(null, token, undefined)}
+            className={styles.refresh}
+          />
         </>
       ) : null}
       <Link
@@ -294,10 +284,7 @@ async function Recovery({
       >
         Зв’язатися з нами
       </Link>
-      <Link
-        href="/catalog"
-        className={buttonStyles({ variant: "outline", size: "lg" })}
-      >
+      <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
         До каталогу
       </Link>
     </section>

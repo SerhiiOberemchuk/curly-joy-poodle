@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 import { FormSuccess } from "@/components/ui/form-success";
 import { Icon } from "@/components/ui/icon";
 import { initialReviewState } from "../action-state";
@@ -13,6 +13,14 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
     initialReviewState,
   );
   const id = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  // The server's answer lands next to the fields: take the keyboard to the first.
+  useEffect(() => {
+    if (state.status !== "error") return;
+    formRef.current
+      ?.querySelector<HTMLElement>('[aria-invalid="true"], fieldset[aria-describedby] input')
+      ?.focus();
+  }, [state]);
   const fields = [
     {
       name: "name",
@@ -43,7 +51,9 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
       <p className={styles.formIntro}>
         Поділіться враженнями — допоможіть іншим знайти свою маленьку радість.
       </p>
-      <form action={action} className={styles.form}>
+      {/* The server checks every field and answers next to it, in the
+          shop's own words, instead of the browser's bubbles. */}
+      <form ref={formRef} action={action} className={styles.form} noValidate>
         <fieldset
           className={styles.ratingField}
           disabled={pending}

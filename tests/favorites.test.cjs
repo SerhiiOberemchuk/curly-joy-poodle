@@ -20,11 +20,11 @@ const load = createLoader({
     __esModule: true,
     default: ({ children, ...props }) => React.createElement("a", props, children),
   },
-  "@/features/home/components/product-tile": {
-    ProductTile: ({ product }) => React.createElement("article", null,
+  "@/features/catalog/components/product-grid": {
+    ProductGrid: ({ products }) => products.map((product) => React.createElement("article", { key: product.id },
       product.title,
       React.createElement(FavoriteToggle, { productId: product.id, productTitle: product.title }),
-    ),
+    )),
   },
 });
 const { createFavoritesStore } = load("src/features/favorites/favorites-store.ts");

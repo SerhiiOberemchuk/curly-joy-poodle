@@ -1,6 +1,8 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { formatMoney } from "@/lib/money";
 
 import type { Cart } from "../types";
@@ -67,7 +69,7 @@ export function CartSummary({
 
       <dl className={styles.summaryRow}>
         <dt>Доставка</dt>
-        <dd>
+        <dd className={freeShipping && !shippingPending ? styles.free : undefined}>
           {shippingPending
             ? "Уточнюється під час оформлення"
             : freeShipping
@@ -76,27 +78,30 @@ export function CartSummary({
         </dd>
       </dl>
 
-      {threshold === null ? null : (
-        <p className={styles.note}>
-          {threshold === 0
-            ? "Безкоштовна доставка для всіх замовлень."
-            : `Безкоштовна доставка від ${formatMoney(threshold)} суми товарів${promotion ? " після знижки" : ""}.`}
-        </p>
-      )}
-
       {freeShipping || !remainder || shippingPending ? null : (
         <div className={styles.progress}>
-          <span>
-            {promotion
-              ? `До безкоштовної доставки залишилося ${formatMoney(remainder)} після знижок.`
-              : `Додайте ще на ${formatMoney(remainder)} — і доставка за наш кошт`}
-          </span>
-          <span className={styles.progressTrack}>
+          <p>
+            {promotion ? "До безкоштовної доставки після знижок — ще " : "Додайте ще "}
+            <strong>{formatMoney(remainder)}</strong>
+            {promotion ? "" : ", і доставка буде за наш кошт"}
+          </p>
+          <span
+            className={styles.progressTrack}
+            role="progressbar"
+            aria-label="Шлях до безкоштовної доставки"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
             <span
               className={styles.progressBar}
               style={{ width: `${progress}%` }}
             />
           </span>
+          <p className={styles.progressNote}>
+            Безкоштовна доставка від {formatMoney(threshold ?? 0)}
+            {promotion ? " суми після знижки" : ""}
+          </p>
         </div>
       )}
 
@@ -123,11 +128,12 @@ export function CartSummary({
         </a>
       )}
 
-      <p className={styles.note}>
-        {freeShipping
-          ? "Доставку оплачує магазин."
-          : "Вартість доставки Новою поштою розраховується за тарифами перевізника під час відправлення."}
-      </p>
+      {action === "checkout" ? (
+        <Link href="/catalog" className={styles.back}>
+          <Icon name="chevronLeft" />
+          Продовжити покупки
+        </Link>
+      ) : null}
     </aside>
   );
 }

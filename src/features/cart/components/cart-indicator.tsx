@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Icon } from "@/components/ui/icon";
+
 import { getCartItemCount } from "../queries";
 import { CartCount } from "./cart-count";
 import styles from "./cart-indicator.module.css";
@@ -7,17 +9,7 @@ import styles from "./cart-indicator.module.css";
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <Link href="/cart" className={styles.link}>
-      <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="none">
-        <path
-          d="M3 4h2l1.6 8.4a1.5 1.5 0 0 0 1.5 1.2h6.3a1.5 1.5 0 0 0 1.5-1.2L17 7H6"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="8.5" cy="16.5" r="1.2" fill="currentColor" />
-        <circle cx="14.5" cy="16.5" r="1.2" fill="currentColor" />
-      </svg>
+      <Icon name="cart" />
       <span className={styles.label}>Кошик</span>
       {children}
     </Link>

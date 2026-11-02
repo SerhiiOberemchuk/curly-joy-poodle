@@ -27,8 +27,9 @@
   filter: drop-shadow(0 6px 12px rgb(28 25 23 / 18%));
 }
 
+/* Product shots are taken on white: the frame continues the photo. */
 .photo {
-  background: #f5eee7;
+  background: #fff;
 }
 .photo::after {
   display: none;

@@ -4,6 +4,14 @@
   bottom: 22px;
   z-index: 30;
   font-family: Arial, sans-serif;
+  transition: bottom 200ms ease-out;
+}
+/* Above the product page's phone buy bar while it is shown
+   (keep the width in sync with add-to-cart-form.module.css). */
+@media (width < 900px) {
+  :global(body:has([data-buy-bar][data-visible])) .widget {
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
 }
 .trigger {
   display: flex;

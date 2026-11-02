@@ -9,6 +9,7 @@ import {
   useId,
   useState,
   useTransition,
+  type FocusEventHandler,
 } from "react";
 import {
   useForm,
@@ -30,6 +31,7 @@ import {
 import pageStyles from "@/app/checkout/checkout.module.css";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { formatMoney } from "@/lib/money";
 
 import { initialCheckoutState } from "../action-state";
@@ -48,6 +50,8 @@ import {
   checkoutSchema,
   type CheckoutFormValues,
   FIELD_LIMITS,
+  formatPhoneInput,
+  PHONE_PREFIX,
   type CheckoutField,
 } from "../validation";
 import { MARKETING_CONSENT_TEXT } from "../marketing-consent";
@@ -117,6 +121,16 @@ export function CheckoutForm({
     formState: { errors },
   } = form;
 
+  const phoneField = register("phone");
+  // The number is typed after a fixed +38 and grouped as it grows; anything
+  // past the ten local digits is dropped, so a longer number cannot be entered.
+  const phoneRegistration: UseFormRegisterReturn = {
+    ...phoneField,
+    onChange: (event) => {
+      event.target.value = formatPhoneInput(event.target.value);
+      return phoneField.onChange(event);
+    },
+  };
   const delivery = useWatch({ control, name: "delivery" });
   const payment = useWatch({ control, name: "payment" });
   const email = useWatch({ control, name: "email" });
@@ -235,6 +249,10 @@ export function CheckoutForm({
     <FormProvider {...form}>
       <div className={pageStyles.layout}>
         <section className={pageStyles.formPanel} aria-label="Дані замовлення">
+          <Link href="/cart" className={styles.back}>
+            <Icon name="chevronLeft" />
+            Повернутися до кошика
+          </Link>
           {stockAdjusted ? (
             <p className={styles.stockNotice}>
               Наявність змінилася: ми оновили кількість товарів у замовленні.
@@ -278,12 +296,17 @@ export function CheckoutForm({
                 <Field
                   label="Телефон"
                   required
-                  registration={register("phone")}
+                  registration={phoneRegistration}
                   error={errors.phone}
                   type="tel"
                   inputMode="tel"
-                  placeholder="+380 67 440 43 94"
                   autoComplete="tel"
+                  onFocus={(event) => {
+                    if (!event.currentTarget.value) setValue("phone", PHONE_PREFIX);
+                  }}
+                  onBlur={(event) => {
+                    if (event.currentTarget.value.trim() === PHONE_PREFIX.trim()) setValue("phone", "");
+                  }}
                 />
                 <Field
                   label="Email"
@@ -292,7 +315,6 @@ export function CheckoutForm({
                   error={errors.email}
                   type="email"
                   inputMode="email"
-                  placeholder="name@example.com"
                   autoComplete="email"
                   maxLength={FIELD_LIMITS.email}
                 />
@@ -421,13 +443,6 @@ export function CheckoutForm({
                 ))}
               </div>
 
-              {payment === "card" ? (
-                <p className={styles.paymentNotice}>
-                  Після підтвердження відкриється захищена сторінка Monobank.
-                  Дані картки вводяться там — магазин їх не бачить і не
-                  зберігає.
-                </p>
-              ) : null}
             </fieldset>
 
             <fieldset
@@ -481,7 +496,7 @@ export function CheckoutForm({
                 className={
                   currentResult && !currentResult.ok
                     ? styles.error
-                    : styles.paymentNotice
+                    : styles.hint
                 }
               >
                 {quoting
@@ -556,17 +571,19 @@ function Field({
   label,
   registration,
   error,
+  onBlur,
   ...inputProps
 }: {
   label: string;
   registration: UseFormRegisterReturn;
   error?: FieldError;
   type?: string;
-  placeholder?: string;
   autoComplete?: string;
   inputMode?: "tel" | "email" | "numeric";
   maxLength?: number;
   required?: boolean;
+  onFocus?: FocusEventHandler<HTMLInputElement>;
+  onBlur?: FocusEventHandler<HTMLInputElement>;
 }) {
   const id = useId();
   const message = error?.message;
@@ -579,6 +596,10 @@ function Field({
       <input
         {...inputProps}
         {...registration}
+        onBlur={(event) => {
+          onBlur?.(event);
+          return registration.onBlur(event);
+        }}
         id={id}
         aria-invalid={message ? true : undefined}
         aria-describedby={message ? `${id}-error` : undefined}

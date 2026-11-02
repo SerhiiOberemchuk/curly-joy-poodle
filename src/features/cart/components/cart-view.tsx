@@ -1,4 +1,6 @@
 import { buttonStyles } from "@/components/ui/button";
+import { getProducts } from "@/features/catalog/queries";
+import type { ProductListItem } from "@/features/catalog/types";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 
 import { retryCartAction } from "../actions";
@@ -6,6 +8,19 @@ import { calculateCart } from "../calculate";
 import { getCart } from "../queries";
 import { CartClient } from "./cart-client";
 import styles from "./cart-view.module.css";
+
+/** Small things that are easy to add on the way to free delivery. */
+const SUGGESTION_LIMIT = 10;
+
+/** In-stock products the cart does not hold yet, cheapest first. */
+async function suggestionsFor(variantIds: readonly string[]): Promise<ProductListItem[]> {
+  const inCart = new Set(variantIds);
+  const products = await getProducts().catch((): ProductListItem[] => []);
+  return products
+    .filter((product) => product.inStock && !(product.variantId && inCart.has(product.variantId)))
+    .sort((a, b) => a.priceFrom - b.priceFrom)
+    .slice(0, SUGGESTION_LIMIT);
+}
 
 export async function CartEmpty() {
   const terms = await getDisplayCartTerms().catch(() => null);
@@ -40,5 +55,6 @@ export async function CartView() {
 
   if (cart.isEmpty) return <CartEmpty />;
 
-  return <CartClient initialCart={cart} />;
+  const suggestions = await suggestionsFor(cart.lines.map((line) => line.variantId));
+  return <CartClient initialCart={cart} suggestions={suggestions} />;
 }

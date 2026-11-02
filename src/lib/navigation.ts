@@ -22,10 +22,18 @@ export interface NavLink {
 /** Main menu. One source for the desktop header and the mobile sheet. */
 export const headerNav = [
   { href: "/info/about", label: "Про нас" },
-  { href: "/#recommendations", label: "Curly Joy рекомендує" },
-  { href: "/info/blog", label: "Блог" },
-  { href: "/info/events", label: "Події" },
 ] as const satisfies readonly NavLink[];
+
+/**
+ * Menu sections that have no content yet. Named in the menu with a «скоро»
+ * tag but not linked, so nobody lands on an empty page and has to go back.
+ */
+export const upcomingNav = ["Блог", "Події"] as const;
+
+export const businessNavLink = {
+  href: "/business",
+  label: "Для бізнесу (B2B)",
+} as const satisfies NavLink;
 
 /** Service pages, listed in the footer. */
 export const infoNav = [

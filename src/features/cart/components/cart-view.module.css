@@ -7,18 +7,24 @@
 .lines {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .line {
   display: grid;
-  grid-template-columns: 88px 1fr;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  grid-template-columns: 96px 1fr;
+  gap: var(--space-5);
+  padding: 18px 24px 18px 18px;
   border: 1px solid #ead9cf;
-  border-radius: 26px;
+  border-radius: 24px;
   background: #fffaf6;
-  box-shadow: 0 14px 36px rgb(96 59 44 / 6%);
+}
+
+/* The photo takes the frame's rounding instead of sitting square inside it. */
+.line > :first-child {
+  overflow: hidden;
+  border: 1px solid #efe3da;
+  border-radius: 16px;
 }
 
 .lineBody {
@@ -123,6 +129,8 @@
 }
 
 .summaryTitle {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid #d9bfb1;
   font:
     400 36px/1 var(--font-home-handwriting),
     cursive;
@@ -149,10 +157,40 @@
 .summaryTotal {
   composes: summaryRow;
   padding-block-start: var(--space-4);
-  border-block-start: 1px solid var(--color-line);
-  font-size: var(--text-base);
+  border-block-start: 1px solid #d9bfb1;
+  font-size: var(--text-lg);
   font-weight: 700;
   align-items: baseline;
+}
+
+.summaryTotal dd {
+  font-size: 22px;
+}
+
+.free {
+  font-weight: 700;
+  color: #22705f;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent-dark);
+}
+
+.back:hover {
+  background: rgb(255 255 255 / 55%);
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
 }
 
 .savings {
@@ -163,19 +201,34 @@
 .progress {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fff;
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
 }
 
+.progress strong {
+  color: var(--color-ink);
+  font-weight: 800;
+}
+
+.progressNote {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
 .progressTrack {
-  height: 6px;
+  display: block;
+  height: 8px;
   border-radius: var(--radius-pill);
-  background: rgb(28 25 23 / 10%);
+  background: #f0e4dd;
   overflow: hidden;
 }
 
 .progressBar {
+  display: block;
   height: 100%;
   border-radius: var(--radius-pill);
   background: var(--color-accent);
@@ -206,7 +259,12 @@
   height: 76px;
   border-radius: 50%;
   background: #fffaf6;
-  font-size: 2.4rem;
+  color: var(--color-accent);
+}
+
+.emptyGlyph svg {
+  width: 34px;
+  height: 34px;
 }
 
 .empty h2 {
@@ -231,7 +289,8 @@
 @media (width < 560px) {
   .line {
     grid-template-columns: 72px 1fr;
-    padding: 14px;
+    gap: var(--space-4);
+    padding: 14px 18px 14px 14px;
     border-radius: 22px;
   }
 
@@ -240,4 +299,21 @@
     padding: 22px 18px;
     border-radius: 24px;
   }
+}
+
+.suggestions {
+  margin-top: clamp(40px, 5vw, 64px);
+}
+
+.suggestions h2 {
+  margin-bottom: 6px;
+  font:
+    400 clamp(30px, 3vw, 40px)/1.1 var(--font-home-handwriting),
+    cursive;
+  color: #603b2c;
+}
+
+.suggestions > p {
+  margin-bottom: 18px;
+  color: var(--color-ink-soft);
 }

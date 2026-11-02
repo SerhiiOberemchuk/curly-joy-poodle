@@ -9,6 +9,11 @@
   color: var(--color-ink);
 }
 
+.toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
 .panel {
   position: absolute;
   inset-inline: var(--space-4);
@@ -34,6 +39,26 @@
 
 .link:hover {
   background: var(--color-sand);
+}
+
+.upcoming {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  color: var(--color-ink-muted);
+  font-weight: 600;
+}
+
+.soonTag {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* Keep this breakpoint in sync with site-header.module.css. */

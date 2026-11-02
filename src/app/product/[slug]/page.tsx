@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Icon } from "@/components/ui/icon";
 import { FavoriteToggle } from "@/features/favorites/favorites";
 import { ProductReviews } from "@/features/reviews/components/product-reviews";
@@ -24,7 +25,8 @@ import {
   ProductGallery,
   ProductGallerySkeleton,
 } from "@/features/catalog/components/product-gallery";
-import { ProductGrid } from "@/features/catalog/components/product-grid";
+import { ProductShelf } from "@/features/catalog/components/product-shelf";
+import { discountPercent } from "@/features/catalog/pricing";
 import {
   getBundleComposition,
   getProduct,
@@ -91,37 +93,74 @@ async function ProductCrumbs({ params }: { params: ProductParams }) {
   const category = await getProductCategory(product);
 
   return (
-    <>
-      {category ? (
-        <li>
-          <Link href={`/catalog/${category.slug}`}>{category.title}</Link>
-        </li>
-      ) : null}
-      <li aria-current="page">{product.title}</li>
-    </>
+    <Breadcrumbs
+      trail={[
+        { href: "/catalog", label: "Каталог" },
+        ...(category
+          ? [{ href: `/catalog/${category.slug}` as const, label: category.title }]
+          : []),
+      ]}
+      current={product.title}
+    />
   );
 }
 
 async function ProductPhotos({ params }: { params: ProductParams }) {
   const product = await loadProduct(params);
+  const discount = Math.max(
+    0,
+    ...product.variants.map(
+      (variant) => discountPercent(variant.price, variant.compareAtPrice) ?? 0,
+    ),
+  );
   return (
     <ProductGallery
       key={product.id}
       images={product.images}
       videos={product.videos}
+      soldOut={!product.variants.some((variant) => variant.inStock)}
+      overlay={
+        <>
+          {discount ? (
+            <ul className={styles.galleryBadges} aria-label="Позначки товару">
+              <li className={styles.saleBadge}>−{discount}%</li>
+            </ul>
+          ) : null}
+          <FavoriteToggle
+            productId={product.id}
+            productTitle={product.title}
+            className={styles.favorite}
+          />
+        </>
+      }
     />
   );
 }
 
 async function ProductReviewLink({ productId }: { productId: string }) {
   const summary = await getReviewSummary(modelKeyOf(productId)).catch(() => null);
+  if (!summary?.count) {
+    return (
+      <a href="#review-form" className={styles.reviewLink}>
+        <Icon name="star" />
+        Залиште перший відгук
+      </a>
+    );
+  }
   return (
     <a href="#product-reviews" className={styles.reviewLink}>
-      {summary?.count ? <ReviewStars rating={summary.average ?? 0} /> : null}
-      <span>Відгуки{summary?.count ? ` (${summary.count})` : ""}</span>
+      <ReviewStars rating={summary.average ?? 0} />
+      <span>
+        {(summary.average ?? 0).toFixed(1).replace(".", ",")} · {reviewCount(summary.count)}
+      </span>
     </a>
   );
 }
+
+const reviewCount = (count: number) => {
+  const form = new Intl.PluralRules("uk").select(count);
+  return `${count} ${form === "one" ? "відгук" : form === "few" ? "відгуки" : "відгуків"}`;
+};
 
 async function ProductSummary({ params }: { params: ProductParams }) {
   // Read purchase availability on navigation, rather than at build/prefetch time.
@@ -150,17 +189,12 @@ async function ProductSummary({ params }: { params: ProductParams }) {
       <h1 className={styles.title} id="product-title">
         {product.title}
       </h1>
-      <div className={styles.summaryActions}>
-        <Suspense fallback={<a href="#product-reviews" className={styles.reviewLink}>Відгуки</a>}>
-          <ProductReviewLink productId={product.id} />
-        </Suspense>
-        <FavoriteToggle
-          productId={product.id}
-          productTitle={product.title}
-          className={styles.favorite}
-        />
-      </div>
+      <Suspense fallback={<a href="#product-reviews" className={styles.reviewLink}>Відгуки</a>}>
+        <ProductReviewLink productId={product.id} />
+      </Suspense>
+      {product.summary ? <p className={styles.summary}>{product.summary}</p> : null}
       <AddToCartForm
+        title={product.title}
         optionName={product.optionName}
         variants={product.variants}
       />
@@ -177,8 +211,8 @@ async function ProductTrust() {
   return (
     <ul className={styles.trust} aria-label="Доставка, обмін та оплата">
       <li>
-        <Icon name="truck" />
         <Link href="/info/delivery">
+          <Icon name="truck" />
           <strong>
             {freeFrom !== null
               ? `Безкоштовна доставка${freeFrom > 0 ? ` від ${formatMoney(freeFrom)}` : ""}`
@@ -188,20 +222,39 @@ async function ProductTrust() {
         </Link>
       </li>
       <li>
-        <Icon name="heart" />
         <Link href="/info/returns">
+          <Icon name="heart" />
           <strong>14 днів на обмін</strong>
-          <span>Дивитися умови</span>
+          <span>Умови повернення</span>
         </Link>
       </li>
       <li>
-        <Icon name="shield" />
         <Link href="/info/payment">
+          <Icon name="shield" />
           <strong>Захищена оплата</strong>
-          <span>На стороні платіжного сервісу</span>
+          <span>На стороні банку</span>
         </Link>
       </li>
     </ul>
+  );
+}
+
+/** The CRM's specifications, in a block of their own under the purchase. */
+async function ProductAttributes({ params }: { params: ProductParams }) {
+  const product = await loadProduct(params);
+  if (product.attributes.length === 0) return null;
+  return (
+    <section className={styles.attributes} aria-labelledby="attributes-title">
+      <h2 id="attributes-title">Характеристики</h2>
+      <dl className={styles.attributeList}>
+        {product.attributes.map((attribute) => (
+          <div className={styles.attribute} key={attribute.name}>
+            <dt>{attribute.name}</dt>
+            <dd>{attribute.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -235,59 +288,20 @@ async function Reviews({ params, searchParams }: {
   );
 }
 
-function ReturnsLink({ sized = false }: { sized?: boolean }) {
-  return sized ? (
-    <Link href="/info/returns">
-      <strong>Не підійшов розмір?</strong>
-      <span>Допоможемо з обміном <span aria-hidden="true">↗</span></span>
-    </Link>
-  ) : (
-    <Link href="/info/returns">
-      <strong>Повернення та обмін</strong>
-      <span>Умови повернення <span aria-hidden="true">↗</span></span>
-    </Link>
-  );
-}
-
-async function ProductReturnsLink({ params }: { params: ProductParams }) {
-  const product = await loadProduct(params);
-  return <ReturnsLink sized={product.optionName === "Розмір"} />;
-}
-
 async function ProductDetails({ params }: { params: ProductParams }) {
   const product = await loadProduct(params);
-  const [related, composition] = await Promise.all([
-    getRelatedProducts(product),
-    getBundleComposition(product).catch(() => null),
-  ]);
+  const composition = await getBundleComposition(product).catch(() => null);
 
   return (
     <>
-      {product.descriptionHtml || product.attributes.length > 0 ? (
-        <section className={styles.details} aria-label="Деталі товару">
-          {product.descriptionHtml ? (
-            <div>
-              <h2 className={styles.detailTitle}>Більше про цю річ</h2>
-              {/* Sanitized in catalog-source: p/br/ul/ol/li/strong only, no attributes. */}
-              <div
-                className={styles.description}
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-              />
-            </div>
-          ) : null}
-          {product.attributes.length > 0 ? (
-            <div>
-              <h2 className={styles.detailTitle}>Характеристики</h2>
-              <dl className={styles.list}>
-                {product.attributes.map((attribute) => (
-                  <div className={styles.listItem} key={attribute.name}>
-                    <dt>{attribute.name}:</dt>
-                    <dd>{attribute.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ) : null}
+      {product.descriptionHtml ? (
+        <section className={styles.details} aria-labelledby="overview-title">
+          <h2 id="overview-title" className={styles.detailTitle}>Огляд</h2>
+          {/* Sanitized in catalog-source: p/br/ul/ol/li/strong only, no attributes. */}
+          <div
+            className={styles.description}
+            dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+          />
         </section>
       ) : null}
       {product.type === "bundle" ? (
@@ -325,13 +339,19 @@ async function ProductDetails({ params }: { params: ProductParams }) {
           )}
         </section>
       ) : null}
-      {related.length ? (
-        <section className={styles.related}>
-          <h2>Ще трохи радості</h2>
-          <ProductGrid products={related} />
-        </section>
-      ) : null}
     </>
+  );
+}
+
+async function RelatedProducts({ params }: { params: ProductParams }) {
+  const product = await loadProduct(params);
+  const related = await getRelatedProducts(product, 12);
+  if (related.length === 0) return null;
+  return (
+    <section className={styles.related} aria-labelledby="related-title">
+      <h2 id="related-title">Ще трохи радості</h2>
+      <ProductShelf products={related} label="Рекомендовані товари" />
+    </section>
   );
 }
 
@@ -346,51 +366,39 @@ export default async function Page({ params, searchParams }: PageProps<"/product
   if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`);
   return (
     <div className={styles.page}>
-      <nav aria-label="Навігаційний ланцюжок">
-        <ol className={styles.breadcrumbs}>
-          <li>
-            <Link href="/">Головна</Link>
-          </li>
-          <li>
-            <Link href="/catalog">Каталог</Link>
-          </li>
-          <Suspense fallback={null}>
-            <ProductCrumbs params={params} />
-          </Suspense>
-        </ol>
-      </nav>
+      <div className={styles.crumbs}>
+        <Suspense fallback={null}>
+          <ProductCrumbs params={params} />
+        </Suspense>
+      </div>
       <div className={styles.layout}>
-        <div>
+        <div className={styles.galleryColumn}>
           <Suspense fallback={<ProductGallerySkeleton />}>
             <ProductPhotos params={params} />
           </Suspense>
-          <p className={styles.note}>
-            Для щасливих хвостиків <span aria-hidden="true">♡</span>
-          </p>
         </div>
-        <section className={styles.info} aria-labelledby="product-title">
-          <Suspense fallback={<div className={styles.summarySkeleton} />}>
-            <ProductSummary params={params} />
-          </Suspense>
-          <Suspense fallback={null}>
-            <ProductTrust />
-          </Suspense>
-          <div className={styles.shipping}>
-            <Link href="/info/delivery">
-              <strong>Доставка</strong>
-              <span>Способи та умови відправлення <span aria-hidden="true">↗</span></span>
-            </Link>
-            <Suspense fallback={<ReturnsLink />}>
-              <ProductReturnsLink params={params} />
+        <div className={styles.buyColumn}>
+          <section className={styles.info} aria-labelledby="product-title">
+            <Suspense fallback={<div className={styles.summarySkeleton} />}>
+              <ProductSummary params={params} />
             </Suspense>
-          </div>
-        </section>
+            <Suspense fallback={null}>
+              <ProductTrust />
+            </Suspense>
+          </section>
+          <Suspense fallback={null}>
+            <ProductAttributes params={params} />
+          </Suspense>
+        </div>
       </div>
       <Suspense fallback={null}>
         <ProductDetails params={params} />
       </Suspense>
       <Suspense fallback={null}>
         <Reviews params={params} searchParams={searchParams} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <RelatedProducts params={params} />
       </Suspense>
     </div>
   );

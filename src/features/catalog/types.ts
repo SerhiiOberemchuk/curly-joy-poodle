@@ -83,4 +83,9 @@ export interface ProductListItem {
   /** Variant labels; empty for a single-variant product. */
   options: readonly string[];
   inStock: boolean;
+  /**
+   * The CRM id of the only variant, so a card can add it to the cart in one
+   * click; `null` when the buyer has a size or colour to choose first.
+   */
+  variantId: string | null;
 }

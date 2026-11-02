@@ -104,7 +104,7 @@ test("plus and minus change the displayed quantity, total and shipping immediate
   fireEvent.click(screen.getByRole("button", { name: /Збільшити кількість/ }));
   assert.match(screen.getByText(/Товари \(5 шт\.\)/).textContent, /5 шт/);
   assert.match(screen.getByText(/Разом за товари/).parentElement.textContent, /1\s?600\s?₴/);
-  assert.equal(screen.queryByText(/Додайте ще на/), null);
+  assert.equal(screen.queryByText(/Додайте ще/), null);
   assert.deepEqual(await readCartCookie(), [{ p: "p1", q: 5 }]);
 
   document.cookie = `cjp_cart_v2=${encodeURIComponent(JSON.stringify([
@@ -113,7 +113,7 @@ test("plus and minus change the displayed quantity, total and shipping immediate
 
   fireEvent.click(screen.getByRole("button", { name: /Зменшити кількість/ }));
   assert.match(screen.getByText(/Товари \(4 шт\.\)/).textContent, /4 шт/);
-  assert.ok(screen.getByText(/Додайте ще на/));
+  assert.ok(screen.getByText(/Додайте ще/));
   assert.deepEqual(await readCartCookie(), [
     { p: "p1", q: 4 }, { p: "p2", q: 1 },
   ]);

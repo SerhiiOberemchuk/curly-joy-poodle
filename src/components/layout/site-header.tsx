@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -7,8 +8,11 @@ import {
   CartIndicator,
   CartIndicatorFallback,
 } from "@/features/cart/components/cart-indicator";
+import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 import { getCustomerAccountUrl } from "@/features/customer-account/queries";
-import { headerNav, type NavLink } from "@/lib/navigation";
+import { formatMoney } from "@/lib/money";
+import { headerNav, upcomingNav, type NavLink } from "@/lib/navigation";
+import { site } from "@/lib/site";
 
 import { Icon } from "@/components/ui/icon";
 
@@ -17,18 +21,13 @@ import styles from "./site-header.module.css";
 import { SiteSearch } from "./site-search";
 import { StickyHeader } from "./sticky-header";
 
-const businessLink: NavLink = {
-  href: "/business",
-  label: "Для бізнесу (B2B)",
-};
-
 const mobileLinks: readonly NavLink[] = [
   { href: "/catalog", label: "Каталог" },
   ...headerNav,
-  businessLink,
 ];
 
 const accountLabel = "Особистий кабінет";
+const deliveryFallback = "Доставка Новою поштою по всій Україні";
 
 /**
  * The buyer account lives in the CRM, on the shop's own address. Shown only
@@ -55,9 +54,23 @@ async function MobileMenu() {
   return (
     <MobileNav
       links={mobileLinks}
+      upcoming={upcomingNav}
       account={url ? { href: url, label: accountLabel } : null}
     />
   );
+}
+
+/** The CRM's free-shipping threshold: the shop's standing offer. */
+async function DeliveryOffer() {
+  // Cached for 30 s, too short for a prerender: read at request time.
+  await connection();
+  const threshold =
+    (await getDisplayCartTerms().catch(() => null))?.freeShippingThreshold ??
+    null;
+  if (threshold === null) return deliveryFallback;
+  return threshold === 0
+    ? "Безкоштовна доставка для всіх замовлень"
+    : `Безкоштовна доставка від ${formatMoney(threshold)}`;
 }
 
 export function SiteHeader() {
@@ -65,35 +78,46 @@ export function SiteHeader() {
     <StickyHeader
       topbar={
         <>
-          <span className={styles.languages}>
+          <p className={styles.topbarOffer}>
+            <Icon name="truck" />
+            <Suspense fallback={deliveryFallback}>
+              <DeliveryOffer />
+            </Suspense>
+          </p>
+          <p className={styles.topbarContacts}>
             <span>
-              <span aria-hidden="true">UA</span>
-              <span className="visually-hidden">Українська мова</span>
+              <Icon name="clock" />
+              {site.workingHours}
             </span>
-            <span aria-hidden="true">|</span>
-            <span
-              className={styles.futureLanguage}
-              title="Англійська версія з’явиться пізніше"
-              lang="en"
-            >
-              EN
-            </span>
-          </span>
-          <span className={styles.goodDay} lang="en">
-            Good day <span aria-hidden="true">♡</span>
-          </span>
+            <a href={site.phoneHref}>
+              <Icon name="phone" />
+              {site.phone}
+            </a>
+          </p>
         </>
       }
     >
+      <div className={styles.mobileMenu}>
+        <Suspense
+          fallback={<MobileNav links={mobileLinks} upcoming={upcomingNav} />}
+        >
+          <MobileMenu />
+        </Suspense>
+      </div>
       <nav className={styles.navigation} aria-label="Головне меню">
         <Link className={styles.catalogButton} href="/catalog">
-          <Icon name="menu" />
           Каталог
         </Link>
         {headerNav.map((item) => (
           <Link key={item.href} href={item.href}>
             {item.label}
           </Link>
+        ))}
+        {upcomingNav.map((label) => (
+          <span key={label} className={styles.upcoming}>
+            {label}
+            <span className={styles.soonTag}>скоро</span>
+          </span>
         ))}
       </nav>
       <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
@@ -104,20 +128,12 @@ export function SiteHeader() {
           height={1024}
           className={styles.logoArtwork}
           loading="eager"
-          sizes="(width <= 1100px) 74px, 136px"
+          sizes="(width <= 1100px) 56px, 136px"
         />
         <span lang="en">Happy dogs. Happier people.</span>
       </Link>
       <div className={styles.headerActions}>
         <SiteSearch />
-        <Link
-          className={`${styles.iconButton} ${styles.tooltipAction}`}
-          href={businessLink.href}
-          aria-label={businessLink.label}
-        >
-          <Icon name="briefcase" />
-          <span className={styles.actionTooltip}>{businessLink.label}</span>
-        </Link>
         <Suspense fallback={null}>
           <AccountAction />
         </Suspense>
@@ -125,12 +141,11 @@ export function SiteHeader() {
         <Suspense fallback={<CartIndicatorFallback />}>
           <CartIndicator />
         </Suspense>
-        <div className={styles.mobileMenu}>
-          <Suspense fallback={<MobileNav links={mobileLinks} />}>
-            <MobileMenu />
-          </Suspense>
-        </div>
       </div>
+      <Link className={styles.mobileCatalog} href="/catalog">
+        Каталог товарів
+        <Icon name="arrow" />
+      </Link>
     </StickyHeader>
   );
 }

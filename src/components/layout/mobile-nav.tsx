@@ -4,21 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { Icon } from "@/components/ui/icon";
 import type { NavLink } from "@/lib/navigation";
 import styles from "./mobile-nav.module.css";
 
 interface MobileNavProps {
   links: readonly NavLink[];
+  /** Sections without content yet: named, tagged «скоро», not linked. */
+  upcoming?: readonly string[];
   /** The buyer account on the shop's CRM address, when one is open. */
   account?: { href: string; label: string } | null;
 }
 
-export function MobileNav({ links, account }: MobileNavProps) {
+export function MobileNav(props: MobileNavProps) {
   const pathname = usePathname();
-  return <MobileNavPanel key={pathname} links={links} account={account} />;
+  return <MobileNavPanel key={pathname} {...props} />;
 }
 
-function MobileNavPanel({ links, account }: MobileNavProps) {
+function MobileNavPanel({ links, upcoming = [], account }: MobileNavProps) {
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -59,29 +62,7 @@ function MobileNavPanel({ links, account }: MobileNavProps) {
           if (event.key === "Escape") setOpen(false);
         }}
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          aria-hidden="true"
-          fill="none"
-        >
-          {open ? (
-            <path
-              d="M5 5l10 10M15 5L5 15"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          ) : (
-            <path
-              d="M3 6h14M3 10h14M3 14h14"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          )}
-        </svg>
+        <Icon name={open ? "close" : "menu"} />
       </button>
 
       {open ? (
@@ -106,6 +87,12 @@ function MobileNavPanel({ links, account }: MobileNavProps) {
             >
               {link.label}
             </Link>
+          ))}
+          {upcoming.map((label) => (
+            <span key={label} className={styles.upcoming}>
+              {label}
+              <span className={styles.soonTag}>скоро</span>
+            </span>
           ))}
           {account ? (
             // Another host, so a plain anchor rather than a client navigation.

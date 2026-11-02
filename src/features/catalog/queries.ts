@@ -113,6 +113,7 @@ function toListItem(product: Product): ProductListItem {
       ? product.variants.flatMap((variant) => (variant.label ? [variant.label] : []))
       : [],
     inStock: available.length > 0,
+    variantId: product.variants.length === 1 ? product.variants[0].id : null,
   };
 }
 
@@ -142,6 +143,27 @@ export async function getCategory(slug: string): Promise<Category | null> {
 
 export async function getCategorySlugs(): Promise<string[]> {
   return (await getCategories()).map((category) => category.slug);
+}
+
+export interface CategoryTile extends Category {
+  /** The category's own picture, or a product photo from it until one is set. */
+  coverUrl: string | null;
+}
+
+/** The categories directly under `parentId` (`null`: the top level), with a cover each. */
+export async function getCategoryTiles(parentId: string | null): Promise<CategoryTile[]> {
+  const categories = (await getCategories()).filter(
+    (category) => category.parentId === parentId,
+  );
+
+  return Promise.all(
+    categories.map(async (category) => {
+      if (category.imageUrl) return { ...category, coverUrl: category.imageUrl };
+      const products = await getProducts({ category: category.slug });
+      const cover = products.find((product) => product.image.src)?.image.src ?? null;
+      return { ...category, coverUrl: cover };
+    }),
+  );
 }
 
 /** `null` when the CRM has no such collection, or it is hidden or out of season. */

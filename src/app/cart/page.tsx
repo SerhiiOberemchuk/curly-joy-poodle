@@ -17,7 +17,7 @@ export default function Page() {
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Майже готово</p>
         <h1 id="cart-title" tabIndex={-1}>Ваш кошик</h1>
-        <p>Перевірте розміри й кількість — далі залишиться лише оформити доставку.</p>
+        <p>Перевірте товари й кількість — далі залишиться лише оформити доставку.</p>
       </header>
 
       <section className={styles.content} aria-label="Товари у кошику">

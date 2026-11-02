@@ -48,8 +48,9 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
+  border: 1px solid #ead9cf;
   border-radius: var(--radius-pill);
-  background: var(--color-sand);
+  background: #fff;
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -136,4 +137,20 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* The button stays in the row; its confirmation drops to a line below. */
+.refresh {
+  display: contents;
+}
+
+.refresh [data-status-note] {
+  order: 1;
+  flex-basis: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.refresh [data-status-note]:empty {
+  display: none;
 }

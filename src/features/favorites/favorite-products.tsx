@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { buttonStyles } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { ProductGrid } from "@/features/catalog/components/product-grid";
 import type { ProductListItem } from "@/features/catalog/types";
-import { ProductTile } from "@/features/home/components/product-tile";
-import styles from "@/features/home/home.module.css";
 
 import { useFavoritesStore } from "./favorites";
+import styles from "./favorites.module.css";
+
+/** Cards per step: a long list grows on request rather than all at once. */
+const PAGE_SIZE = 20;
 
 /** The saved products, resolved against the live catalog in this browser. */
 export function FavoriteProducts({ products }: { products: readonly ProductListItem[] }) {
@@ -16,6 +20,7 @@ export function FavoriteProducts({ products }: { products: readonly ProductListI
   const isHydrated = useFavoritesStore((state) => state.isHydrated);
   const saved = products.filter((product) => ids.includes(product.id));
   const count = saved.length;
+  const [shown, setShown] = useState(PAGE_SIZE);
   const status = useRef<HTMLParagraphElement>(null);
   const previousCount = useRef<number | null>(null);
 
@@ -46,7 +51,7 @@ export function FavoriteProducts({ products }: { products: readonly ProductListI
     return (
       <>
         {region}
-        <div className={styles.emptyResults}>
+        <div className={styles.empty}>
           <Icon name="heart" />
           <p>Тут з’являться товари, які ви позначите сердечком.</p>
           <Link href="/catalog">
@@ -60,11 +65,18 @@ export function FavoriteProducts({ products }: { products: readonly ProductListI
   return (
     <>
       {region}
-      <div className={styles.favoriteGrid}>
-        {saved.map((product) => (
-          <ProductTile key={product.id} product={product} headingLevel={2} />
-        ))}
-      </div>
+      <ProductGrid products={saved.slice(0, shown)} wide headingLevel={2} />
+      {count > shown ? (
+        <div className={styles.more}>
+          <button
+            type="button"
+            className={buttonStyles({ variant: "outline", size: "lg" })}
+            onClick={() => setShown(shown + PAGE_SIZE)}
+          >
+            Показати ще ({count - shown})
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

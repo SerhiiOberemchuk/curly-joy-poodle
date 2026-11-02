@@ -1,56 +1,292 @@
+/* Filter column beside the list on wide screens; above it on narrow ones. */
+.layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin-top: 28px;
+}
+
+.results {
+  min-width: 0;
+  scroll-margin-top: calc(var(--sticky-header-offset) + var(--space-4));
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding-block: var(--space-4);
-  margin-block-end: var(--space-5);
-  border-block-end: 1px solid var(--color-line);
-}
-
-.chipsRow {
-  padding: 18px;
-  margin-top: 24px;
-  border-radius: 24px;
-  background: #f1ddd5;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.chip {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-ink-soft);
-  transition: border-color var(--transition), color var(--transition),
-    background var(--transition);
-}
-
-.chip:hover {
-  border-color: var(--color-ink);
-  color: var(--color-ink);
-}
-
-.chipActive {
-  composes: chip;
-  background: #795446;
-  border-color: #795446;
-  color: var(--color-cream);
-}
-
-.chipActive:hover {
-  color: var(--color-cream);
+  margin-block-end: 16px;
 }
 
 .count {
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
+}
+
+/* ---- Filters ------------------------------------------------------------- */
+.filters {
+  position: sticky;
+  top: calc(var(--sticky-header-offset) + var(--space-4));
+  max-height: calc(100dvh - var(--sticky-header-offset) - 2 * var(--space-4));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.filtersToggle {
+  display: none;
+}
+
+.filtersPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 18px 18px;
+  border: 1px solid #efe3da;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 0 12px;
+  border: 0;
+}
+
+.filterGroup + .filterGroup {
+  border-top: 1px solid #f1e7e0;
+}
+
+.filterGroup fieldset {
+  min-width: 0;
+  border: 0;
+}
+
+.filterTitle {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.categoryList {
+  display: flex;
+  flex-direction: column;
+}
+
+.category,
+.categoryActive {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--color-ink-soft);
+}
+
+.category:hover {
+  background: #f6ece6;
+  color: var(--color-ink);
+}
+
+.categoryActive {
+  background: #f1e1dc;
+  color: var(--color-accent-dark);
+  font-weight: 700;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.check:hover input:not(:checked) {
+  border-color: var(--color-accent);
+}
+
+.checkCount {
+  margin-inline-start: auto;
+  font-size: 12px;
+  color: var(--color-ink-muted);
+}
+
+.priceRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.priceInput {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #e3d3c8;
+  border-radius: 10px;
+  background: #fffaf6;
+  font-size: 15px;
+}
+
+.priceInput:hover {
+  border-color: #c9a796;
+}
+
+.priceInput:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(137 89 77 / 16%);
+}
+
+.priceApply {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #785446;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.priceApply:hover {
+  background: #58382d;
+}
+
+.reset {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Pagination ---------------------------------------------------------- */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.more {
+  min-width: min(100%, 320px);
+  min-height: 48px;
+  padding: 0 28px;
+  border: 1px solid #785446;
+  border-radius: 999px;
+  background: #fff;
+  color: #5b3a2e;
+  font-weight: 700;
+  transition: background-color var(--transition);
+}
+
+.more:hover {
+  background: #f6ece6;
+}
+
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.page,
+.pageActive,
+.pageStep {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 8px;
+  border: 1px solid #e8dad0;
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.page:hover,
+.pageStep:hover:not(:disabled) {
+  border-color: #a8796a;
+  color: var(--color-ink);
+}
+
+.pageActive {
+  border-color: #785446;
+  background: #785446;
+  color: #fff;
+}
+
+.pageStep svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pageStep:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (width < 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .filters {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .filtersToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid #e3d3c8;
+    border-radius: 999px;
+    background: #fff;
+    font-weight: 600;
+  }
+
+  .filtersToggle svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toggleChevron {
+    transition: transform var(--transition);
+  }
+
+  .filtersToggle[aria-expanded="true"] .toggleChevron {
+    transform: rotate(180deg);
+  }
+
+  .filtersPanel {
+    display: none;
+    margin-top: 10px;
+  }
+
+  .filtersPanel[data-open] {
+    display: flex;
+  }
 }

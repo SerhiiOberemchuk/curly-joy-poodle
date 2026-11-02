@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { Icon } from "@/components/ui/icon";
-import { infoNav } from "@/lib/navigation";
+import { businessNavLink, infoNav } from "@/lib/navigation";
 import { paymentMarks, site } from "@/lib/site";
 
 import styles from "./site-footer.module.css";
@@ -23,27 +22,6 @@ export function SiteFooter() {
         />
       </svg>
       <div className={styles.container}>
-        <div className={styles.signature}>
-          <p className={styles.note} lang="en">
-            Happy dogs.
-            <br />
-            <span>
-              Happier people. <b aria-hidden="true">♡</b>
-            </span>
-          </p>
-          <Link
-            href="/"
-            className={styles.wordmark}
-            aria-label="Curly Joy — головна"
-          >
-            CURLY JOY
-          </Link>
-          <div className={styles.pawTrail} aria-hidden="true">
-            <Icon name="paw" />
-            <Icon name="paw" />
-            <Icon name="paw" />
-          </div>
-        </div>
         <div className={styles.grid}>
           <div className={styles.brand}>
             <Link
@@ -62,20 +40,9 @@ export function SiteFooter() {
               Речі, історії та маленькі відкриття для щасливого життя разом із
               собакою.
             </p>
-            <div className={styles.socials}>
-              {site.socials.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  className={styles.social}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  {social.label}
-                  <NewTabNote />
-                </a>
-              ))}
-            </div>
+            <p className={styles.slogan} lang="en">
+              Happy dogs. Happier people. <span aria-hidden="true">♡</span>
+            </p>
           </div>
 
           <nav aria-labelledby="footer-info">
@@ -91,6 +58,9 @@ export function SiteFooter() {
                   <Link href={link.href}>{link.label}</Link>
                 </li>
               ))}
+              <li>
+                <Link href={businessNavLink.href}>{businessNavLink.label}</Link>
+              </li>
             </ul>
           </nav>
 
@@ -110,6 +80,21 @@ export function SiteFooter() {
                 Відповідаємо в робочий час
               </li>
               <li className={styles.contactItem}>{site.address}</li>
+            </ul>
+            <ul className={styles.socials} aria-label="Ми в соцмережах">
+              {site.socials.map((social) => (
+                <li key={social.label}>
+                  <a
+                    href={social.href}
+                    className={styles.social}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {social.label}
+                    <NewTabNote />
+                  </a>
+                </li>
+              ))}
             </ul>
           </address>
         </div>
@@ -132,11 +117,6 @@ export function SiteFooter() {
                     width={mark.width ?? 72}
                     height={mark.height ?? 24}
                   />
-                ) : mark.href ? (
-                  <a href={mark.href} target="_blank" rel="noreferrer noopener">
-                    {mark.label}
-                    <NewTabNote />
-                  </a>
                 ) : (
                   mark.label
                 )}

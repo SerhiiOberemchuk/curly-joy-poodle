@@ -13,9 +13,44 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
-  padding-bottom: 20px;
+  gap: 10px 16px;
+  padding-bottom: 18px;
   border-bottom: 1px solid #e7d8ce;
+}
+
+/* Availability reads at a glance: a coloured pill, not a footnote. */
+.stockIn,
+.stockOut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stockIn {
+  background: var(--color-mint-soft);
+  color: #22705f;
+}
+
+.stockOut {
+  background: #efe7e2;
+  color: var(--color-ink-soft);
+}
+
+.stockDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sku {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: var(--color-ink-muted);
 }
 
 .fieldLabel {
@@ -83,23 +118,29 @@
 .stepper {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
+  min-height: 54px;
+  padding: 0 5px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
-  overflow: hidden;
-  min-height: 48px;
 }
 
+/* The hover is a circle inside the pill, not a slab cut by its edge. */
 .stepperButton {
-  width: 44px;
-  align-self: stretch;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   font-size: var(--text-lg);
   color: var(--color-ink-soft);
-  transition: background var(--transition);
+  transition: background-color var(--transition), color var(--transition);
 }
 
 .stepperButton:hover:not(:disabled) {
-  background: var(--color-sand);
+  background: #f1e1dc;
+  color: var(--color-accent-dark);
 }
 
 .stepperButton:disabled {
@@ -114,12 +155,36 @@
   font-variant-numeric: tabular-nums;
 }
 
-.submit {
+.submit,
+.inCart {
   flex: 1;
   min-width: 200px;
-  border-radius: 999px;
-  background: #795446;
   min-height: 54px;
+  border-radius: 999px;
+}
+
+.submit {
+  background: #795446;
+}
+
+.inCart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--color-mint);
+  color: #fff;
+  font-weight: 700;
+  transition: background-color var(--transition);
+}
+
+.inCart:hover {
+  background: #26786a;
+}
+
+.inCart svg {
+  width: 20px;
+  height: 20px;
 }
 
 .status {
@@ -130,22 +195,79 @@
   font-weight: 600;
 }
 
-.statusSuccess {
-  composes: status;
-  color: var(--color-mint);
-}
-
 .statusError {
   composes: status;
   color: var(--color-danger);
 }
 
-.statusLink {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+/* ---- Phone buy bar --------------------------------------------------------- */
+.buyBar {
+  display: none;
 }
 
-.stock {
-  font-size: var(--text-sm);
-  color: var(--color-ink-muted);
+@media (width < 900px) {
+  .buyBar {
+    position: fixed;
+    z-index: 60;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid #ead9cf;
+    background: #fffdfb;
+    box-shadow: 0 -8px 24px rgb(73 45 34 / 10%);
+    translate: 0 110%;
+    transition: translate 200ms ease-out;
+  }
+
+  .buyBar[data-visible] {
+    translate: 0 0;
+  }
+
+  .buyBarCopy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .buyBarTitle {
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--color-ink-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .buyBarButton,
+  .buyBarInCart {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 999px;
+    background: #795446;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .buyBarInCart {
+    background: var(--color-mint);
+  }
+
+  .buyBarButton svg,
+  .buyBarInCart svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buyBar {
+    transition: none;
+  }
 }

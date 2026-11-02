@@ -7,7 +7,6 @@ export interface PaymentMark {
   src?: string;
   width?: number;
   height?: number;
-  href?: string;
 }
 
 export interface MessengerLink { label: string; href: string }
@@ -58,5 +57,5 @@ export const site = {
 export const paymentMarks: readonly PaymentMark[] = [
   { label: "Visa" },
   { label: "Mastercard" },
-  { label: "Monobank", href: "https://monobank.ua" },
+  { label: "monobank" },
 ];

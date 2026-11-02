@@ -1,6 +1,6 @@
 .header {
-  --header-topbar-height: max(30px, 3.2cqw);
-  --header-expanded-height: max(72px, 6.35cqw);
+  --header-topbar-height: 34px;
+  --header-expanded-height: clamp(72px, 6.35vw, 102px);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
@@ -19,94 +19,123 @@
   width: 1px;
   height: 1px;
 }
+
+/* A plain service strip: the shop's delivery offer and how to reach it. */
 .topbar {
   height: var(--header-topbar-height);
   pointer-events: auto;
   background: #f2e3da;
+  color: #5b3d32;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.topbarInner {
   display: flex;
   align-items: center;
-  padding-inline: 2.2%;
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 95%,
-    81% 88%,
-    63% 100%,
-    40% 87%,
-    26% 91%,
-    16% 87%,
-    7% 100%,
-    0 92%
-  );
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 2.2vw, 36px);
 }
-.languages {
+.topbarOffer,
+.topbarContacts,
+.topbarContacts > * {
   display: flex;
+  align-items: center;
   gap: 7px;
-  font-size: clamp(10px, 0.9cqw, 13px);
+  min-width: 0;
+  white-space: nowrap;
 }
-.futureLanguage {
-  color: #81736b;
-}
-.goodDay {
-  position: absolute;
-  left: 65.4%;
-  top: 0.5cqw;
-  font: 400 clamp(18px, 2.1cqw, 30px)/1 var(--home-script);
-  transform: rotate(-9deg);
-}
-.goodDay span {
-  color: #c5867b;
+.topbarOffer {
   font-weight: 600;
 }
+.topbarContacts {
+  gap: 22px;
+}
+.topbar svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: #89594d;
+}
+.topbarContacts a {
+  font-weight: 600;
+}
+.topbarContacts a:hover {
+  color: #89594d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .headerBar {
+  height: var(--header-expanded-height);
+  background: #fcf8f4;
+  pointer-events: auto;
+  transition:
+    height 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+.headerInner {
+  container-type: inline-size;
   position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: var(--header-expanded-height);
-  min-height: var(--header-expanded-height);
-  padding: 0.8cqw 2%;
-  gap: 2cqw;
-  background: #fcf8f4;
-  pointer-events: auto;
-  transition: height 180ms ease-out, min-height 180ms ease-out,
-    padding 180ms ease-out, box-shadow 180ms ease-out;
+  gap: 24px;
+  height: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 2vw, 32px);
 }
 .navigation {
   display: flex;
   align-items: center;
-  gap: 0.9cqw;
+  gap: clamp(14px, 1.5cqw, 26px);
   max-width: calc(50% - 8.5cqw);
   white-space: nowrap;
   /* rem bounds follow the reader's own font size setting. */
-  font-size: clamp(0.75rem, 0.9cqw, 0.875rem);
+  font-size: clamp(0.8125rem, 1cqw, 0.9375rem);
 }
-.navigation a:not(.catalogButton):hover {
+.navigation > a:not(.catalogButton):hover {
   color: #9b6250;
 }
 .catalogButton {
-  min-height: 44px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 0.7em;
+  min-height: 44px;
+  padding: 0 clamp(18px, 1.7cqw, 28px);
   border-radius: 999px;
-  font-weight: 500;
-  transition:
-    background-color 180ms,
-    transform 180ms;
-}
-.catalogButton {
-  padding: 1cqw 1.5cqw;
   background: #785446;
   color: #fff9f4;
-}
-.catalogButton svg {
-  width: 1.2em;
-  height: 1.2em;
+  font-weight: 600;
+  transition: background-color 180ms;
 }
 .catalogButton:hover {
   background: #58382d;
+}
+.upcoming {
+  position: relative;
+  color: #a1928a;
+  cursor: default;
+}
+/* Sits above the section name, so the menu line keeps its rhythm. */
+.soonTag {
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f1e1dc;
+  color: #89594d;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-transform: uppercase;
 }
 .logo {
   position: absolute;
@@ -121,7 +150,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: top 180ms ease-out, width 180ms ease-out, padding 180ms ease-out;
+  transition:
+    top 180ms ease-out,
+    width 180ms ease-out,
+    padding 180ms ease-out;
 }
 .logoArtwork {
   width: 8.5cqw;
@@ -133,24 +165,33 @@
 .logo > span:last-child {
   margin-top: 0.7cqw;
   text-transform: uppercase;
-  font-size: 0.66cqw;
+  font-size: max(9px, 0.66cqw);
   letter-spacing: 0.07em;
   white-space: nowrap;
   max-height: 20px;
   overflow: hidden;
-  transition: opacity 180ms ease-out, max-height 180ms ease-out,
-    margin-top 180ms ease-out, visibility 180ms;
+  transition:
+    opacity 180ms ease-out,
+    max-height 180ms ease-out,
+    margin-top 180ms ease-out,
+    visibility 180ms;
 }
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 0.7cqw;
+  gap: clamp(4px, 0.6cqw, 10px);
+}
+
+/* Search: a field on desktop, an icon that opens the field on phones. */
+.searchArea {
+  position: relative;
 }
 .search {
   display: flex;
   align-items: center;
-  width: 16.1cqw;
-  padding: 0.25cqw 0.8cqw;
+  width: clamp(200px, 17cqw, 280px);
+  height: 40px;
+  padding-inline: 6px 14px;
   border-radius: 999px;
   background: #f1eae4;
 }
@@ -162,13 +203,17 @@
   order: -1;
   display: grid;
   place-items: center;
-  width: 28px;
-  min-height: 30px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  border-radius: 50%;
+}
+.search button:hover {
+  color: #89594d;
 }
 .search svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 .search input {
   width: 100%;
@@ -176,38 +221,114 @@
   border: 0;
   outline: none;
   background: transparent;
-  font-size: clamp(10px, 1cqw, 14px);
+  font-size: 14px;
 }
 .search input::placeholder {
   color: #887970;
 }
+.search input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(420px, 92vw);
+  padding: 8px;
+  border: 1px solid #eadbd1;
+  border-radius: 18px;
+  background: #fffdfb;
+  box-shadow: 0 18px 44px rgb(73 45 34 / 14%);
+}
+.suggestionList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.suggestion {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.suggestion:hover,
+.suggestion:focus-visible {
+  background: #f6ece6;
+}
+.suggestionImage {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #fff;
+}
+.suggestionImage img {
+  object-fit: contain;
+  padding: 4px;
+}
+.suggestionTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.suggestionPrice {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.suggestionsMessage {
+  padding: 14px 12px;
+  color: #6b5b51;
+  font-size: 14px;
+}
+.suggestionsAll {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: #785446;
+  color: #fff9f4;
+  font-size: 14px;
+  font-weight: 600;
+}
+.suggestionsAll:hover {
+  background: #58382d;
+}
+.suggestionsAll svg {
+  width: 16px;
+  height: 16px;
+}
+
 .iconButton {
   position: relative;
   display: grid;
   place-items: center;
-  width: 3.2cqw;
-  min-width: 32px;
+  width: 40px;
   height: 44px;
-  list-style: none;
+  color: var(--color-ink);
   cursor: pointer;
 }
+.iconButton:hover {
+  color: var(--color-accent-dark);
+}
 .iconButton svg {
-  width: 2cqw;
-  min-width: 21px;
-  height: 2cqw;
-  min-height: 21px;
-}
-.iconButton::-webkit-details-marker {
-  display: none;
-}
-.iconButton[aria-pressed="true"] svg {
-  fill: #c5867b;
-  stroke: #9a5d51;
+  width: 23px;
+  height: 23px;
 }
 .favoriteCount {
   position: absolute;
-  top: 1px;
-  right: -1px;
+  top: 3px;
+  right: 1px;
   display: inline-grid;
   place-items: center;
   min-width: 18px;
@@ -239,21 +360,23 @@
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -3px);
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
 }
 .tooltipAction:hover .actionTooltip,
 .tooltipAction:focus-visible .actionTooltip {
   opacity: 1;
   transform: translate(-50%, 0);
 }
-.mobileMenu {
+.mobileMenu,
+.mobileCatalog,
+.iconButton.searchToggle {
   display: none;
 }
 
 .header[data-compact] .headerBar {
   height: var(--header-height);
-  min-height: var(--header-height);
-  padding-block: 6px;
   box-shadow: 0 1px 0 var(--color-line);
 }
 .header[data-compact] .logo {
@@ -271,122 +394,127 @@
   visibility: hidden;
 }
 
+/* Keep this breakpoint in sync with mobile-nav.module.css and globals.css. */
 @media (width <= 1100px) {
   .header {
     --header-topbar-height: 30px;
-    --header-expanded-height: 112px;
+    /* 56 px bar + the 44 px catalog strip under it. */
+    --header-expanded-height: 100px;
   }
   .topbar {
-    padding-inline: 18px;
+    font-size: 12px;
   }
-  .goodDay {
-    left: auto;
-    right: 24px;
-    top: 5px;
-    font-size: 21px;
-  }
-  .headerBar {
-    padding: 0 14px 48px;
-  }
-  .navigation > a:not(.catalogButton) {
+  .topbarContacts > span {
     display: none;
   }
-  .catalogButton {
-    padding: 9px 12px;
-    font-size: 12px;
-    gap: 7px;
+  .headerInner {
+    gap: 8px;
+    padding: 0 8px 44px;
   }
-  .logo {
-    width: 108px;
-    top: -19px;
-    padding: 4px 9px 10px;
-    border-radius: 50% 50% 16% 16%;
-  }
-  .logoArtwork {
-    width: 74px;
-  }
-  .logo > span:last-child {
-    font-size: 5.5px;
-    margin-top: 4px;
-  }
-  .headerActions {
-    gap: 1px;
-  }
-  .headerActions > a {
-    min-width: 36px;
-  }
-  .headerActions > a > svg {
-    width: 21px;
-  }
-  .headerActions > a > span:last-child {
-    position: absolute;
-    top: 2px;
-    right: 0;
-  }
-  .search {
-    position: absolute;
-    bottom: 10px;
-    left: 16px;
-    right: 16px;
-    width: auto;
-    height: 36px;
-    padding-inline: 8px;
-  }
-  .search input {
-    font-size: 16px;
-  }
-  .iconButton {
-    min-width: 30px;
-    width: 30px;
-  }
-  .iconButton svg {
-    width: 20px;
-    height: 20px;
-  }
-  .tooltipAction {
+  .navigation {
     display: none;
   }
   .mobileMenu {
     display: block;
   }
-  .mobileMenu button {
-    width: 34px;
-    min-width: 34px;
-  }
   .mobileMenu nav {
     z-index: 30;
   }
-  .header[data-compact] .headerBar {
-    padding: 0 14px 44px;
-  }
+  .logo,
   .header[data-compact] .logo {
-    top: 2px;
+    top: 4px;
+    width: auto;
+    padding: 0;
+    border-radius: 50%;
   }
+  .logoArtwork,
   .header[data-compact] .logoArtwork {
-    width: 50px;
+    width: 48px;
+  }
+  .logo > span:last-child {
+    display: none;
+  }
+  .headerActions {
+    gap: 0;
+  }
+  .iconButton {
+    width: 38px;
+  }
+  .iconButton svg {
+    width: 22px;
+    height: 22px;
+  }
+  .tooltipAction .actionTooltip {
+    display: none;
+  }
+  .iconButton.searchToggle {
+    display: grid;
+  }
+  .searchArea {
+    position: static;
+  }
+  .searchPanel {
+    position: absolute;
+    z-index: 35;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: none;
+    padding: 10px 12px 12px;
+    background: #fcf8f4;
+    box-shadow: 0 12px 24px rgb(73 45 34 / 12%);
+  }
+  .searchArea[data-open] .searchPanel {
+    display: block;
+  }
+  .search {
+    width: 100%;
+    height: 44px;
+  }
+  .search input {
+    /* At least 16 px, or iOS zooms the page into the focused field. */
+    font-size: 16px;
+  }
+  .suggestions {
+    position: static;
+    width: auto;
+    margin-top: 10px;
+    box-shadow: none;
+  }
+  .mobileCatalog {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    background: #785446;
+    color: #fff9f4;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .mobileCatalog:hover {
+    background: #58382d;
+  }
+  .mobileCatalog svg {
+    width: 18px;
+    height: 18px;
   }
 }
 
-@media (width <= 360px) {
-  .headerBar {
-    padding-inline: 10px;
+@media (width <= 480px) {
+  .topbarContacts {
+    display: none;
   }
-  .catalogButton {
-    padding-inline: 9px;
-    font-size: 11px;
-  }
-  .logo {
-    left: 46%;
-    width: 90px;
-  }
-  .logoArtwork {
-    width: 66px;
-  }
-  .logo > span:last-child {
-    font-size: 5px;
-  }
-  .header[data-compact] .headerBar {
-    padding-inline: 10px;
+}
+
+/* The account stays in the burger menu; the bar keeps room for the logo. */
+@media (width <= 400px) {
+  .headerActions > .tooltipAction {
+    display: none;
   }
 }
 

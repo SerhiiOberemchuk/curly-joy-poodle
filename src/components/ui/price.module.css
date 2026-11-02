@@ -33,3 +33,15 @@
 .lg {
   font-size: var(--text-3xl);
 }
+
+.card {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 0;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.card .compare {
+  font-size: 13px;
+}

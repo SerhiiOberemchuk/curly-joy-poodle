@@ -14,17 +14,16 @@ import styles from "../welcome-offer.module.css";
 export function WelcomeOfferDialog({
   offer,
   copy,
+  trigger = true,
 }: {
   offer: WelcomeOffer;
   copy: WelcomeOfferDialogCopy;
+  /** Off where the page shows the form itself: the dialog only opens on its own. */
+  trigger?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const overflow = useRef<string | null>(null);
   const id = useId();
-  const [state, action, pending] = useActionState(
-    requestWelcomeOfferAction,
-    initialOfferState,
-  );
   const show = useCallback(() => {
     if (!dialog.current || dialog.current.open) return;
     overflow.current = document.body.style.overflow;
@@ -82,10 +81,12 @@ export function WelcomeOfferDialog({
   }
   return (
     <>
-      <button type="button" className={styles.button} onClick={show}>
-        {copy.open}
-        <Icon name="arrow" />
-      </button>
+      {trigger ? (
+        <button type="button" className={styles.button} onClick={show}>
+          {copy.open}
+          <Icon name="arrow" />
+        </button>
+      ) : null}
       <dialog
         ref={dialog}
         className={styles.dialog}
@@ -113,74 +114,107 @@ export function WelcomeOfferDialog({
           <span className={styles.eyebrow}>{copy.eyebrow}</span>
           <h2 id={`${id}-title`}>{offer.title}</h2>
           <p id={`${id}-description`}>{offer.description}</p>
-          {state.status === "sent" ? (
-            <FormSuccess className={styles.success}>{state.message}</FormSuccess>
-          ) : (
-            <form action={action} className={styles.form}>
-              <input type="hidden" name="offerId" value={offer.id} />
-              <input
-                type="hidden"
-                name="offerRevision"
-                value={offer.revision}
-              />
-              <input type="hidden" name="locale" value={offer.locale} />
-              <p className={styles.hint}>{copy.hint}</p>
-              <div className={styles.field}>
-                <label htmlFor={`${id}-email`}>{copy.email}</label>
-                <input
-                  id={`${id}-email`}
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  maxLength={120}
-                  required
-                  disabled={pending}
-                  defaultValue={state.values?.email ?? ""}
-                />
-              </div>
-              {(["fullName", "phone"] as const).map((field) => offer.fields[field] === "hidden" ? null : (
-                <div className={styles.field} key={field}>
-                  <label htmlFor={`${id}-${field}`}>{copy[field]}{offer.fields[field] === "optional" ? ` (${copy.optional})` : ""}</label>
-                  <input id={`${id}-${field}`} name={field} type={field === "phone" ? "tel" : "text"}
-                    autoComplete={field === "phone" ? "tel" : "name"} maxLength={field === "phone" ? 50 : 180}
-                    required={offer.fields[field] === "required"} disabled={pending} defaultValue={state.values?.[field] ?? ""} />
-                </div>
-              ))}
-              <div className={styles.honeypot} aria-hidden="true">
-                <label htmlFor={`${id}-website`}>Website</label>
-                <input
-                  id={`${id}-website`}
-                  name="website"
-                  tabIndex={-1}
-                  autoComplete="off"
-                />
-              </div>
-              <label className={styles.consent}>
-                <input
-                  type="checkbox"
-                  name="consent"
-                  required
-                  disabled={pending}
-                />
-                <span>{offer.consentText}</span>
-              </label>
-              <button
-                type="submit"
-                className={styles.button}
-                disabled={pending}
-              >
-                {pending ? copy.pending : copy.submit}
-                <Icon name="arrow" />
-              </button>
-              {state.status === "error" ? (
-                <p className={styles.error} role="alert">
-                  {state.message}
-                </p>
-              ) : null}
-            </form>
-          )}
+          <WelcomeOfferForm offer={offer} copy={copy} />
         </div>
       </dialog>
+    </>
+  );
+}
+
+/**
+ * The offer's request form: in the dialog and, on the home page, right in
+ * the offer block. A request sent from either keeps the dialog from opening
+ * by itself later in the visit.
+ */
+export function WelcomeOfferForm({
+  offer,
+  copy,
+}: {
+  offer: WelcomeOffer;
+  copy: WelcomeOfferDialogCopy;
+}) {
+  const id = useId();
+  const [state, action, pending] = useActionState(
+    requestWelcomeOfferAction,
+    initialOfferState,
+  );
+  useEffect(() => {
+    if (state.status !== "sent") return;
+    try {
+      window.sessionStorage.setItem(`welcome-offer:${offer.id}`, "sent");
+    } catch {
+      /* Optional: the dialog may then still offer itself once. */
+    }
+  }, [state.status, offer.id]);
+
+  return (
+    <>
+      {state.status === "sent" ? (
+        <FormSuccess className={styles.success}>{state.message}</FormSuccess>
+      ) : (
+        <form action={action} className={styles.form}>
+          <input type="hidden" name="offerId" value={offer.id} />
+          <input
+            type="hidden"
+            name="offerRevision"
+            value={offer.revision}
+          />
+          <input type="hidden" name="locale" value={offer.locale} />
+          <p className={styles.hint}>{copy.hint}</p>
+          <div className={styles.field}>
+            <label htmlFor={`${id}-email`}>{copy.email}</label>
+            <input
+              id={`${id}-email`}
+              name="email"
+              type="email"
+              autoComplete="email"
+              maxLength={120}
+              required
+              disabled={pending}
+              defaultValue={state.values?.email ?? ""}
+            />
+          </div>
+          {(["fullName", "phone"] as const).map((field) => offer.fields[field] === "hidden" ? null : (
+            <div className={styles.field} key={field}>
+              <label htmlFor={`${id}-${field}`}>{copy[field]}{offer.fields[field] === "optional" ? ` (${copy.optional})` : ""}</label>
+              <input id={`${id}-${field}`} name={field} type={field === "phone" ? "tel" : "text"}
+                autoComplete={field === "phone" ? "tel" : "name"} maxLength={field === "phone" ? 50 : 180}
+                required={offer.fields[field] === "required"} disabled={pending} defaultValue={state.values?.[field] ?? ""} />
+            </div>
+          ))}
+          <div className={styles.honeypot} aria-hidden="true">
+            <label htmlFor={`${id}-website`}>Website</label>
+            <input
+              id={`${id}-website`}
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+          <label className={styles.consent}>
+            <input
+              type="checkbox"
+              name="consent"
+              required
+              disabled={pending}
+            />
+            <span>{offer.consentText}</span>
+          </label>
+          <button
+            type="submit"
+            className={styles.button}
+            disabled={pending}
+          >
+            {pending ? copy.pending : copy.submit}
+            <Icon name="arrow" />
+          </button>
+          {state.status === "error" ? (
+            <p className={styles.error} role="alert">
+              {state.message}
+            </p>
+          ) : null}
+        </form>
+      )}
     </>
   );
 }

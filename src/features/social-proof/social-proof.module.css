@@ -9,6 +9,8 @@
   padding: 18px 16px;
   list-style: none;
   background: #f5e9df;
+  box-shadow: 0 0 0 100vmax #f5e9df;
+  clip-path: inset(0 -100vmax);
   color: #38271f;
   font-family: Arial, Helvetica, sans-serif;
 }

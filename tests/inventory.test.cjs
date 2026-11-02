@@ -255,12 +255,11 @@ beforeEach(async () => {
   };
 });
 
-test("sold-out product shows quantity zero and disables both quantity buttons", async () => {
+test("sold-out product sends quantity zero, offers no quantity control and disables buying", async () => {
   products = [product({ stock: 0, availability: "out_of_stock" })];
   const html = await renderProduct();
   assert.match(html, /name="quantity" value="0"/);
-  assert.match(html, /aria-label="Зменшити кількість" disabled=""/);
-  assert.match(html, /aria-label="Збільшити кількість" disabled=""/);
+  assert.doesNotMatch(html, /Зменшити кількість|Збільшити кількість/);
   assert.match(html, /disabled=""[^>]*>Немає в наявності/);
   assert.doesNotMatch(html, /У наявності:/);
 });
@@ -881,10 +880,10 @@ test("cart shipping terms are read from the CRM without an invented threshold", 
   cart = await buildCart([{ p: "p1", q: 1 }]);
   assert.equal(cart.freeShipping, true);
   assert.equal(cart.freeShippingThreshold, 40000);
-  assert.match(
-    renderToStaticMarkup(React.createElement(CartSummary, { cart })),
-    /Безкоштовна доставка від 400\s₴ суми товарів/,
-  );
+  // Reached: the delivery row itself says so, without a second note.
+  const freeMarkup = renderToStaticMarkup(React.createElement(CartSummary, { cart }));
+  assert.match(freeMarkup, /Безкоштовно/);
+  assert.doesNotMatch(freeMarkup, /Безкоштовна доставка від/);
   capabilities.cart.byCurrency = [
     { currency: "UAH", freeShippingThreshold: 1500, minOrderAmount: 500 },
   ];
@@ -897,8 +896,8 @@ test("cart shipping terms are read from the CRM without an invented threshold", 
   const markup = renderToStaticMarkup(
     React.createElement(CartSummary, { cart }),
   );
-  assert.match(markup, /Безкоштовна доставка від 1\s500\s₴ суми товарів/);
-  assert.match(markup, /Додайте ще на 1\s080\s₴/);
+  assert.match(markup, /Безкоштовна доставка від 1\s500\s₴/);
+  assert.match(markup, /Додайте ще <strong>1\s080\s₴<\/strong>/);
   assert.match(markup, /Мінімальна сума замовлення — 500\s₴/);
   assert.doesNotMatch(markup, /Оформити замовлення/);
 });

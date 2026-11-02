@@ -35,21 +35,22 @@ export function ProductReviews({ productId, productSlug, requestId, reviews, pag
             Відгуки покупців <span aria-hidden="true">♡</span>
           </h2>
         </div>
-        <div className={styles.headingActions}>
-          <a className={styles.writeReview} href="#review-form">
-            Залишити відгук <span aria-hidden="true">↗</span>
-          </a>
-        </div>
       </div>
       <p className={styles.sectionIntro}>
         Розкажіть про свій досвід із цим товаром.
       </p>
-      <div className={styles.reviewLayout}>
+      <div className={styles.reviewLayout} data-empty={count === 0 || undefined}>
         <div>
           {unavailable ? (
-            <p role="status">Відгуки тимчасово недоступні.</p>
+            <p className={styles.emptyReviews} role="status">
+              Відгуки тимчасово недоступні.
+            </p>
           ) : count === 0 ? (
-            <p>Поки немає опублікованих відгуків про цей товар. Ваш може стати першим.</p>
+            <div className={styles.emptyReviews}>
+              <span className={styles.emptyIcon} aria-hidden="true">♡</span>
+              <p>Поки немає опублікованих відгуків про цей товар.</p>
+              <p>Ваш може стати першим — форма поруч.</p>
+            </div>
           ) : (
             <div className={styles.summary}>
               <div>

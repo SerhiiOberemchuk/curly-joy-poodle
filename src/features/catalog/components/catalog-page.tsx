@@ -1,7 +1,9 @@
 import { Suspense, type ReactNode } from "react";
-import { readSearchQuery } from "../search";
 
-import { CategoryChips } from "./category-chips";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+
+import { readSearchQuery } from "../search";
+import { CategoryTiles } from "./category-tiles";
 import { ProductGridSkeleton } from "./product-grid-skeleton";
 import {
   SortedProductList,
@@ -29,6 +31,9 @@ export function CatalogPage({
   activeCategory,
   collection,
 }: CatalogPageProps) {
+  // The catalog itself is the top level; categories and collections sit under it.
+  const nested = Boolean(activeCategory || collection);
+
   return (
     <div className={styles.page}>
       <div className={styles.content}>
@@ -40,6 +45,7 @@ export function CatalogPage({
             eyebrow={eyebrow}
             description={description}
             searchParams={searchParams}
+            nested={nested}
           />
         </Suspense>
 
@@ -47,12 +53,10 @@ export function CatalogPage({
           <section className={styles.catalog} id="products" aria-labelledby="products-title">
             <h2 id="products-title" className="visually-hidden">Товари каталогу</h2>
 
-            {activeCategory ? (
-              <Suspense fallback={<CategoryChips filtered />}>
-                <CategoryChips activeSlug={activeCategory} />
+            {collection ? null : (
+              <Suspense fallback={null}>
+                <CategoryTiles activeSlug={activeCategory} searchParams={searchParams} />
               </Suspense>
-            ) : (
-              <CategoryChips filtered={Boolean(collection)} />
             )}
 
             <Suspense fallback={<ProductGridSkeleton />}>
@@ -74,16 +78,28 @@ async function CatalogHeading({
   eyebrow,
   description,
   searchParams,
-}: Pick<CatalogPageProps, "title" | "eyebrow" | "description" | "searchParams">) {
+  nested,
+}: Pick<CatalogPageProps, "title" | "eyebrow" | "description" | "searchParams"> & {
+  nested: boolean;
+}) {
   const query = readSearchQuery((await searchParams).q);
 
   return (
-    <header className={`${styles.heading} ${query ? styles.searchHeading : ""}`}>
-      <div>
-        <p className={styles.eyebrow}>{query ? "Каталог Curly Joy" : eyebrow}</p>
-        <h1 id="catalog-title">{query ? "Результати пошуку" : title}</h1>
+    <>
+      <div className={styles.crumbs}>
+        <Breadcrumbs
+          trail={query || nested ? [{ href: "/catalog", label: "Каталог" }] : []}
+          current={query ? "Результати пошуку" : title}
+        />
       </div>
-      {query ? null : <p className={styles.description}>{description}</p>}
-    </header>
+      <header className={`${styles.heading} ${query ? styles.searchHeading : ""}`}>
+        <div>
+          <p className={styles.eyebrow}>{query ? "Каталог Curly Joy" : eyebrow}</p>
+          <h1 id="catalog-title">{query ? "Результати пошуку" : title}</h1>
+          {query ? <p className={styles.searchQuery}>За запитом «{query}»</p> : null}
+        </div>
+        {query ? null : <p className={styles.description}>{description}</p>}
+      </header>
+    </>
   );
 }

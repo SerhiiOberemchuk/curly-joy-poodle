@@ -6,6 +6,9 @@
 .homeSection {
   padding: clamp(40px, 5vw, 80px) clamp(20px, 5vw, 80px);
   background: #f5e9df;
+  /* The band reaches both edges of a screen wider than the page. */
+  box-shadow: 0 0 0 100vmax #f5e9df;
+  clip-path: inset(0 -100vmax);
 }
 .productSection {
   padding-top: 64px;
@@ -166,6 +169,35 @@
   gap: 32px;
   align-items: start;
 }
+/* No reviews yet: the note and the form stand side by side as equals. */
+.reviewLayout[data-empty] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+.reviewLayout[data-empty] > div:first-child {
+  display: flex;
+}
+.emptyReviews {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-height: 220px;
+  padding: 32px 24px;
+  border: 1px solid #ecdcd2;
+  border-radius: 28px;
+  background: #fff;
+  text-align: center;
+  color: #5d4639;
+}
+.emptyIcon {
+  margin-bottom: 6px;
+  color: #c5867b;
+  font-size: 34px;
+  line-height: 1;
+}
 .summary {
   display: grid;
   grid-template-columns: 150px 1fr;
@@ -247,6 +279,7 @@
 .formRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 14px;
 }
 .field {
@@ -273,6 +306,22 @@
 .field textarea {
   resize: vertical;
   line-height: 1.6;
+}
+.field input,
+.field textarea {
+  transition:
+    border-color 160ms,
+    box-shadow 160ms;
+}
+.field input:hover,
+.field textarea:hover {
+  border-color: #b48d7b;
+}
+.field input:focus,
+.field textarea:focus {
+  border-color: #795446;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(121 84 70 / 18%);
 }
 .field input[aria-invalid="true"],
 .field textarea[aria-invalid="true"] {
@@ -314,6 +363,16 @@
   width: 18px;
   height: 18px;
 }
+.ratingOption > span {
+  transition:
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms;
+}
+.ratingOption:hover input:not(:checked) + span {
+  border-color: #795446;
+  background: #fff;
+}
 .ratingOption input:checked + span {
   background: #795446;
   color: #fffaf5;
@@ -334,11 +393,17 @@
   line-height: 1.5;
   color: #6d574b;
 }
+.consent {
+  cursor: pointer;
+}
 .consent input {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
   accent-color: #795446;
+}
+.consent:hover input:not(:checked) {
+  border-color: #795446;
 }
 .primaryButton {
   display: flex;
@@ -387,8 +452,12 @@
   overflow-wrap: anywhere;
 }
 @media (width < 1000px) {
-  .reviewLayout {
+  .reviewLayout,
+  .reviewLayout[data-empty] {
     grid-template-columns: 1fr;
+  }
+  .emptyReviews {
+    min-height: 0;
   }
   .formPanel {
     max-width: 720px;

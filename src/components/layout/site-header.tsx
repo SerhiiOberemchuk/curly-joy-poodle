@@ -128,9 +128,8 @@ export function SiteHeader() {
           height={1024}
           className={styles.logoArtwork}
           loading="eager"
-          sizes="(width <= 1100px) 56px, 136px"
+          sizes="(width <= 1100px) 56px, 120px"
         />
-        <span lang="en">Happy dogs. Happier people.</span>
       </Link>
       <div className={styles.headerActions}>
         <SiteSearch />

@@ -12,9 +12,11 @@
   position: sticky;
   top: calc(-1 * var(--header-topbar-height));
 }
+/* Marks the bottom of the service strip: the bar compacts only once the
+   strip has scrolled away and the header is already held at the top. */
 .sentinel {
   position: absolute;
-  top: 0;
+  top: calc(var(--header-topbar-height) - 2px);
   left: 0;
   width: 1px;
   height: 1px;
@@ -73,9 +75,10 @@
   height: var(--header-expanded-height);
   background: #fcf8f4;
   pointer-events: auto;
+  /* Expanding: the dividing line goes at once. */
   transition:
     height 180ms ease-out,
-    box-shadow 180ms ease-out;
+    box-shadow 100ms ease-out;
 }
 .headerInner {
   container-type: inline-size;
@@ -137,44 +140,27 @@
   line-height: 1.5;
   text-transform: uppercase;
 }
+/* The emblem rises into the service strip and ends inside the bar: nothing
+   of it hangs below the header onto the page. */
 .logo {
   position: absolute;
   z-index: 2;
   left: 50%;
-  top: -2.7cqw;
+  top: calc(6px - var(--header-topbar-height));
   transform: translateX(-50%);
-  width: 16.2cqw;
-  padding: 0.85cqw 1cqw 1cqw;
-  border-radius: 48% 48% 12% 12%;
+  padding: 6px 14px 0;
+  border-radius: 50% 50% 0 0;
   background: #fcf8f4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   transition:
     top 180ms ease-out,
-    width 180ms ease-out,
     padding 180ms ease-out;
 }
 .logoArtwork {
-  width: 8.5cqw;
+  width: calc(var(--header-topbar-height) + var(--header-expanded-height) - 18px);
   height: auto;
   border-radius: 50%;
   object-fit: contain;
   transition: width 180ms ease-out;
-}
-.logo > span:last-child {
-  margin-top: 0.7cqw;
-  text-transform: uppercase;
-  font-size: max(9px, 0.66cqw);
-  letter-spacing: 0.07em;
-  white-space: nowrap;
-  max-height: 20px;
-  overflow: hidden;
-  transition:
-    opacity 180ms ease-out,
-    max-height 180ms ease-out,
-    margin-top 180ms ease-out,
-    visibility 180ms;
 }
 .headerActions {
   display: flex;
@@ -378,20 +364,18 @@
 .header[data-compact] .headerBar {
   height: var(--header-height);
   box-shadow: 0 1px 0 var(--color-line);
+  /* Compacting: the line fades in once the bar has finished shrinking, so it
+     never slides up across the page. */
+  transition:
+    height 180ms ease-out,
+    box-shadow 160ms ease-out 180ms;
 }
 .header[data-compact] .logo {
   top: 10px;
-  width: 72px;
   padding: 0;
 }
 .header[data-compact] .logoArtwork {
   width: 52px;
-}
-.header[data-compact] .logo > span:last-child {
-  max-height: 0;
-  margin-top: 0;
-  opacity: 0;
-  visibility: hidden;
 }
 
 /* Keep this breakpoint in sync with mobile-nav.module.css and globals.css. */
@@ -423,16 +407,12 @@
   .logo,
   .header[data-compact] .logo {
     top: 4px;
-    width: auto;
     padding: 0;
     border-radius: 50%;
   }
   .logoArtwork,
   .header[data-compact] .logoArtwork {
     width: 48px;
-  }
-  .logo > span:last-child {
-    display: none;
   }
   .headerActions {
     gap: 0;

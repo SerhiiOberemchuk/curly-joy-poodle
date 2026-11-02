@@ -15,7 +15,8 @@ export function StickyHeader({ topbar, children }: { topbar: ReactNode; children
       const entry = entries.at(-1);
       if (entry) setCompact(!entry.isIntersecting);
     }, {
-      // Exclude edge contact so shrinking begins as soon as scrolling starts.
+      // Exclude edge contact: the marker at the strip's bottom is out of view
+      // as soon as the strip is, and stays out while the header is held.
       rootMargin: "-1px 0px 0px 0px",
     });
     observer.observe(sentinelRef.current);

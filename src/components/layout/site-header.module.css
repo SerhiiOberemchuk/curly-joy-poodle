@@ -1,6 +1,6 @@
+/* Geometry variables live in globals.css: the scroll marker outside the
+   header reads them too. */
 .header {
-  --header-topbar-height: 34px;
-  --header-expanded-height: clamp(72px, 6.35vw, 102px);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
@@ -12,14 +12,19 @@
   position: sticky;
   top: calc(-1 * var(--header-topbar-height));
 }
-/* Marks the bottom of the service strip: the bar compacts only once the
-   strip has scrolled away and the header is already held at the top. */
+/* A scroll marker in the page, not in the held header. The bar compacts
+   once the page has scrolled the strip away AND as far as the bar will
+   shrink: the content is then already under the compact bar, so no empty
+   band opens between the header and the first block of the page. */
 .sentinel {
   position: absolute;
-  top: calc(var(--header-topbar-height) - 2px);
+  top: calc(
+    var(--header-topbar-height) + var(--header-expanded-height) - var(--header-height)
+  );
   left: 0;
   width: 1px;
   height: 1px;
+  pointer-events: none;
 }
 
 /* A plain service strip: the shop's delivery offer and how to reach it. */
@@ -380,11 +385,6 @@
 
 /* Keep this breakpoint in sync with mobile-nav.module.css and globals.css. */
 @media (width <= 1100px) {
-  .header {
-    --header-topbar-height: 30px;
-    /* 56 px bar + the 44 px catalog strip under it. */
-    --header-expanded-height: 100px;
-  }
   .topbar {
     font-size: 12px;
   }

@@ -66,6 +66,9 @@
   /* Layout */
   --container: 1200px;
   --container-narrow: 760px;
+  /* Header geometry: service strip, full bar, compact bar (`--header-height`). */
+  --header-topbar-height: 34px;
+  --header-expanded-height: clamp(72px, 6.35vw, 102px);
   --header-height: 72px;
   --sticky-header-offset: var(--header-height);
 
@@ -90,8 +93,13 @@ html {
   scroll-padding-block-start: calc(var(--sticky-header-offset) + var(--space-4));
 }
 
+/* Phones and tablets: a 56 px bar plus the 44 px catalog strip, which does not shrink. */
 @media (width <= 1100px) {
-  :root { --header-height: 100px; }
+  :root {
+    --header-topbar-height: 30px;
+    --header-expanded-height: 100px;
+    --header-height: 100px;
+  }
 }
 
 @media (height <= 500px) {

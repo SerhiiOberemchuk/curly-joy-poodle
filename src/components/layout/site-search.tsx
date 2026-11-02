@@ -177,7 +177,8 @@ function SearchControls({
           return;
         }
         setSuggesting(false);
-        onLeave();
+        // Live catalog updates must keep the phone field open for continued typing.
+        if (!onCatalog) onLeave();
       }}
       onBlur={(event) => {
         if (event.currentTarget.contains(event.relatedTarget)) return;

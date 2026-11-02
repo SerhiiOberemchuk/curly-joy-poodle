@@ -33,6 +33,12 @@ export const metadata: Metadata = {
   }),
 };
 
+/**
+ * Categories, promotions, recommendations, social proof and the offer read
+ * cached CRM data, so they are part of the prerendered page with no loading
+ * state. Only the free-shipping figure (cached for 30 s) streams, into a
+ * benefits strip of the same shape.
+ */
 export default function HomePage() {
   return (
     <div className={styles.page}>
@@ -41,24 +47,10 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeJsonLd()) }}
       />
       <HomeHero />
-      <Suspense
-        fallback={
-          <p className={styles.catalogLoading} role="status">
-            Готуємо категорії…
-          </p>
-        }
-      >
-        <HomeCategories />
-      </Suspense>
-      <Suspense fallback={null}>
-        <HomePromotions />
-      </Suspense>
+      <HomeCategories />
+      <HomePromotions />
       <div id="recommendations" className={styles.recommendationsAnchor}>
-        <Suspense
-          fallback={<p className={styles.catalogLoading} role="status">Готуємо рекомендовані товари…</p>}
-        >
-          <HomeRecommendations />
-        </Suspense>
+        <HomeRecommendations />
       </div>
       <Suspense fallback={<HomeBenefits />}>
         <HomeBenefitsWithTerms />
@@ -71,9 +63,7 @@ export default function HomePage() {
         <HomeInstagramShots locale={defaultLocale} />
       </SocialProofPart>
       <HomeBusiness />
-      <Suspense fallback={null}>
-        <HomeWelcomeOffer locale={defaultLocale} />
-      </Suspense>
+      <HomeWelcomeOffer locale={defaultLocale} />
     </div>
   );
 }

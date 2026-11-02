@@ -36,31 +36,6 @@
   margin: clamp(32px, 5vw, 56px) auto 0;
 }
 
-.loading {
-  display: grid;
-  gap: 24px;
-}
-
-.loading span {
-  display: block;
-  min-height: 210px;
-  border-radius: 30px;
-  background: #f1ddd5;
-  animation: pulse 1.2s ease-in-out infinite alternate;
-}
-
-.loading span:last-child {
-  min-height: 280px;
-}
-
-@keyframes pulse {
-  to { opacity: 0.55; }
-}
-
-@media (width >= 900px) {
-  .loading { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr); }
-}
-
 @media (width < 640px) {
   .page { padding-top: 30px; }
   .hero { text-align: left; }

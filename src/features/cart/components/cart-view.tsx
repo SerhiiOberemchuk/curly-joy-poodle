@@ -5,12 +5,10 @@ import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 
 import { retryCartAction } from "../actions";
 import { calculateCart } from "../calculate";
+import { CART_SUGGESTION_LIMIT } from "../constants";
 import { getCart } from "../queries";
 import { CartClient } from "./cart-client";
 import styles from "./cart-view.module.css";
-
-/** Small things that are easy to add on the way to free delivery. */
-const SUGGESTION_LIMIT = 10;
 
 /** In-stock products the cart does not hold yet, cheapest first. */
 async function suggestionsFor(variantIds: readonly string[]): Promise<ProductListItem[]> {
@@ -19,7 +17,7 @@ async function suggestionsFor(variantIds: readonly string[]): Promise<ProductLis
   return products
     .filter((product) => product.inStock && !(product.variantId && inCart.has(product.variantId)))
     .sort((a, b) => a.priceFrom - b.priceFrom)
-    .slice(0, SUGGESTION_LIMIT);
+    .slice(0, CART_SUGGESTION_LIMIT);
 }
 
 export async function CartEmpty() {

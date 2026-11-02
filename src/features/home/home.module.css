@@ -184,18 +184,6 @@
   padding-inline: var(--home-inline);
   scroll-margin-top: 20px;
 }
-.catalogLoading {
-  display: grid;
-  place-items: center;
-  min-height: 280px;
-  margin: var(--home-gap) var(--home-inline) 0;
-  padding: 24px;
-  border: 1px solid var(--color-line);
-  border-radius: 18px;
-  background: #faf2e9;
-  color: #694638;
-  text-align: center;
-}
 /* Four in view; more categories scroll sideways instead of wrapping. */
 .categoryRow {
   --gap: clamp(10px, 1.2cqw, 20px);
@@ -536,6 +524,11 @@
   }
   .benefits span {
     font-size: 12px;
+  }
+  /* Two columns: «Від … суми товарів» takes two lines, so the wording shown
+     while the offer streams takes them too. */
+  .benefits .offerText {
+    min-height: 2lh;
   }
   .business {
     border-radius: 18px;

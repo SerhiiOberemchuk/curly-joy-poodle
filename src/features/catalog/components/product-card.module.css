@@ -138,6 +138,26 @@
   outline-offset: 2px;
 }
 
+.rating {
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-ink-soft);
+}
+
+.rating > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rating svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .options {
   display: flex;
   flex-wrap: wrap;
@@ -217,6 +237,50 @@
   color: var(--color-danger);
 }
 
+/* ---- Skeleton: the same frame and lines, filled while the list streams --- */
+.mediaBone {
+  aspect-ratio: 1;
+}
+
+.brandBone {
+  width: 38%;
+}
+
+.titleBoneShort {
+  width: 64%;
+}
+
+/* One line of variant chips. */
+.optionsBone {
+  width: 58%;
+  height: calc(12px * 1.4 + 6px);
+  --bone-radius: 999px;
+}
+
+/* The card price: 17 px current, 13 px old price above it, line height 1.2. */
+.priceBones {
+  display: flex;
+  flex-direction: column;
+  width: 34%;
+  line-height: 1.2;
+}
+
+.priceBone {
+  font-size: 17px;
+}
+
+.oldPriceBone {
+  width: 70%;
+  font-size: 13px;
+}
+
+.cartBone {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  --bone-radius: 50%;
+}
+
 @container (width < 220px) {
   .body {
     gap: 4px;
@@ -240,7 +304,8 @@
     height: 36px;
   }
   .cartButton,
-  .cartButtonAdded {
+  .cartButtonAdded,
+  .cartBone {
     width: 40px;
     height: 40px;
   }

@@ -1,10 +1,8 @@
 import "server-only";
 import { cacheLife } from "next/cache";
 import { z } from "zod";
-import { getListedProducts } from "@/features/catalog/queries";
+import { getCatalogReviewSummaries } from "@/features/reviews/catalog-ratings.server";
 import {
-  fetchReviewSummaries,
-  modelKeyOf,
   ratingFromSummaries,
   reviewListSchema,
   type PublishedReview,
@@ -15,8 +13,6 @@ import { crmFailureDetails } from "@/lib/crm-errors";
 // Every read below is cached for all visitors: the token's quota of CRM reads
 // is shared with the cart and checkout. A failure is cached for minutes too,
 // so a missing permission or an outage costs one read, not one per visitor.
-
-const SUMMARY_KEYS_PER_REQUEST = 100;
 
 function logHidden(part: string, scope: string, error: unknown) {
   console.error(`[social-proof] The ${part} is hidden: the CRM read failed.`, {
@@ -54,17 +50,11 @@ export interface ShopRating {
 export async function getShopRating(): Promise<ShopRating | null> {
   "use cache: remote";
   try {
-    const keys = [
-      ...new Set(
-        (await getListedProducts()).map((product) => modelKeyOf(product.id)),
-      ),
-    ];
-    const batches: string[][] = [];
-    for (let start = 0; start < keys.length; start += SUMMARY_KEYS_PER_REQUEST)
-      batches.push(keys.slice(start, start + SUMMARY_KEYS_PER_REQUEST));
-    const summaries = (
-      await Promise.all(batches.map(fetchReviewSummaries))
-    ).flat();
+    const summaries = await getCatalogReviewSummaries();
+    if (!summaries) {
+      cacheLife("minutes");
+      return null;
+    }
     cacheLife("hours");
     return ratingFromSummaries(summaries);
   } catch (error) {

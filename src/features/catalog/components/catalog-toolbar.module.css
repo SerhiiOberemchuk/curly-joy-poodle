@@ -290,3 +290,56 @@
     display: flex;
   }
 }
+
+/* ---- Skeleton: the list's layout while it streams ------------------------ */
+.filtersToggleBone {
+  --bone-display: none;
+  width: 132px;
+  height: 44px;
+  --bone-radius: 999px;
+}
+
+.filterTitleBone {
+  width: 45%;
+}
+
+/* A category link or a checkbox line: the bone fills its text line. */
+.rowBone {
+  width: 62%;
+}
+
+/* The «from — to» inputs and the apply button, 40 px tall, as one bar. */
+.priceFieldBone {
+  grid-column: 1 / -1;
+  height: 40px;
+  --bone-radius: 10px;
+}
+
+.countBone {
+  width: 76px;
+}
+
+/* «Сортування» and its 230 px field: 10 px padding around a 14 px line
+   (line height 1.4) inside a 1 px border. */
+.sortBone {
+  width: min(100%, 319px);
+  height: calc(2 * 10px + var(--text-sm) * 1.4 + 2px);
+  --bone-radius: 999px;
+}
+
+.moreBone {
+  width: min(100%, 320px);
+  height: 48px;
+  --bone-radius: 999px;
+}
+
+.pagesBone {
+  width: min(100%, 260px);
+  height: 42px;
+}
+
+@media (width < 1024px) {
+  .filtersToggleBone {
+    --bone-display: block;
+  }
+}

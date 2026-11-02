@@ -9,16 +9,6 @@ import { ProductArtwork } from "./product-artwork";
 import { videoSource } from "../video";
 import styles from "./product-gallery.module.css";
 
-export function ProductGallerySkeleton() {
-  return (
-    <div className={styles.gallery}>
-      <div className={styles.stage}>
-        <ProductArtwork image={{ src: null, alt: "" }} size="lg" decorative />
-      </div>
-    </div>
-  );
-}
-
 export function ProductGallery({
   images,
   videos = [],

@@ -96,7 +96,10 @@ export function HomeBenefits({
           <Icon name={benefit.icon} />
           <div>
             <strong>{benefit.title}</strong>
-            <span>{benefit.description}</span>
+            {/* The CRM's offer streams in: its room is held while it does. */}
+            <span className={benefit === shipping ? styles.offerText : undefined}>
+              {benefit.description}
+            </span>
           </div>
         </li>
       ))}

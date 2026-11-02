@@ -2,33 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getCategories, getCategoryTiles } from "../queries";
-import { readSearchQuery } from "../search";
-import type { SearchParams } from "./sorted-product-list";
 import styles from "./category-tiles.module.css";
 
 /**
  * Picture tiles of the next category level. The catalog shows every top
  * category, wrapping onto new rows; a category shows its own subcategories
- * in one row that scrolls sideways. Hidden while the page answers a search.
+ * in one row that scrolls sideways. Cached data: part of the static shell.
  */
-export async function CategoryTiles({
-  activeSlug: activeSlugPromise,
-  searchParams,
-}: {
-  activeSlug?: Promise<string>;
-  searchParams: SearchParams;
-}) {
-  const [activeSlug, params, categories] = await Promise.all([
-    activeSlugPromise,
-    searchParams,
-    getCategories(),
-  ]);
-  if (readSearchQuery(params.q)) return null;
-
-  const parent = activeSlug
-    ? categories.find((category) => category.slug === activeSlug)
+export async function CategoryTiles({ parentSlug }: { parentSlug?: string }) {
+  const parent = parentSlug
+    ? (await getCategories()).find((category) => category.slug === parentSlug)
     : null;
-  if (activeSlug && !parent) return null;
+  if (parentSlug && !parent) return null;
   const tiles = await getCategoryTiles(parent?.id ?? null);
   if (tiles.length === 0) return null;
 

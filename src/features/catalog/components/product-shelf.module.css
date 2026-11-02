@@ -14,13 +14,13 @@
   padding: 2px 2px 10px;
 }
 
-.track > li {
+.track > * {
   display: flex;
   min-width: 0;
   scroll-snap-align: start;
 }
 
-.track > li > * {
+.track > * > * {
   flex: 1;
 }
 
@@ -66,4 +66,9 @@
     --gap: 10px;
     grid-auto-columns: 46%;
   }
+}
+
+/* Keeps the arrow row's height until the real arrows arrive. */
+.controlsSkeleton {
+  height: 44px;
 }

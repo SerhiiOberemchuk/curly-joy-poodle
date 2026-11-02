@@ -112,6 +112,22 @@ test("continued typing sends only the last value and shortening cancels a pendin
   assert.equal(submissions.length, 1);
 });
 
+test("phone catalog search stays open and focused across automatic updates", () => {
+  pathname = "/catalog";
+  render(React.createElement(SiteSearch));
+  fireEvent.click(screen.getByRole("button", { name: "Відкрити пошук" }));
+  const input = screen.getByRole("searchbox");
+  change(input, "ша");
+  tick(400);
+  assert.equal(screen.getByRole("button", { name: "Закрити пошук" }).getAttribute("aria-expanded"), "true");
+  assert.equal(document.activeElement, input);
+  change(input, "шампунь");
+  tick(400);
+  assert.deepEqual(submissions.map(({ query }) => query), ["ша", "шампунь"]);
+  fireEvent.keyDown(input, { key: "Escape" });
+  assert.equal(screen.getByRole("button", { name: "Відкрити пошук" }).getAttribute("aria-expanded"), "false");
+});
+
 test("manual submission stays immediate and cancels the pending automatic submission", () => {
   pathname = "/catalog";
   render(React.createElement(SiteSearch));

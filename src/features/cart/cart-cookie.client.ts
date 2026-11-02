@@ -24,6 +24,12 @@ export function browserCartItemCount(): number | null {
   return parseCartCookie(raw).reduce((count, line) => count + line.q, 0);
 }
 
+/** Lines in the browser's cart, or null while only the older HttpOnly cookie holds one. */
+export function browserCartLineCount(): number | null {
+  const raw = browserCookieValue();
+  return raw === undefined ? null : parseCartCookie(raw).length;
+}
+
 function writeBrowserCart(lines: readonly StoredCartLine[]): "saved" | "unavailable" {
   const value = encodeURIComponent(JSON.stringify({ revision: crypto.randomUUID(), lines }));
   const secure = location.protocol === "https:" ? "; Secure" : "";

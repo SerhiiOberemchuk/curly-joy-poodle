@@ -221,6 +221,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  /* Keep the fixed contact launcher clear of the last payment mark. */
+  padding-inline-end: 144px;
 }
 .payment {
   display: flex;
@@ -243,6 +245,12 @@
 
 .contacts {
   font-style: normal;
+}
+
+@media (width < 600px) {
+  .payments {
+    padding-inline-end: 60px;
+  }
 }
 
 @media (width < 360px) {

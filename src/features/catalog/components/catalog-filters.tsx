@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 
 import {
   activeFilterCount,
+  filterSections,
   type FilterFacets,
   type ProductFilters,
 } from "../filtering";
@@ -39,6 +40,7 @@ export function CatalogFilters({
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const active = activeFilterCount(filters);
+  const sections = filterSections(facets);
 
   return (
     <aside className={styles.filters} aria-label="Фільтри товарів">
@@ -76,7 +78,7 @@ export function CatalogFilters({
           </nav>
         ) : null}
 
-        {facets.brands.length > 1 ? (
+        {sections.brands ? (
           <fieldset className={styles.filterGroup}>
             <legend className={styles.filterTitle}>Бренд</legend>
             {facets.brands.map((brand) => {
@@ -102,7 +104,7 @@ export function CatalogFilters({
           </fieldset>
         ) : null}
 
-        {facets.priceRange && facets.priceRange.min < facets.priceRange.max ? (
+        {sections.price && facets.priceRange ? (
           <PriceFilter
             // A new range or a reset from elsewhere starts a fresh draft.
             key={`${filters.minPrice}-${filters.maxPrice}`}
@@ -113,10 +115,10 @@ export function CatalogFilters({
           />
         ) : null}
 
-        {facets.outOfStock > 0 || facets.onSale > 0 ? (
+        {sections.inStock || sections.sale ? (
           <fieldset className={styles.filterGroup}>
             <legend className={styles.filterTitle}>Наявність і ціни</legend>
-            {facets.outOfStock > 0 ? (
+            {sections.inStock ? (
               <label className={styles.check}>
                 <input
                   type="checkbox"
@@ -126,7 +128,7 @@ export function CatalogFilters({
                 <span>Лише в наявності</span>
               </label>
             ) : null}
-            {facets.onSale > 0 ? (
+            {sections.sale ? (
               <label className={styles.check}>
                 <input
                   type="checkbox"

@@ -29,14 +29,10 @@ export async function SortedProductList({
   collection,
 }: {
   searchParams: SearchParams;
-  category?: Promise<string>;
+  category?: string;
   collection?: string;
 }) {
-  const [params, categorySlug, categories] = await Promise.all([
-    searchParams,
-    category,
-    getCategories(),
-  ]);
+  const [params, categories] = await Promise.all([searchParams, getCategories()]);
   const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
   const requestedCollection = first(params.collection);
   const queryCollection = requestedCollection
@@ -45,9 +41,9 @@ export async function SortedProductList({
   const activeCollection = collection ?? queryCollection?.slug;
   const query = readSearchQuery(params.q);
 
-  const products = await getProducts({ category: categorySlug, collection: activeCollection, query });
+  const products = await getProducts({ category, collection: activeCollection, query });
 
-  const active = categories.find((item) => item.slug === categorySlug);
+  const active = categories.find((item) => item.slug === category);
   const activeRoot = active ? rootOf(categories, active).id : null;
   const categoryLinks: CategoryLink[] = [
     { href: "/catalog", title: "Усі товари", active: !active && !activeCollection && !query },

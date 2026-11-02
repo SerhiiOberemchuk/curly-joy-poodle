@@ -21,18 +21,18 @@ type Copy = (typeof socialProofCopy)[Locale]["reviews"];
 /** Published CRM reviews; local development shows samples while there are none. */
 async function loadReviews(
   products: readonly Product[],
-): Promise<PublishedReview[]> {
+): Promise<{ reviews: PublishedReview[]; preview: boolean }> {
   const reviews = await getHomeReviews();
   if (reviews?.length || process.env.NODE_ENV !== "development")
-    return reviews ?? [];
+    return { reviews: reviews ?? [], preview: false };
   // A dynamic import inside the dropped branch keeps the samples out of production.
   const { previewReviews } = await import("../preview-reviews");
-  return previewReviews(products);
+  return { reviews: previewReviews(products), preview: true };
 }
 
 export async function HomeReviews({ locale }: { locale: Locale }) {
   const products = await getListedProducts().catch(() => []);
-  const reviews = await loadReviews(products);
+  const { reviews, preview } = await loadReviews(products);
   if (!reviews.length) return null;
   // A review of a product that left the catalog stays, without a link.
   const slugs = new Map(
@@ -65,6 +65,12 @@ export async function HomeReviews({ locale }: { locale: Locale }) {
         ) : null}
       </div>
       <p className={reviewStyles.sectionIntro}>{copy.intro}</p>
+      {preview ? (
+        <p className={reviewStyles.previewNotice} role="note">
+          Демонстрація оформлення: це тестові відгуки для локального перегляду.
+          На опублікованому сайті показуються лише відгуки з CRM.
+        </p>
+      ) : null}
       {/* Focusable so the keyboard can scroll cards that hold no link. */}
       <ul className={styles.scroller} aria-label={copy.list} tabIndex={0}>
         {reviews.map((review) => (

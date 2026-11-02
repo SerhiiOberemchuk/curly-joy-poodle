@@ -489,3 +489,27 @@
     padding: 18px;
   }
 }
+.previewNotice {
+  max-width: 760px;
+  margin: 0 auto 20px;
+  padding: 12px 16px;
+  border: 1px dashed var(--color-accent);
+  border-radius: 12px;
+  background: #fffaf5;
+  color: var(--color-ink-soft);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---- Skeleton: the «no reviews yet» note while the reviews stream ------- */
+.emptyIconBone {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 6px;
+  --bone-radius: 50%;
+}
+/* Holds its line's own words, invisible, so it wraps where the text will. */
+.emptyLineBone {
+  max-width: 100%;
+}

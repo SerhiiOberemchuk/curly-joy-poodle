@@ -52,10 +52,6 @@
   overflow-wrap: anywhere;
 }
 
-.headingLoading {
-  padding-block: 32px 24px;
-}
-
 .searchHeading {
   grid-template-columns: 1fr;
   border-bottom: 0;

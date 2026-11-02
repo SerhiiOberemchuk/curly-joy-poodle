@@ -1,0 +1,41 @@
+/* A placeholder takes the box of the content it stands for: the class that
+   places it sets the size, `--bone-radius` the corners and `--bone-display`
+   its flow (custom properties, so the two classes never compete on order).
+   Text inside only sizes it and stays invisible. */
+.bone {
+  display: var(--bone-display, block);
+  border-radius: var(--bone-radius, 8px);
+  /* Translucent brown: reads on white cards and tinted panels alike. */
+  background: linear-gradient(
+    100deg,
+    rgb(121 84 70 / 11%) 30%,
+    rgb(121 84 70 / 5%) 50%,
+    rgb(121 84 70 / 11%) 70%
+  );
+  background-size: 300% 100%;
+  color: transparent;
+  animation: shimmer 1.4s ease-in-out infinite;
+  user-select: none;
+}
+
+/* One line of text: as tall as the line, painted as tall as the letters. */
+.line {
+  height: 1lh;
+  padding-block: 0.2lh;
+  background-clip: content-box;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+  }
+}

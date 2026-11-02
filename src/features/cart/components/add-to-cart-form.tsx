@@ -6,12 +6,61 @@ import { useActionState, useEffect, useRef, useState, type RefObject } from "rea
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Price } from "@/components/ui/price";
+import { Bone } from "@/components/ui/skeleton";
 import type { ProductVariant } from "@/features/catalog/types";
 
 import { initialCartActionState } from "../action-state";
 import { addToCartAction } from "../actions";
 import { maxQuantityForVariant } from "../quantity";
 import styles from "./add-to-cart-form.module.css";
+
+/**
+ * The form's rows while today's price and stock stream in. The variant names
+ * come from the cached product, so the choice wraps exactly as it will.
+ */
+export function AddToCartFormSkeleton({
+  optionName,
+  variants,
+}: {
+  optionName: string;
+  variants: readonly Pick<ProductVariant, "id" | "label" | "sku">[];
+}) {
+  return (
+    <div className={styles.form}>
+      <p className="visually-hidden" role="status">
+        Перевіряємо ціну й наявність…
+      </p>
+      <div className={styles.priceRow} aria-hidden="true">
+        <Bone line className={styles.priceBone} />
+        <Bone className={styles.stockBone} />
+        <span className={styles.sku}>
+          <Bone line className={styles.skuBone} />
+        </span>
+      </div>
+      {variants.length > 1 ? (
+        <fieldset disabled aria-hidden="true">
+          <legend className={styles.fieldLabel}>
+            <span>{optionName}</span>
+            {optionName === "Розмір" ? <span className={styles.sizeHint}>Як виміряти?</span> : null}
+          </legend>
+          <div className={styles.sizes}>
+            {variants.map((variant) => (
+              <Bone key={variant.id} className={styles.sizeBone}>
+                {variant.label ?? variant.sku}
+              </Bone>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+      <div className={styles.row} aria-hidden="true">
+        <Bone className={styles.stepperBone} />
+        <Bone className={styles.submitBone} />
+      </div>
+      {/* The form's status line: keeps the gap it adds below the button. */}
+      <div />
+    </div>
+  );
+}
 
 export function AddToCartForm({
   title,

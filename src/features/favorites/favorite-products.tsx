@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { ProductGrid } from "@/features/catalog/components/product-grid";
+import { ProductGrid, ProductGridSkeleton } from "@/features/catalog/components/product-grid";
 import type { ProductListItem } from "@/features/catalog/types";
 
 import { useFavoritesStore } from "./favorites";
@@ -39,11 +39,13 @@ export function FavoriteProducts({ products }: { products: readonly ProductListI
   // First in every branch, so React keeps the same live region mounted.
   const region = <p ref={status} className="visually-hidden" role="status" />;
 
+  // The saved list is in this browser only: one row of cards until it is read.
   if (!isHydrated)
     return (
       <>
         {region}
-        <p role="status">Завантажуємо обране…</p>
+        <p className="visually-hidden" role="status">Завантажуємо обране…</p>
+        <ProductGridSkeleton cards={5} wide singleRow />
       </>
     );
 

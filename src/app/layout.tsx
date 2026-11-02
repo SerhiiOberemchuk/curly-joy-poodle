@@ -10,6 +10,7 @@ import { QuickContact } from "@/components/layout/quick-contact";
 import { PageTransition } from "@/components/layout/page-transition";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
+import { ViewedProductsProvider } from "@/features/recently-viewed/viewed-products";
 import { CartStoreProvider } from "@/features/cart/cart-store";
 import { openGraph } from "@/lib/metadata";
 import { site } from "@/lib/site";
@@ -76,14 +77,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </a>
           <div className={styles.shell}>
             <FavoritesProvider>
-              <CartStoreProvider>
-                <SiteHeader />
-                <main id="main-content" className={styles.main}>
-                  <PageTransition>{children}</PageTransition>
-                </main>
-                <SiteFooter />
-                <QuickContact />
-              </CartStoreProvider>
+              <ViewedProductsProvider>
+                <CartStoreProvider>
+                  <SiteHeader />
+                  <main id="main-content" className={styles.main}>
+                    <PageTransition>{children}</PageTransition>
+                  </main>
+                  <SiteFooter />
+                  <QuickContact />
+                </CartStoreProvider>
+              </ViewedProductsProvider>
             </FavoritesProvider>
           </div>
         </NuqsAdapter>

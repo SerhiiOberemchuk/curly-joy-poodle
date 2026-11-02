@@ -246,10 +246,22 @@ export async function getProductCategory(product: Product): Promise<Category | n
   return (await getCategories()).find((category) => category.id === product.categoryId) ?? null;
 }
 
+/**
+ * A bundle's composition: descriptive, like the listing, so cached as long and
+ * shared by every instance — part of the prerendered product page.
+ */
+async function getBundleDetail(id: string) {
+  "use cache: remote";
+  cacheLife("minutes");
+  cacheTag(catalogTags.all);
+
+  return fetchBundleDetail(id);
+}
+
 /** Composition comes from CRM detail; only listed components receive shop links. */
 export async function getBundleComposition(product: Product) {
   if (product.type !== "bundle") return [];
-  const detail = await fetchBundleDetail(product.variants[0].id);
+  const detail = await getBundleDetail(product.variants[0].id);
   if (detail.type !== "bundle" || detail.id !== product.variants[0].id) {
     throw new Error("CRM returned a different bundle");
   }

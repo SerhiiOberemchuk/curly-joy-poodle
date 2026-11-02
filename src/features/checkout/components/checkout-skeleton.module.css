@@ -1,0 +1,114 @@
+/* Sizes of the order form's own controls, for the bones that stand in for them. */
+
+/* «Повернутися до кошика»: a 40 px link above the form. */
+.back {
+  width: 190px;
+  height: 40px;
+  margin-bottom: var(--space-3);
+  padding-block: 11px;
+  background-clip: content-box;
+}
+
+.step {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  --bone-radius: 50%;
+}
+
+.legendText {
+  width: 160px;
+}
+
+.label {
+  width: 30%;
+}
+
+/* A text field: 12 px padding around one line, inside a 1 px border. */
+.input {
+  height: calc(var(--space-3) * 2 + 1lh + 2px);
+  --bone-radius: var(--radius-xl);
+}
+
+.textarea {
+  height: 84px;
+  --bone-radius: var(--radius-xl);
+}
+
+/* The city hint: one 14 px line, two on a phone. */
+.fieldHint {
+  width: 70%;
+  height: calc(var(--text-sm) * 1.4);
+}
+
+/* The promo code status: one 12 px line, two on a phone. */
+.promoHint {
+  width: 80%;
+  height: 1lh;
+}
+
+/* Grows along the row; in the phone's column it keeps its own height. */
+.promoInput {
+  flex: 1 1 auto;
+}
+
+/* «Застосувати»: a medium button as tall as the field. */
+.promoButton {
+  width: 150px;
+  height: calc(var(--space-3) * 2 + 1lh + 2px);
+  --bone-radius: 999px;
+}
+
+.radio {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  --bone-radius: 50%;
+}
+
+/* Sized by the option's own words, kept invisible. */
+.text {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* A block «lg» button: 16 px padding around an 18 px line (1.4), with a border. */
+.submit {
+  height: calc(var(--space-4) * 2 + var(--text-lg) * 1.4 + 2px);
+  --bone-radius: 999px;
+}
+
+.consent {
+  display: flex;
+  flex-direction: column;
+}
+
+.consentEnd {
+  width: 60%;
+}
+
+.summaryTitle {
+  width: 40%;
+  font-size: 36px;
+  line-height: 1;
+}
+
+.total {
+  width: 100%;
+  font-size: 22px;
+}
+
+@media (width < 560px) {
+  .fieldHint {
+    height: calc(var(--text-sm) * 1.4 * 2);
+  }
+
+  .promoHint {
+    height: 2lh;
+  }
+
+  .promoButton {
+    width: 100%;
+  }
+}

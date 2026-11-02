@@ -1,0 +1,32 @@
+.section {
+  margin-block: clamp(36px, 5vw, 64px);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.heading h2 {
+  font: 400 clamp(30px, 3vw, 44px)/1.12 var(--font-home-handwriting), cursive;
+  color: #603b2c;
+}
+
+.clear {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--color-accent);
+  font-size: 14px;
+}
+
+.clear:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}

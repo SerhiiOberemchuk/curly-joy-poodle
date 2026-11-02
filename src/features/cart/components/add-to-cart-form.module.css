@@ -271,3 +271,48 @@
     transition: none;
   }
 }
+
+/* ---- Skeleton: the same rows while price and stock stream in ------------- */
+.priceBone {
+  width: 150px;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+}
+
+/* The stock pill: 13 px text on 5 px padding. */
+.stockBone {
+  width: 128px;
+  height: calc(13px * 1.6 + 10px);
+  --bone-radius: 999px;
+}
+
+.skuBone {
+  width: 140px;
+}
+
+.sizeBone {
+  min-width: 56px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  --bone-radius: 999px;
+}
+
+/* The stepper is a 54 px pill that stretches to the large button beside it;
+   the button is its padding, one line and a border. */
+.stepperBone,
+.submitBone {
+  --bone-radius: 999px;
+}
+
+.stepperBone {
+  width: 122px;
+  min-height: 54px;
+}
+
+.submitBone {
+  flex: 1;
+  min-width: 200px;
+  height: calc(var(--space-4) * 2 + var(--text-lg) * 1.4 + 2px);
+}

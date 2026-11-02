@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { connection } from "next/server";
+import { Suspense, type ReactNode } from "react";
 
 import { findInfoPage, infoPages, type InfoPage } from "@/content/info-pages";
 import { sizeGuide } from "@/content/size-guide";
@@ -11,8 +12,6 @@ import { formatMoney } from "@/lib/money";
 import { site } from "@/lib/site";
 
 import styles from "./info.module.css";
-
-type InfoParams = PageProps<"/info/[slug]">["params"];
 
 export function generateStaticParams() {
   return infoPages.map(({ slug }) => ({ slug }));
@@ -35,54 +34,55 @@ export async function generateMetadata({ params }: PageProps<"/info/[slug]">): P
   };
 }
 
-async function loadInfoPage(params: InfoParams): Promise<InfoPage> {
-  const page = findInfoPage((await params).slug);
-  if (!page) notFound();
-  return page;
-}
-
-async function InfoHero({ params }: { params: InfoParams }) {
-  const page = await loadInfoPage(params);
-
+/** The CRM's current free-shipping and minimum-order figures, in the shop's words. */
+async function FreeShippingTerms({ fallback }: { fallback: ReactNode }) {
+  // The terms are cached for 30 s, too short for a prerender: read at request time.
+  await connection();
+  const terms = await getDisplayCartTerms().catch(() => null);
+  const threshold = terms?.freeShippingThreshold ?? null;
   return (
     <>
-      <h1 className={styles.title}>{page.title}</h1>
-      <p className={styles.intro}>{page.intro}</p>
+      {threshold === null ? fallback : (
+        <p className={styles.paragraph}>
+          {threshold === 0
+            ? "Безкоштовна доставка для всіх замовлень."
+            : `Безкоштовна доставка від ${formatMoney(threshold)} суми товарів.`}{" "}
+          Підсумок покажемо в кошику перед оформленням.
+        </p>
+      )}
+      {terms?.minOrderAmount ? (
+        <p className={styles.paragraph}>
+          Мінімальна сума замовлення — {formatMoney(terms.minOrderAmount)}.
+        </p>
+      ) : null}
     </>
   );
 }
 
-async function InfoBlocks({ params }: { params: InfoParams }) {
-  const page = await loadInfoPage(params);
+function InfoBlocks({ page }: { page: InfoPage }) {
   const sizes = page.showSizeTable ? sizeGuide : [];
-  const deliveryTerms = page.slug === "delivery"
-    ? await getDisplayCartTerms().catch(() => null)
-    : null;
-  const freeShippingThreshold = deliveryTerms?.freeShippingThreshold ?? null;
 
   const content = (
     <>
-      {page.blocks.map((block) => (
-        <section className={styles.block} key={block.heading}>
-          <h2 className={styles.heading}>{block.heading}</h2>
-          {page.slug === "delivery" && block.heading === "Безкоштовна доставка" && freeShippingThreshold !== null ? (
-            <p className={styles.paragraph}>
-              {freeShippingThreshold === 0
-                ? "Безкоштовна доставка для всіх замовлень."
-                : `Безкоштовна доставка від ${formatMoney(freeShippingThreshold)} суми товарів.`}{" "}
-              Підсумок покажемо в кошику перед оформленням.
-            </p>
-          ) : (
-            block.paragraphs?.map((paragraph) => <p className={styles.paragraph} key={paragraph}>{paragraph}</p>)
-          )}
-          {page.slug === "delivery" && block.heading === "Безкоштовна доставка" && deliveryTerms?.minOrderAmount ? (
-            <p className={styles.paragraph}>
-              Мінімальна сума замовлення — {formatMoney(deliveryTerms.minOrderAmount)}.
-            </p>
-          ) : null}
-          {block.list ? <ul className={styles.list}>{block.list.map((item) => <li className={styles.listItem} key={item}>{item}</li>)}</ul> : null}
-        </section>
-      ))}
+      {page.blocks.map((block) => {
+        const paragraphs = block.paragraphs?.map((paragraph) => (
+          <p className={styles.paragraph} key={paragraph}>{paragraph}</p>
+        ));
+        return (
+          <section className={styles.block} key={block.heading}>
+            <h2 className={styles.heading}>{block.heading}</h2>
+            {page.slug === "delivery" && block.heading === "Безкоштовна доставка" ? (
+              // The general wording until the CRM's figures arrive.
+              <Suspense fallback={paragraphs}>
+                <FreeShippingTerms fallback={paragraphs} />
+              </Suspense>
+            ) : (
+              paragraphs
+            )}
+            {block.list ? <ul className={styles.list}>{block.list.map((item) => <li className={styles.listItem} key={item}>{item}</li>)}</ul> : null}
+          </section>
+        );
+      })}
       {sizes.length > 0 ? (
         <section className={styles.block}>
           <h2 className={styles.heading}>Таблиця розмірів GF Pet</h2>
@@ -109,36 +109,28 @@ async function InfoBlocks({ params }: { params: InfoParams }) {
   );
 }
 
-async function ContactsLink({ params }: { params: InfoParams }) {
-  const { slug } = await params;
-  return slug !== "contacts" ? <Link href="/info/contacts">Усі контакти</Link> : null;
-}
-
 // A real 404 for an unknown slug must be decided before the first streamed
-// byte, so this page may block navigation.
+// byte, so this page may block navigation. The content is the shop's own and
+// is part of the prerendered page.
 export const instant = false;
 
 export default async function Page({ params }: PageProps<"/info/[slug]">) {
-  if (!findInfoPage((await params).slug)) notFound();
+  const page = findInfoPage((await params).slug);
+  if (!page) notFound();
   return (
     <article className={`container ${styles.article}`}>
       <header className={styles.hero}>
         <p className={styles.eyebrow}>Curly Joy підказує</p>
-        <Suspense fallback={<div className={styles.heroSkeleton} />}>
-          <InfoHero params={params} />
-        </Suspense>
+        <h1 className={styles.title}>{page.title}</h1>
+        <p className={styles.intro}>{page.intro}</p>
       </header>
       <div className={styles.content}>
-        <Suspense fallback={<div className={styles.blocksSkeleton} />}>
-          <InfoBlocks params={params} />
-        </Suspense>
+        <InfoBlocks page={page} />
         <aside className={styles.help}>
           <div><strong>Залишилися запитання?</strong><p className={styles.helpText}>{site.workingHours}</p></div>
           <div className={styles.helpLinks}>
             <a href={site.phoneHref}>{site.phone}</a><a href={`mailto:${site.email}`}>{site.email}</a>
-            <Suspense fallback={null}>
-              <ContactsLink params={params} />
-            </Suspense>
+            {page.slug !== "contacts" ? <Link href="/info/contacts">Усі контакти</Link> : null}
           </div>
         </aside>
       </div>

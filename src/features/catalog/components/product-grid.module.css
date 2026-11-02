@@ -20,12 +20,12 @@
   color: var(--color-ink-soft);
 }
 
-.grid > li {
+.grid > * {
   display: flex;
   min-width: 0;
 }
 
-.grid > li > * {
+.grid > * > * {
   flex: 1;
 }
 
@@ -52,5 +52,32 @@
 @container (width >= 1180px) {
   .wide {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* A skeleton of one row: no more cards than the columns above allow. */
+@container (width < 300px) {
+  .singleRow > :nth-child(n + 2) {
+    display: none;
+  }
+}
+@container (300px <= width < 680px) {
+  .singleRow > :nth-child(n + 3) {
+    display: none;
+  }
+}
+@container (680px <= width < 900px) {
+  .singleRow > :nth-child(n + 4) {
+    display: none;
+  }
+}
+@container (width >= 900px) {
+  .singleRow > :nth-child(n + 5) {
+    display: none;
+  }
+}
+@container (width >= 1180px) {
+  .singleRow.wide > :nth-child(5) {
+    display: flex;
   }
 }

@@ -279,6 +279,9 @@ test("favorite button on a catalog card updates the shared store without navigat
     "@/features/catalog/components/card-cart-button": {
       CardCartButton: () => null,
     },
+    "@/features/reviews/components/product-card-rating": {
+      ProductCardRating: () => null,
+    },
   });
   const { ProductCard } = cardLoad(
     "src/features/catalog/components/product-card.tsx",
@@ -612,6 +615,10 @@ test("a product with several CRM photos gets arrows, a counter and thumbnails th
     alt: `Фото ${name}`,
   }));
   const { container } = render(React.createElement(ProductGallery, { images }));
+  // JSDOM does not implement the thumbnail strip's native scrolling API.
+  const strip = screen.getByRole("group", { name: "Зображення товару" });
+  const scrollCalls = [];
+  strip.scrollTo = (options) => scrollCalls.push(options);
   const main = () => container.querySelector("img").getAttribute("src");
   const counter = () => container.querySelector("[aria-live]").textContent;
 
@@ -620,6 +627,8 @@ test("a product with several CRM photos gets arrows, a counter and thumbnails th
   assert.equal(screen.getByRole("group", { name: "Зображення товару" }).querySelectorAll("button").length, 3);
   fireEvent.click(screen.getByRole("button", { name: "Наступне фото" }));
   assert.equal(main(), "https://example.com/b.jpg");
+  assert.equal(scrollCalls.length, 1);
+  assert.equal(scrollCalls[0].behavior, "smooth");
   fireEvent.click(screen.getByRole("button", { name: "Попереднє фото" }));
   fireEvent.click(screen.getByRole("button", { name: "Попереднє фото" }));
   // From the first photo «previous» wraps round to the last one.

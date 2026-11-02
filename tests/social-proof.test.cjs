@@ -132,15 +132,15 @@ test("shop rating averages exact star counts of every listed model in batches of
     ),
     [100, 50],
   );
-  assert.deepEqual(lifetimes, ["hours"]);
+  assert.deepEqual(lifetimes, [{ stale: 60, revalidate: 60, expire: 120 }, "hours"]);
 });
 
 test("a refused CRM read hides its part, is cached briefly and tells the owner which permission to add", async () => {
   responses = () => new CrmApiError(403, "FORBIDDEN");
   assert.equal(await server.getShopRating(), null);
-  assert.deepEqual(lifetimes, ["minutes"]);
+  assert.deepEqual(lifetimes, [{ stale: 60, revalidate: 60, expire: 120 }, "minutes"]);
   const [message, details] = logs.mock.calls.at(-1).arguments;
-  assert.match(message, /shop rating is hidden/);
+  assert.match(message, /Catalog ratings are hidden/);
   assert.equal(details.status, 403);
   assert.match(details.hint, /reviews:read/);
   assert.match(details.hint, /«Змінити права»/);

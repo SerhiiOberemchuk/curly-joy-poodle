@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { CartSkeleton } from "@/features/cart/components/cart-skeleton";
 import { CartView } from "@/features/cart/components/cart-view";
 
 import styles from "./cart.module.css";
@@ -21,20 +22,10 @@ export default function Page() {
       </header>
 
       <section className={styles.content} aria-label="Товари у кошику">
-        <Suspense fallback={<CartFallback />}>
+        <Suspense fallback={<CartSkeleton />}>
           <CartView />
         </Suspense>
       </section>
-    </div>
-  );
-}
-
-function CartFallback() {
-  return (
-    <div className={styles.loading} role="status">
-      <span className="visually-hidden">Завантажуємо кошик</span>
-      <span aria-hidden="true" />
-      <span aria-hidden="true" />
     </div>
   );
 }

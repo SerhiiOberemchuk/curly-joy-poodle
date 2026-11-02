@@ -12,6 +12,7 @@ import {
   sellsInHryvnia,
 } from "@/features/checkout/options";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
+import { CheckoutSkeleton } from "@/features/checkout/components/checkout-skeleton";
 import { marketingConsentEnabled } from "@/features/checkout/marketing-consent";
 import { formatMoney } from "@/lib/money";
 
@@ -31,9 +32,7 @@ export default function Page() {
         <h1>Оформлення замовлення</h1>
         <p>Заповніть контакти та оберіть зручний спосіб доставки.</p>
       </header>
-      <Suspense
-        fallback={<div className={styles.loading}>Готуємо замовлення…</div>}
-      >
+      <Suspense fallback={<CheckoutSkeleton />}>
         <CheckoutContent />
       </Suspense>
     </div>

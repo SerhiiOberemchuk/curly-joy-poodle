@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { CatalogPage } from "@/features/catalog/components/catalog-page";
 import {
@@ -41,45 +40,23 @@ export async function generateMetadata({
   };
 }
 
-type CategoryParams = PageProps<"/catalog/[category]">["params"];
-
-async function CategoryTitle({ params }: { params: CategoryParams }) {
-  const category = await getCategory((await params).category);
-  if (!category) notFound();
-
-  return category.title;
-}
-
-async function CategoryDescription({ params }: { params: CategoryParams }) {
-  const category = await getCategory((await params).category);
-  if (!category) return null;
-
-  return categoryDescription(category);
-}
-
 // A real 404 for an unknown category must be decided before the first
-// streamed byte, so this page may block navigation.
+// streamed byte, so this page may block navigation. Everything above the list
+// then comes from the cached category and is part of the prerendered page.
 export const instant = false;
 
 export default async function Page({
   params,
   searchParams,
 }: PageProps<"/catalog/[category]">) {
-  if (!(await getCategory((await params).category))) notFound();
+  const category = await getCategory((await params).category);
+  if (!category) notFound();
   return (
     <CatalogPage
       eyebrow="Категорія"
-      title={
-        <Suspense fallback={"\u00a0"}>
-          <CategoryTitle params={params} />
-        </Suspense>
-      }
-      description={
-        <Suspense fallback={"\u00a0"}>
-          <CategoryDescription params={params} />
-        </Suspense>
-      }
-      activeCategory={params.then(({ category }) => category)}
+      title={category.title}
+      description={categoryDescription(category)}
+      category={category.slug}
       searchParams={searchParams}
     />
   );

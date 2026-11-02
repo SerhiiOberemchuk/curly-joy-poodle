@@ -12,17 +12,122 @@ import {
 import { useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/icon";
+import { Bone } from "@/components/ui/skeleton";
 
-import { filterFacets, filterProductList, type ProductFilters } from "../filtering";
-import { sortProductList, sortValues } from "../sorting";
+import {
+  CATALOG_PAGE_SIZE,
+  filterFacets,
+  filterProductList,
+  type ProductFilters,
+} from "../filtering";
+import { defaultSort, sortProductList, sortValues } from "../sorting";
 import type { ProductListItem } from "../types";
 import { CatalogFilters, type CategoryLink } from "./catalog-filters";
 import styles from "./catalog-toolbar.module.css";
-import { ProductGrid } from "./product-grid";
+import type { ProductCardShape } from "./product-card";
+import { ProductGrid, ProductGridSkeleton } from "./product-grid";
 import { SortSelect } from "./sort-select";
 
-/** Six rows of four: a page that loads fast and still feels full. */
-const PAGE_SIZE = 24;
+/** The rows the filter column will hold, counted from the cached list. */
+export interface FilterOutline {
+  /** Category links, «Усі товари» included. */
+  categories: number;
+  /** Brand checkboxes; 0 when the section is hidden. */
+  brands: number;
+  price: boolean;
+  /** «Лише в наявності» and «Зі знижкою», as shown. */
+  checks: number;
+}
+
+function RowBones({ count, className }: { count: number; className: string }) {
+  return Array.from({ length: count }, (_, index) => (
+    <span className={className} key={index}>
+      <Bone line className={styles.rowBone} />
+    </span>
+  ));
+}
+
+function TitleBone() {
+  return <Bone line className={styles.filterTitleBone} />;
+}
+
+/**
+ * The list's layout while it streams: the filter column with its sections,
+ * the toolbar, one card per product of the first page (`shapes`) and the
+ * pager when the list runs past it. The same elements and classes as the
+ * list, so nothing moves on arrival.
+ */
+export function CatalogResultsSkeleton({
+  shapes,
+  paged,
+  filters,
+}: {
+  shapes: readonly ProductCardShape[];
+  paged: boolean;
+  filters: FilterOutline;
+}) {
+  return (
+    <div className={styles.layout}>
+      <p className="visually-hidden" role="status">
+        Завантажуємо товари…
+      </p>
+      <div className={styles.filters} aria-hidden="true">
+        <Bone className={styles.filtersToggleBone} />
+        <div className={styles.filtersPanel}>
+          <div className={styles.filterGroup}>
+            <p className={styles.filterTitle}>
+              <TitleBone />
+            </p>
+            <div className={styles.categoryList}>
+              <RowBones count={filters.categories} className={styles.category} />
+            </div>
+          </div>
+          {filters.brands > 0 ? (
+            <fieldset className={styles.filterGroup} disabled>
+              <legend className={styles.filterTitle}>
+                <TitleBone />
+              </legend>
+              <RowBones count={filters.brands} className={styles.check} />
+            </fieldset>
+          ) : null}
+          {filters.price ? (
+            <div className={styles.filterGroup}>
+              <fieldset disabled>
+                <legend className={styles.filterTitle}>
+                  <TitleBone />
+                </legend>
+                <div className={styles.priceRow}>
+                  <Bone className={styles.priceFieldBone} />
+                </div>
+              </fieldset>
+            </div>
+          ) : null}
+          {filters.checks > 0 ? (
+            <fieldset className={styles.filterGroup} disabled>
+              <legend className={styles.filterTitle}>
+                <TitleBone />
+              </legend>
+              <RowBones count={filters.checks} className={styles.check} />
+            </fieldset>
+          ) : null}
+        </div>
+      </div>
+      <div className={styles.results} aria-hidden="true">
+        <div className={styles.toolbar}>
+          <Bone line className={`${styles.count} ${styles.countBone}`} />
+          <Bone className={styles.sortBone} />
+        </div>
+        {shapes.length > 0 ? <ProductGridSkeleton cards={shapes} /> : null}
+        {paged ? (
+          <div className={styles.pagination}>
+            <Bone className={styles.moreBone} />
+            <Bone className={styles.pagesBone} />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 const urlOptions = { history: "replace", shallow: true } as const;
 const filterParsers = {
@@ -59,7 +164,7 @@ export function CatalogResults({
 }) {
   const [sort, setSort] = useQueryState(
     "sort",
-    parseAsStringLiteral(sortValues).withDefault("featured").withOptions(urlOptions),
+    parseAsStringLiteral(sortValues).withDefault(defaultSort).withOptions(urlOptions),
   );
   const [state, setState] = useQueryStates(filterParsers, urlOptions);
   const filters = useMemo<ProductFilters>(
@@ -78,12 +183,12 @@ export function CatalogResults({
     [products, filters, sort],
   );
 
-  const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(visible.length / CATALOG_PAGE_SIZE));
   const page = Math.min(Math.max(1, state.page), pages);
   // «Show more» extends the run of pages on screen; a page number starts a new run.
   const [runStart, setRunStart] = useState(page);
   const first = Math.min(runStart, page);
-  const shown = visible.slice((first - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const shown = visible.slice((first - 1) * CATALOG_PAGE_SIZE, page * CATALOG_PAGE_SIZE);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   function changeFilters(next: Partial<ProductFilters>) {
@@ -155,7 +260,7 @@ export function CatalogResults({
                 className={styles.more}
                 onClick={() => void setState({ page: page + 1 })}
               >
-                Показати ще {Math.min(PAGE_SIZE, visible.length - page * PAGE_SIZE)}
+                Показати ще {Math.min(CATALOG_PAGE_SIZE, visible.length - page * CATALOG_PAGE_SIZE)}
               </button>
             ) : null}
             <ul className={styles.pages}>

@@ -25,6 +25,7 @@ const load = createLoader({
       product.title,
       React.createElement(FavoriteToggle, { productId: product.id, productTitle: product.title }),
     )),
+    ProductGridSkeleton: () => null,
   },
 });
 const { createFavoritesStore } = load("src/features/favorites/favorites-store.ts");

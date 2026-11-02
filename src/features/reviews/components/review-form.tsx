@@ -7,11 +7,16 @@ import { initialReviewState } from "../action-state";
 import { submitReviewAction } from "../actions";
 import styles from "../reviews.module.css";
 
-export function ReviewForm({ productId, requestId }: { productId: string; requestId: string }) {
+/**
+ * Without `requestId` the form stands in the static shell while the reviews
+ * stream: the same fields, disabled until the page's own request id arrives.
+ */
+export function ReviewForm({ productId, requestId }: { productId: string; requestId?: string }) {
   const [state, action, pending] = useActionState(
-    submitReviewAction.bind(null, productId, requestId),
+    submitReviewAction.bind(null, productId, requestId ?? ""),
     initialReviewState,
   );
+  const locked = pending || !requestId;
   const id = useId();
   const formRef = useRef<HTMLFormElement>(null);
   // The server's answer lands next to the fields: take the keyboard to the first.
@@ -56,7 +61,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
       <form ref={formRef} action={action} className={styles.form} noValidate>
         <fieldset
           className={styles.ratingField}
-          disabled={pending}
+          disabled={locked}
           aria-describedby={
             state.errors.rating ? `${id}-rating-error` : undefined
           }
@@ -101,7 +106,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
                 maxLength={field.maxLength}
                 id={`${id}-${field.name}`}
                 required
-                disabled={pending}
+                disabled={locked}
                 defaultValue={state.values?.[field.name] ?? ""}
                 aria-invalid={Boolean(state.errors[field.name])}
                 aria-describedby={
@@ -134,7 +139,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
             minLength={10}
             maxLength={2000}
             required
-            disabled={pending}
+            disabled={locked}
             defaultValue={state.values?.comment ?? ""}
             placeholder="Розкажіть про свій досвід із цим товаром"
             aria-invalid={Boolean(state.errors.comment)}
@@ -153,7 +158,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
             name="consent"
             type="checkbox"
             required
-            disabled={pending}
+            disabled={locked}
             defaultChecked={state.values?.consent === "on"}
             aria-invalid={Boolean(state.errors.consent)}
             aria-describedby={
@@ -170,7 +175,7 @@ export function ReviewForm({ productId, requestId }: { productId: string; reques
         <button
           type="submit"
           className={styles.primaryButton}
-          disabled={pending}
+          disabled={locked}
         >
           {pending ? "Надсилаємо…" : "Надіслати відгук"}
           <Icon name="arrow" />

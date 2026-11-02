@@ -5,8 +5,24 @@ import { useRef } from "react";
 import { Icon } from "@/components/ui/icon";
 
 import type { ProductListItem } from "../types";
-import { ProductCard } from "./product-card";
+import { ProductCard, ProductCardSkeleton } from "./product-card";
 import styles from "./product-shelf.module.css";
+
+/** The shelf's frame while its products load: the cards and the arrow row. */
+export function ProductShelfSkeleton({ count }: { count: number }) {
+  return (
+    <div className={styles.shelf} aria-hidden="true">
+      <div className={styles.track}>
+        {Array.from({ length: count }, (_, index) => (
+          <div key={index}>
+            <ProductCardSkeleton />
+          </div>
+        ))}
+      </div>
+      {count > 2 ? <div className={`${styles.controls} ${styles.controlsSkeleton}`} /> : null}
+    </div>
+  );
+}
 
 /**
  * A row of product cards that scrolls sideways: suggestions that should not

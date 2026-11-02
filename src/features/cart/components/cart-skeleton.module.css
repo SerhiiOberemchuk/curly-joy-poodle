@@ -1,0 +1,97 @@
+/* Sizes of the cart's own parts, for the bones that stand in for them. */
+.photo {
+  aspect-ratio: 1;
+  --bone-radius: 16px;
+}
+
+.lineCopy {
+  flex: 1 1 auto;
+}
+
+/* The line's h2: 24 px at line height 1.15. One line beside the price on a
+   wide screen; on a phone the title takes two and the price wraps below. */
+.title {
+  width: 70%;
+  font-size: 1.5em;
+  line-height: 1.15;
+}
+
+.titleWrap {
+  --bone-display: none;
+}
+
+.meta {
+  width: 40%;
+}
+
+/* The line total: a small price on one 18 px line. */
+.price {
+  width: 72px;
+  font-size: var(--text-lg);
+}
+
+/* Two 38 px buttons and the count inside a 1 px border. */
+.stepper {
+  width: 112px;
+  height: 40px;
+  --bone-radius: 999px;
+}
+
+.remove {
+  width: 64px;
+}
+
+.summaryTitle {
+  width: 40%;
+  font-size: 36px;
+  line-height: 1;
+}
+
+.total {
+  width: 100%;
+  font-size: 22px;
+}
+
+/* A block «lg» button: 16 px padding around an 18 px line (1.4), with a border. */
+.checkout {
+  height: calc(var(--space-4) * 2 + var(--text-lg) * 1.4 + 2px);
+  --bone-radius: 999px;
+}
+
+.back {
+  width: 60%;
+  height: 44px;
+  margin-inline: auto;
+  --bone-radius: 999px;
+}
+
+.glyph {
+  width: 76px;
+  height: 76px;
+  --bone-radius: 50%;
+}
+
+.emptyTitle {
+  --bone-display: inline-block;
+}
+
+.emptyText {
+  width: min(100%, 44ch);
+}
+
+.emptyButton {
+  width: 240px;
+  height: calc(var(--space-4) * 2 + var(--text-lg) * 1.4 + 2px);
+  --bone-radius: 999px;
+}
+
+@media (width < 560px) {
+  .lineCopy {
+    flex-basis: 100%;
+  }
+
+  .titleWrap {
+    --bone-display: block;
+    width: 60%;
+  }
+}

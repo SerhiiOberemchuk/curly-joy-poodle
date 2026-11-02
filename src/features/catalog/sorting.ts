@@ -20,6 +20,9 @@ export const sortOptions: ReadonlyArray<{ value: SortOption; label: string }> = 
   { value: "title", label: "За назвою" },
 ];
 
+/** The order a list opens in, before the buyer picks another. */
+export const defaultSort: SortOption = "featured";
+
 export function isSortOption(value: string | undefined): value is SortOption {
   return sortOptions.some((option) => option.value === value);
 }

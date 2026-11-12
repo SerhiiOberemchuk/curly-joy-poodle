@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import styles from "./section.module.css";
 
@@ -23,15 +23,19 @@ export function Section<HrefType extends string>({
   children?: ReactNode;
 }) {
   const Heading = headingLevel === 1 ? "h1" : "h2";
+  const headingId = useId();
 
   return (
-    <section className={`${styles.section} ${tight ? styles.tight : ""}`}>
+    <section
+      className={`${styles.section} ${tight ? styles.tight : ""}`}
+      aria-labelledby={title ? headingId : undefined}
+    >
       <div className="container">
         {title ? (
           <header className={styles.head}>
             <div>
               {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
-              <Heading className={styles.title}>{title}</Heading>
+              <Heading id={headingId} className={styles.title}>{title}</Heading>
               {description ? <p className={styles.description}>{description}</p> : null}
             </div>
             {action ? (

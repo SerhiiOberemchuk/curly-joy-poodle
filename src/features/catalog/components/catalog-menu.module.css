@@ -1,0 +1,291 @@
+/* A native popover lives in the top layer: it hangs from the header bar
+   (`--site-header-bar`, set in site-header.module.css) and follows it while
+   the bar compacts and sticks. */
+.panel {
+  --surface-y: -10px;
+  --surface-scale: 1;
+  position: fixed;
+  position-anchor: --site-header-bar;
+  inset: auto 0;
+  top: anchor(bottom);
+  width: min(100%, 1600px);
+  /* Room under the full header: it fits whatever state the bar is in. */
+  max-height: calc(100dvh - var(--header-topbar-height) - var(--header-expanded-height));
+  margin: 0 auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-top: 1px solid #eadbd1;
+  border-radius: 0 0 24px 24px;
+  background: #fffdfb;
+  color: var(--color-ink);
+  box-shadow: 0 24px 48px rgb(73 45 34 / 14%);
+  /* The header ignores the pointer outside its controls; the panel is one. */
+  pointer-events: auto;
+}
+
+/* Without anchor positioning: under the full header at the top of the page. */
+@supports not (anchor-name: --anchor) {
+  .panel {
+    top: calc(var(--header-topbar-height) + var(--header-expanded-height));
+  }
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-ink-soft);
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.close:hover {
+  background: #f6ece6;
+  color: var(--color-ink);
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 32px;
+  padding: 28px clamp(16px, 2vw, 32px) 32px;
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.title {
+  font: 400 34px/1 var(--font-home-handwriting), cursive;
+  letter-spacing: -0.02em;
+  color: #603b2c;
+}
+
+.title span {
+  color: #c5867b;
+  font-size: 0.8em;
+}
+
+.groupTitle {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #89594d;
+}
+
+.quickLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.allLink,
+.quickLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.allLink {
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 0 20px;
+  background: #785446;
+  color: #fff9f4;
+  transition: background-color var(--transition);
+}
+
+.allLink:hover {
+  background: #58382d;
+}
+
+.allLink svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quickLink {
+  padding: 0 14px;
+  color: var(--color-ink);
+  transition: background-color var(--transition);
+}
+
+.quickLink:hover {
+  background: #f6ece6;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: start;
+  /* Clear of the close button in the panel's corner. */
+  padding-right: 48px;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.categoryLink {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #efe3da;
+  border-radius: 18px;
+  background: #fff;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.categoryLink:hover {
+  border-color: #a8796a;
+  box-shadow: 0 10px 28px rgb(137 89 77 / 16%);
+}
+
+.cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: #fff;
+}
+
+.cover img {
+  object-fit: contain;
+  padding: 14px;
+}
+
+/* Two lines held for every name, so a row of cards keeps one height. */
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: calc(2lh + 24px);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.categoryTitle svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: #795446;
+}
+
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-inline: 6px;
+  font-size: 14px;
+}
+
+.children a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: var(--color-ink-soft);
+}
+
+.children a:hover {
+  background: #f6ece6;
+  color: var(--color-ink);
+}
+
+.panel a:focus-visible,
+.panel button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Keep in sync with the header's breakpoint in site-header.module.css. */
+@media (width <= 1100px) {
+  .panel {
+    border-radius: 0 0 18px 18px;
+  }
+
+  .close {
+    top: 10px;
+    right: 8px;
+  }
+
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 18px 16px 24px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  /* Quick links as one wrapping row of chips above the categories. */
+  .quickLinks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .allLink {
+    margin-bottom: 0;
+  }
+
+  .quickLink {
+    border: 1px solid #e8d8cd;
+  }
+
+  /* Two across on a phone, more as a tablet allows. */
+  .categories {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding-right: 0;
+  }
+
+  .cover {
+    aspect-ratio: 1.3 / 1;
+  }
+
+  .cover img {
+    padding: 10px;
+  }
+
+  .categoryTitle {
+    min-height: calc(2lh + 20px);
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition: none;
+  }
+}

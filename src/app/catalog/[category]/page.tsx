@@ -7,6 +7,7 @@ import {
   getCategorySlugs,
 } from "@/features/catalog/queries";
 import { openGraph } from "@/lib/metadata";
+import { PageTransition } from "@/components/layout/page-transition";
 
 /** Cache Components needs at least one param; an empty catalog prerenders a 404. */
 const EMPTY_CATALOG_SLUG = "__empty__";
@@ -52,12 +53,14 @@ export default async function Page({
   const category = await getCategory((await params).category);
   if (!category) notFound();
   return (
-    <CatalogPage
-      eyebrow="Категорія"
-      title={category.title}
-      description={categoryDescription(category)}
-      category={category.slug}
-      searchParams={searchParams}
-    />
+    <PageTransition>
+      <CatalogPage
+        eyebrow="Категорія"
+        title={category.title}
+        description={categoryDescription(category)}
+        category={category.slug}
+        searchParams={searchParams}
+      />
+    </PageTransition>
   );
 }

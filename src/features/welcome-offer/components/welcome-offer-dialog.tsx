@@ -3,6 +3,8 @@
 import { useActionState, useCallback, useEffect, useId, useRef } from "react";
 import { FormSuccess } from "@/components/ui/form-success";
 import { Icon } from "@/components/ui/icon";
+import { syncSurfaceInteraction } from "@/components/ui/surface-interaction";
+import motion from "@/components/ui/surface-motion.module.css";
 import { requestWelcomeOfferAction } from "../actions";
 import {
   initialOfferState,
@@ -89,7 +91,9 @@ export function WelcomeOfferDialog({
       ) : null}
       <dialog
         ref={dialog}
-        className={styles.dialog}
+        className={`${styles.dialog} ${motion.layer}`}
+        onBeforeToggle={syncSurfaceInteraction}
+        onToggle={syncSurfaceInteraction}
         aria-labelledby={`${id}-title`}
         aria-describedby={`${id}-description`}
         onClose={closed}

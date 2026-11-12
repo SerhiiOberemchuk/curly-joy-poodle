@@ -1,0 +1,116 @@
+/* Native display/overlay transitions keep the closing surface painted without
+   delaying its logical close, focus restoration or dismissal with JS timers. */
+.layer,
+.disclosure {
+  opacity: 0;
+  translate: 0 var(--surface-y, 8px);
+  scale: var(--surface-scale, 0.985);
+  transform-origin: var(--surface-origin, top center);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-exit) var(--motion-ease-exit),
+    translate var(--motion-exit) var(--motion-ease-exit),
+    scale var(--motion-exit) var(--motion-ease-exit),
+    display var(--motion-exit) allow-discrete,
+    overlay var(--motion-exit) allow-discrete;
+}
+
+.layer:is([open], :popover-open),
+.disclosure:not([hidden]) {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  pointer-events: auto;
+  transition-duration: var(--motion-enter);
+  transition-timing-function: var(--motion-ease-enter);
+}
+
+.disclosure[hidden] {
+  display: none;
+}
+
+.layer:not([open]):not(:popover-open) {
+  pointer-events: none;
+}
+
+@starting-style {
+  .layer:is([open], :popover-open),
+  .disclosure:not([hidden]) {
+    opacity: 0;
+    translate: 0 var(--surface-y, 8px);
+    scale: var(--surface-scale, 0.985);
+  }
+}
+
+.layer::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--motion-exit, 200ms) ease,
+    display var(--motion-exit, 200ms) allow-discrete,
+    overlay var(--motion-exit, 200ms) allow-discrete;
+}
+
+.layer[open]::backdrop {
+  opacity: 1;
+  transition-duration: var(--motion-enter, 320ms);
+}
+
+@starting-style {
+  .layer[open]::backdrop { opacity: 0; }
+}
+
+/* The desktop search remains in place; only its phone panel is a surface. */
+@media (width <= 1100px) {
+  .responsive {
+    opacity: 0;
+    translate: 0 -8px;
+    pointer-events: none;
+    transition:
+      opacity var(--motion-exit) var(--motion-ease-exit),
+      translate var(--motion-exit) var(--motion-ease-exit),
+      display var(--motion-exit) allow-discrete;
+  }
+
+  .responsive[data-open] {
+    opacity: 1;
+    translate: 0 0;
+    pointer-events: auto;
+    transition-duration: var(--motion-enter);
+    transition-timing-function: var(--motion-ease-enter);
+  }
+
+  @starting-style {
+    .responsive[data-open] {
+      opacity: 0;
+      translate: 0 -8px;
+    }
+  }
+}
+
+/* react-select owns removal and focus. Its supported classNames API adds
+   arrival motion without holding a logically closed listbox in the DOM. */
+.dropdown {
+  transform-origin: top center;
+  animation: dropdown-enter var(--motion-dropdown) var(--motion-ease-enter) both;
+}
+
+.above {
+  --dropdown-y: 6px;
+  transform-origin: bottom center;
+}
+
+@keyframes dropdown-enter {
+  from { opacity: 0; translate: 0 var(--dropdown-y, -6px); scale: 0.99; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer,
+  .layer::backdrop,
+  .disclosure,
+  .responsive {
+    transition: none;
+  }
+
+  .dropdown { animation: none; }
+}

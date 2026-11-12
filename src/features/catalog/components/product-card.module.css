@@ -158,6 +158,10 @@
   color: var(--color-accent);
 }
 
+.ratingBone {
+  width: 70px;
+}
+
 .options {
   display: flex;
   flex-wrap: wrap;

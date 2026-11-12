@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-
-import { ProductShelf } from "@/features/catalog/components/product-shelf";
-import type { ProductListItem } from "@/features/catalog/types";
+import { useEffect, type ReactNode } from "react";
 
 import { useCartStore, useCartStoreApi } from "../cart-store";
 import type { Cart } from "../types";
@@ -14,11 +11,11 @@ import styles from "./cart-view.module.css";
 
 export function CartClient({
   initialCart,
-  suggestions = [],
+  children,
 }: {
   initialCart: Cart;
   /** «Add to your order»: shown while the cart has something in it. */
-  suggestions?: readonly ProductListItem[];
+  children?: ReactNode;
 }) {
   const store = useCartStoreApi();
   const currentCart = useCartStore((state) => state.cart);
@@ -60,13 +57,7 @@ export function CartClient({
         </div>
         <CartSummary cart={cart} action="checkout" />
       </div>
-      {suggestions.length > 0 ? (
-        <section className={styles.suggestions} aria-labelledby="cart-suggestions-title">
-          <h2 id="cart-suggestions-title">Додайте до замовлення</h2>
-          <p>Приємні дрібниці, які легко додати до кошика.</p>
-          <ProductShelf products={suggestions} label="Товари, які можна додати" />
-        </section>
-      ) : null}
+      {children}
     </>
   );
 }

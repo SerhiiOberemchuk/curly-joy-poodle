@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/icon";
+import motion from "@/components/ui/surface-motion.module.css";
 import type { NavLink } from "@/lib/navigation";
 import styles from "./mobile-nav.module.css";
 
@@ -65,47 +66,48 @@ function MobileNavPanel({ links, upcoming = [], account }: MobileNavProps) {
         <Icon name={open ? "close" : "menu"} />
       </button>
 
-      {open ? (
-        <nav
-          id={panelId}
-          ref={panelRef}
-          className={styles.panel}
-          aria-label="Мобільне меню"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setOpen(false);
-              toggleRef.current?.focus();
-            }
-          }}
-        >
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={styles.link}
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-          {upcoming.map((label) => (
-            <span key={label} className={styles.upcoming}>
-              {label}
-              <span className={styles.soonTag}>скоро</span>
-            </span>
-          ))}
-          {account ? (
-            // Another host, so a plain anchor rather than a client navigation.
-            <a
-              href={account.href}
-              className={styles.link}
-              onClick={() => setOpen(false)}
-            >
-              {account.label}
-            </a>
-          ) : null}
-        </nav>
-      ) : null}
+      <nav
+        id={panelId}
+        ref={panelRef}
+        className={`${styles.panel} ${motion.disclosure}`}
+        hidden={!open}
+        inert={!open}
+        aria-hidden={!open || undefined}
+        aria-label="Мобільне меню"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+            toggleRef.current?.focus();
+          }
+        }}
+      >
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={styles.link}
+            onClick={() => setOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {upcoming.map((label) => (
+          <span key={label} className={styles.upcoming}>
+            {label}
+            <span className={styles.soonTag}>скоро</span>
+          </span>
+        ))}
+        {account ? (
+          // Another host, so a plain anchor rather than a client navigation.
+          <a
+            href={account.href}
+            className={styles.link}
+            onClick={() => setOpen(false)}
+          >
+            {account.label}
+          </a>
+        ) : null}
+      </nav>
     </>
   );
 }

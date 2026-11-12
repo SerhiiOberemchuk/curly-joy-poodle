@@ -9,13 +9,11 @@ import {
   useId,
   useState,
   useTransition,
-  type FocusEventHandler,
 } from "react";
 import {
   useForm,
   FormProvider,
   useWatch,
-  type FieldError,
   type SubmitHandler,
   type UseFormRegisterReturn,
 } from "react-hook-form";
@@ -56,6 +54,7 @@ import {
 } from "../validation";
 import { MARKETING_CONSENT_TEXT } from "../marketing-consent";
 import styles from "./checkout-form.module.css";
+import { CheckoutStepLegend, Field } from "./checkout-fields";
 
 const defaultValues: CheckoutFormValues = {
   firstName: "",
@@ -269,9 +268,7 @@ export function CheckoutForm({
             }}
           >
             <fieldset className={styles.fieldset} disabled={isPending}>
-              <legend className={styles.legend}>
-                <span className={styles.step}>1</span> Контактні дані
-              </legend>
+              <CheckoutStepLegend step={1} />
 
               <div className={`${styles.row} ${styles.rowTwo}`}>
                 <Field
@@ -334,9 +331,7 @@ export function CheckoutForm({
             </fieldset>
 
             <fieldset className={styles.fieldset} disabled={isPending}>
-              <legend className={styles.legend}>
-                <span className={styles.step}>2</span> Доставка
-              </legend>
+              <CheckoutStepLegend step={2} />
 
               <div className={styles.options}>
                 {deliveryOptions.map((option) => {
@@ -423,9 +418,7 @@ export function CheckoutForm({
             </fieldset>
 
             <fieldset className={styles.fieldset} disabled={isPending}>
-              <legend className={styles.legend}>
-                <span className={styles.step}>3</span> Оплата
-              </legend>
+              <CheckoutStepLegend step={3} />
 
               <div className={styles.options}>
                 {paymentOptions.map((option) => (
@@ -564,52 +557,5 @@ export function CheckoutForm({
         </CartSummary>
       </div>
     </FormProvider>
-  );
-}
-
-function Field({
-  label,
-  registration,
-  error,
-  onBlur,
-  ...inputProps
-}: {
-  label: string;
-  registration: UseFormRegisterReturn;
-  error?: FieldError;
-  type?: string;
-  autoComplete?: string;
-  inputMode?: "tel" | "email" | "numeric";
-  maxLength?: number;
-  required?: boolean;
-  onFocus?: FocusEventHandler<HTMLInputElement>;
-  onBlur?: FocusEventHandler<HTMLInputElement>;
-}) {
-  const id = useId();
-  const message = error?.message;
-
-  return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={id}>
-        {label}
-      </label>
-      <input
-        {...inputProps}
-        {...registration}
-        onBlur={(event) => {
-          onBlur?.(event);
-          return registration.onBlur(event);
-        }}
-        id={id}
-        aria-invalid={message ? true : undefined}
-        aria-describedby={message ? `${id}-error` : undefined}
-        className={message ? styles.inputInvalid : styles.input}
-      />
-      {message ? (
-        <span id={`${id}-error`} className={styles.error}>
-          {message}
-        </span>
-      ) : null}
-    </div>
   );
 }

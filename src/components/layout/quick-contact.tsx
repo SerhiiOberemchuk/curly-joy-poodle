@@ -3,6 +3,8 @@
 import { useId } from "react";
 import { Icon } from "@/components/ui/icon";
 import { NewTabNote } from "@/components/ui/new-tab-note";
+import { syncSurfaceInteraction } from "@/components/ui/surface-interaction";
+import motion from "@/components/ui/surface-motion.module.css";
 import { site } from "@/lib/site";
 import styles from "./quick-contact.module.css";
 
@@ -23,7 +25,9 @@ export function QuickContact() {
         id={id}
         popover="auto"
         role="dialog"
-        className={styles.panel}
+        className={`${styles.panel} ${motion.layer}`}
+        onBeforeToggle={syncSurfaceInteraction}
+        onToggle={syncSurfaceInteraction}
         aria-labelledby={`${id}-title`}
       >
         <div className={styles.heading}>

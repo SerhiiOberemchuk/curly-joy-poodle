@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CatalogPage } from "@/features/catalog/components/catalog-page";
 import { getCollection, getCollectionSlugs } from "@/features/catalog/queries";
 import { openGraph } from "@/lib/metadata";
+import { PageTransition } from "@/components/layout/page-transition";
 
 /** Cache Components needs at least one param; no live collection prerenders a 404. */
 const EMPTY_COLLECTION_SLUG = "__empty__";
@@ -49,12 +50,14 @@ export default async function Page({
   const collection = await getCollection((await params).collection);
   if (!collection) notFound();
   return (
-    <CatalogPage
-      eyebrow="Добірка Curly Joy"
-      title={collection.title}
-      description={collectionDescription(collection)}
-      searchParams={searchParams}
-      collection={collection.slug}
-    />
+    <PageTransition>
+      <CatalogPage
+        eyebrow="Добірка Curly Joy"
+        title={collection.title}
+        description={collectionDescription(collection)}
+        searchParams={searchParams}
+        collection={collection.slug}
+      />
+    </PageTransition>
   );
 }

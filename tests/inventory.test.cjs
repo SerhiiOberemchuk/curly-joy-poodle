@@ -615,7 +615,7 @@ test("checkout starts with contacts and an old buyer cookie cannot force login o
   setCart([{ p: "p1", q: 1 }]);
   cookieValues.set("cjp_buyer", "a-session-left-by-the-removed-profile-flow");
   const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
-  const content = CheckoutPage().props.children[1].props.children;
+  const content = CheckoutPage().props.children.props.children[1].props.children;
   const html = renderToStaticMarkup(await content.type(content.props));
   assert.match(html, /Контактні дані/);
   assert.doesNotMatch(html, /Ваш профіль покупця|Email для входу|Отримати код/);
@@ -1168,10 +1168,24 @@ test("the payment poll re-renders the page only when the status on screen change
   assert.equal((await readReceiptCookie()).status, "paid");
 });
 
-async function renderReturn(query = {}) {
+function returnContent(query) {
   const { default: Page } = load("src/app/checkout/success/page.tsx");
-  const element = Page({ searchParams: Promise.resolve(query) }).props.children
-    .props.children;
+  function findBoundary(node) {
+    if (!React.isValidElement(node)) return null;
+    if (node.type === React.Suspense) return node;
+    for (const child of React.Children.toArray(node.props.children)) {
+      const boundary = findBoundary(child);
+      if (boundary) return boundary;
+    }
+    return null;
+  }
+  const boundary = findBoundary(Page({ searchParams: Promise.resolve(query) }));
+  assert.ok(boundary, "confirmation content streams inside its static card");
+  return boundary.props.children;
+}
+
+async function renderReturn(query = {}) {
+  const element = returnContent(query);
   try {
     return renderToStaticMarkup(await element.type(element.props));
   } catch(error) {
@@ -1239,8 +1253,7 @@ test("a legacy tokenless confirmation redirects to a proof for the displayed ord
   setCart([{ p: "p1", q: 1 }]);
   failPayment = true;
   await confirmationUrl(checkoutData());
-  const { default: Page } = load("src/app/checkout/success/page.tsx");
-  const element = Page({ searchParams: Promise.resolve({ payment: "unavailable" }) }).props.children.props.children;
+  const element = returnContent({ payment: "unavailable" });
   await assert.rejects(element.type(element.props), asyncRedirect);
   function asyncRedirect(error) {
     const url = new URL(error.message.slice(9), "https://shop.test");
@@ -1414,7 +1427,7 @@ test("cart and checkout pages explain a CRM outage instead of failing the whole 
     /Не вдалося завантажити кошик/,
   );
   const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
-  const content = CheckoutPage().props.children[1].props.children;
+  const content = CheckoutPage().props.children.props.children[1].props.children;
   assert.match(
     renderToStaticMarkup(await content.type(content.props)),
     /Оформлення тимчасово недоступне/,
@@ -1516,7 +1529,7 @@ test("the minimum order comes from the CRM's hryvnia terms", async () => {
     { currency: "UAH", freeShippingThreshold: null, minOrderAmount: 500 },
   ];
   const { default: CheckoutPage } = load("src/app/checkout/page.tsx");
-  const content = CheckoutPage().props.children[1].props.children;
+  const content = CheckoutPage().props.children.props.children[1].props.children;
   const checkout = renderToStaticMarkup(await content.type(content.props));
   assert.match(checkout, /Мінімальна сума замовлення — 500\s₴/);
   assert.match(checkout, /Додайте товарів ще на 80\s₴/);

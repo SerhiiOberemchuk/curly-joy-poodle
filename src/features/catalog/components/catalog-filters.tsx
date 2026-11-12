@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
-
-import { Icon } from "@/components/ui/icon";
 
 import {
   activeFilterCount,
@@ -20,64 +17,25 @@ export interface CategoryLink {
 }
 
 /**
- * The filter column beside the catalog list. A section appears only when the
- * current products differ in it: one brand needs no brand filter. On phones
- * the column folds behind a «Фільтри» button.
+ * Only the data-dependent fields inside the persistent filter panel. A
+ * section appears when the products differ in it: one brand needs no filter.
  */
 export function CatalogFilters({
   facets,
   filters,
-  categories,
   onChange,
   onReset,
 }: {
   facets: FilterFacets;
   filters: ProductFilters;
-  categories: readonly CategoryLink[];
   onChange: (next: Partial<ProductFilters>) => void;
   onReset: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
   const active = activeFilterCount(filters);
   const sections = filterSections(facets);
 
   return (
-    <aside className={styles.filters} aria-label="Фільтри товарів">
-      <button
-        type="button"
-        className={styles.filtersToggle}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen(!open)}
-      >
-        <Icon name="filter" />
-        Фільтри{active ? ` (${active})` : ""}
-        <Icon name="chevronDown" className={styles.toggleChevron} />
-      </button>
-
-      <div id={panelId} className={styles.filtersPanel} data-open={open || undefined}>
-        {categories.length > 0 ? (
-          <nav className={styles.filterGroup} aria-labelledby={`${panelId}-categories`}>
-            <p className={styles.filterTitle} id={`${panelId}-categories`}>
-              Категорії
-            </p>
-            <ul className={styles.categoryList}>
-              {categories.map((category) => (
-                <li key={category.href}>
-                  <Link
-                    href={category.href}
-                    className={category.active ? styles.categoryActive : styles.category}
-                    aria-current={category.active ? "page" : undefined}
-                  >
-                    {category.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
-
+    <>
         {sections.brands ? (
           <fieldset className={styles.filterGroup}>
             <legend className={styles.filterTitle}>Бренд</legend>
@@ -147,8 +105,7 @@ export function CatalogFilters({
             Скинути фільтри
           </button>
         ) : null}
-      </div>
-    </aside>
+    </>
   );
 }
 

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
+import { Bone } from "@/components/ui/skeleton";
 import {
   checkPaymentStatusAction,
   retryPaymentAction,
@@ -26,6 +27,7 @@ import type { PaymentStatus } from "@/features/checkout/types";
 import { formatMoney } from "@/lib/money";
 import { StatusRefresh } from "@/features/checkout/components/status-refresh";
 import styles from "./success.module.css";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   title: "Статус замовлення",
@@ -34,13 +36,41 @@ export const metadata: Metadata = {
 };
 export default function Page({ searchParams }: PageProps<"/checkout/success">) {
   return (
-    <div className={styles.page}>
-      <Suspense
-        fallback={<div className={styles.loading}>Готуємо підтвердження…</div>}
-      >
-        <Receipt searchParams={searchParams} />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className={styles.page}>
+        <section className={styles.card} aria-labelledby="receipt-title">
+          <p className={styles.eyebrow}>Ваше замовлення</p>
+          <h1 id="receipt-title">Статус замовлення</h1>
+          <div className={styles.receiptBody}>
+            <Suspense fallback={<ReceiptSkeleton />}>
+              <Receipt searchParams={searchParams} />
+            </Suspense>
+          </div>
+        </section>
+      </div>
+    </PageTransition>
+  );
+}
+
+function ReceiptSkeleton() {
+  return (
+    <>
+      <p className="visually-hidden" role="status">Перевіряємо статус замовлення…</p>
+      <div className={styles.statusTitle} aria-hidden="true">
+        <Bone line>Очікуємо підтвердження</Bone>
+      </div>
+      <Bone className={styles.number}>№ 00000</Bone>
+      <Bone className={styles.text}>Отримуємо дані вашого замовлення та перевіряємо стан оплати.</Bone>
+      <dl className={styles.details} aria-hidden="true">
+        {["Сума товарів", "Статус замовлення", "Оплата", "Статус оплати", "Доставка"].map((label) => (
+          <Detail key={label} label={label} value={<Bone line>Очікуємо дані</Bone>} />
+        ))}
+      </dl>
+      <div className={styles.actions} aria-hidden="true">
+        <Bone className={styles.actionBone} />
+        <Bone className={styles.actionBone} />
+      </div>
+    </>
   );
 }
 async function Receipt({
@@ -108,7 +138,7 @@ async function Receipt({
               ? "Замовлення очікує оплати"
               : "Замовлення прийнято";
   return (
-    <section className={styles.card}>
+    <>
       <ForgetCheckoutToken />
       {/* Kept in place across status refreshes, so a change of state is read out. */}
       <p className="visually-hidden" role="status">
@@ -119,8 +149,7 @@ async function Receipt({
           {canPay || status === "cancelled" ? "!" : "✓"}
         </span>
       ) : null}
-      <p className={styles.eyebrow}>Ваше замовлення</p>
-      <h1>{title}</h1>
+      <h2 className={styles.statusTitle}>{title}</h2>
       <p className={styles.number}>
         № {receipt.crmReference ?? receipt.number}
       </p>
@@ -212,7 +241,7 @@ async function Receipt({
           До каталогу
         </Link>
       </div>
-    </section>
+    </>
   );
 }
 const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
@@ -235,7 +264,7 @@ const ORDER_STATUS_LABEL: Record<CrmOrder["status"], string> = {
   refunded: "Кошти повернено",
 };
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className={styles.detailRow}>
       <dt className={styles.detailLabel}>{label}</dt>
@@ -253,12 +282,12 @@ async function Recovery({
 }) {
   const number = token ? await readPaymentReturnToken(token) : null;
   return (
-    <section className={styles.card}>
-      <h1>
+    <>
+      <h2 className={styles.statusTitle}>
         {unavailable
           ? "Статус тимчасово недоступний"
           : "Не вдалося відкрити замовлення"}
-      </h1>
+      </h2>
       <p className={styles.text}>
         {unavailable
           ? "Не вдалося отримати підтвердження оплати. Якщо ви вже оплатили, не сплачуйте повторно — ми перевіряємо статус."
@@ -287,6 +316,6 @@ async function Recovery({
       <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
         До каталогу
       </Link>
-    </section>
+    </>
   );
 }

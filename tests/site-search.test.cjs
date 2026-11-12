@@ -128,6 +128,55 @@ test("phone catalog search stays open and focused across automatic updates", () 
   assert.equal(screen.getByRole("button", { name: "Відкрити пошук" }).getAttribute("aria-expanded"), "false");
 });
 
+test("a closing phone search stops accepting focus immediately and desktop search remains usable", () => {
+  const previous = window.matchMedia;
+  const listeners = new Set();
+  const media = {
+    matches: true,
+    addEventListener: (type, listener) => listeners.add(listener),
+    removeEventListener: (type, listener) => listeners.delete(listener),
+  };
+  window.matchMedia = () => media;
+  try {
+    pathname = "/catalog";
+    const view = render(React.createElement(SiteSearch));
+    const toggle = screen.getByRole("button", { name: "Відкрити пошук" });
+    const panel = document.getElementById(toggle.getAttribute("aria-controls"));
+    assert.ok(panel.hasAttribute("inert"));
+    assert.equal(screen.queryByRole("searchbox"), null);
+
+    fireEvent.click(toggle);
+    const input = screen.getByRole("searchbox");
+    assert.equal(document.activeElement, input);
+    assert.equal(panel.hasAttribute("inert"), false);
+    fireEvent.keyDown(input, { key: "Escape" });
+    assert.ok(panel.hasAttribute("inert"));
+    assert.equal(panel.getAttribute("aria-hidden"), "true");
+    assert.equal(document.activeElement, toggle);
+    assert.equal(panel.querySelector("input"), input);
+
+    act(() => {
+      media.matches = false;
+      for (const listener of listeners) listener();
+    });
+    assert.equal(panel.hasAttribute("inert"), false);
+    assert.equal(panel.hasAttribute("aria-hidden"), false);
+    assert.equal(screen.getByRole("searchbox"), input);
+    act(() => input.focus());
+    act(() => {
+      media.matches = true;
+      for (const listener of listeners) listener();
+    });
+    assert.equal(document.activeElement, toggle);
+    assert.ok(panel.hasAttribute("inert"));
+
+    view.unmount();
+    assert.equal(listeners.size, 0);
+  } finally {
+    window.matchMedia = previous;
+  }
+});
+
 test("manual submission stays immediate and cancels the pending automatic submission", () => {
   pathname = "/catalog";
   render(React.createElement(SiteSearch));
@@ -156,6 +205,30 @@ test("outside the catalog typing suggests products instead of leaving the page",
   assert.equal(screen.queryByRole("link", { name: /Пуходірка/ }), null);
   fireEvent.submit(input.form);
   assert.deepEqual(submissions, [{ query: "пухо", replace: false, scroll: false }]);
+});
+
+test("dismissed suggestions remain available for their exit without focusing stale links or sending requests", async () => {
+  render(React.createElement(SiteSearch));
+  const input = screen.getByRole("searchbox");
+  act(() => input.focus());
+  change(input, "преміум");
+  tick(300);
+  await act(async () => {});
+  const link = screen.getByRole("link", { name: /Пуходірка Emmy&Lily/ });
+  const panel = link.closest("ul").parentElement;
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  assert.equal(document.activeElement, link);
+  fireEvent.keyDown(link, { key: "Escape" });
+  assert.equal(document.activeElement, input);
+  assert.ok(panel.hidden);
+  assert.ok(panel.hasAttribute("inert"));
+  assert.ok(panel.contains(link));
+  assert.equal(screen.queryByRole("link", { name: /Пуходірка Emmy&Lily/ }), null);
+  assert.equal(fireEvent.keyDown(input, { key: "ArrowDown" }), true);
+  assert.equal(document.activeElement, input);
+  tick(1000);
+  await act(async () => {});
+  assert.deepEqual(lookups, ["преміум"]);
 });
 
 test("an empty search outside the catalog stays on the page", () => {

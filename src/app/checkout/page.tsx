@@ -17,6 +17,7 @@ import { marketingConsentEnabled } from "@/features/checkout/marketing-consent";
 import { formatMoney } from "@/lib/money";
 
 import styles from "./checkout.module.css";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -26,23 +27,25 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className={styles.page}>
-      <header className={styles.hero}>
-        <p className={styles.eyebrow}>Останній крок</p>
-        <h1>Оформлення замовлення</h1>
-        <p>Заповніть контакти та оберіть зручний спосіб доставки.</p>
-      </header>
-      <Suspense fallback={<CheckoutSkeleton />}>
-        <CheckoutContent />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className={styles.page}>
+        <header className={styles.hero}>
+          <p className={styles.eyebrow}>Останній крок</p>
+          <h1>Оформлення замовлення</h1>
+          <p>Заповніть контакти та оберіть зручний спосіб доставки.</p>
+        </header>
+        <Suspense fallback={<CheckoutSkeleton />}>
+          <CheckoutContent />
+        </Suspense>
+      </div>
+    </PageTransition>
   );
 }
 
 function EmptyCart() {
   return (
-    <section className={styles.empty}>
-      <h2>Кошик порожній</h2>
+    <section className={styles.empty} aria-labelledby="checkout-state-title">
+      <h2 id="checkout-state-title">Кошик порожній</h2>
       <p>Спочатку додайте товари, а потім поверніться до оформлення.</p>
       <Link href="/catalog" className={buttonStyles({ size: "lg" })}>
         Перейти до каталогу
@@ -60,8 +63,8 @@ async function CheckoutContent() {
     loaded = await loadCart(stored);
   } catch {
     return (
-      <section className={styles.empty}>
-        <h2>Оформлення тимчасово недоступне</h2>
+      <section className={styles.empty} aria-labelledby="checkout-state-title">
+        <h2 id="checkout-state-title">Оформлення тимчасово недоступне</h2>
         <p>
           Не вдалося перевірити товари, доставку та оплату. Ваш кошик збережено
           — спробуйте ще раз за кілька хвилин.
@@ -77,16 +80,16 @@ async function CheckoutContent() {
     !availablePayments(capabilities).length
   ) {
     return (
-      <section className={styles.empty}>
-        <h2>Оформлення тимчасово недоступне</h2>
+      <section className={styles.empty} aria-labelledby="checkout-state-title">
+        <h2 id="checkout-state-title">Оформлення тимчасово недоступне</h2>
         <p>Зверніться до нас для оформлення замовлення.</p>
       </section>
     );
   }
   if (cart.minOrderAmount !== null && cart.subtotal < cart.minOrderAmount) {
     return (
-      <section className={styles.empty}>
-        <h2>Додайте товари до замовлення</h2>
+      <section className={styles.empty} aria-labelledby="checkout-state-title">
+        <h2 id="checkout-state-title">Додайте товари до замовлення</h2>
         <p>
           Мінімальна сума замовлення — {formatMoney(cart.minOrderAmount)}.{" "}
           Додайте товарів ще на{" "}

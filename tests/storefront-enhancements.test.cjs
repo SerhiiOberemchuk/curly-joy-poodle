@@ -374,7 +374,13 @@ test("mobile menu closes on outside pointer and keyboard focus while keeping ins
     ),
   );
   const user = userEvent.setup();
+  const toggle = screen.getByRole("button", { name: "Відкрити меню" });
+  const panel = document.getElementById(toggle.getAttribute("aria-controls"));
+  assert.ok(panel.hidden);
+  assert.ok(panel.hasAttribute("inert"));
   await user.click(screen.getByRole("button", { name: "Відкрити меню" }));
+  assert.equal(screen.getByRole("navigation", { name: "Мобільне меню" }), panel);
+  assert.equal(panel.hasAttribute("inert"), false);
   await user.click(screen.getByRole("navigation", { name: "Мобільне меню" }));
   assert.equal(
     screen
@@ -383,11 +389,15 @@ test("mobile menu closes on outside pointer and keyboard focus while keeping ins
     "true",
   );
   fireEvent.pointerDown(document.body);
+  assert.ok(panel.isConnected);
+  assert.ok(panel.hidden);
+  assert.ok(panel.hasAttribute("inert"));
   assert.equal(
     screen.queryByRole("navigation", { name: "Мобільне меню" }),
     null,
   );
   await user.click(screen.getByRole("button", { name: "Відкрити меню" }));
+  assert.equal(screen.getByRole("navigation", { name: "Мобільне меню" }), panel);
   await user.click(screen.getByRole("button", { name: "Поза меню" }));
   assert.equal(
     screen.queryByRole("navigation", { name: "Мобільне меню" }),
@@ -420,6 +430,37 @@ test("mobile menu closes on outside pointer and keyboard focus while keeping ins
     screen.queryByRole("navigation", { name: "Мобільне меню" }),
     null,
   );
+});
+
+test("native surfaces disable closing content after focus restoration and enable it before reopening", () => {
+  const { QuickContact } = load("src/components/layout/quick-contact.tsx");
+  const { CatalogMenuPopover } = load("src/features/catalog/components/catalog-menu-popover.tsx");
+  const surfaces = [
+    React.createElement(QuickContact),
+    React.createElement(CatalogMenuPopover, { id: "catalog-test", className: "" },
+      React.createElement("a", { href: "/catalog" }, "Товари")),
+  ];
+  function toggle(panel, type, newState) {
+    const event = new dom.window.Event(type);
+    Object.defineProperty(event, "newState", { value: newState });
+    fireEvent(panel, event);
+  }
+  for (const surface of surfaces) {
+    const { container } = render(surface);
+    const panel = container.querySelector("[popover]");
+    toggle(panel, "beforetoggle", "open");
+    toggle(panel, "toggle", "open");
+    assert.equal(panel.inert, false);
+    toggle(panel, "beforetoggle", "closed");
+    // Native focus restoration happens between beforetoggle and toggle.
+    assert.equal(panel.inert, false);
+    toggle(panel, "toggle", "closed");
+    assert.equal(panel.inert, true);
+    assert.ok(panel.isConnected);
+    toggle(panel, "beforetoggle", "open");
+    assert.equal(panel.inert, false);
+    cleanup();
+  }
 });
 
 test("CRM model gallery merges variant photos and videos without duplicates and accepts older photo-only responses", async () => {

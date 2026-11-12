@@ -1,15 +1,18 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import Link from "next/link";
 
 import pageStyles from "@/app/checkout/checkout.module.css";
 import { Bone } from "@/components/ui/skeleton";
+import { Icon } from "@/components/ui/icon";
 import { browserCartLineCount, subscribeBrowserCart } from "@/features/cart/cart-cookie.client";
 import cartStyles from "@/features/cart/components/cart-view.module.css";
 
 import { deliveryOptions, paymentOptions } from "../options";
 import styles from "./checkout-form.module.css";
 import skeleton from "./checkout-skeleton.module.css";
+import { CheckoutStepLegend, Field } from "./checkout-fields";
 
 function FieldBone({ hint = false }: { hint?: boolean }) {
   return (
@@ -24,7 +27,7 @@ function FieldBone({ hint = false }: { hint?: boolean }) {
 /** The ways the CRM usually offers; their own words, invisible, wrap as they will. */
 function OptionsBone({ options }: { options: ReadonlyArray<{ label: string; hint: string }> }) {
   return (
-    <div className={styles.options}>
+    <div className={styles.options} aria-hidden="true">
       {options.map((option) => (
         <div className={styles.option} key={option.label}>
           <Bone className={skeleton.radio} />
@@ -35,16 +38,6 @@ function OptionsBone({ options }: { options: ReadonlyArray<{ label: string; hint
         </div>
       ))}
     </div>
-  );
-}
-
-/** A numbered section's legend: the 28 px step badge and its name. */
-function StepLegend() {
-  return (
-    <legend className={styles.legend}>
-      <Bone className={skeleton.step} />
-      <Bone line className={skeleton.legendText} />
-    </legend>
   );
 }
 
@@ -64,38 +57,36 @@ export function CheckoutSkeleton() {
       <p className="visually-hidden" role="status">
         Готуємо замовлення…
       </p>
-      <div className={pageStyles.formPanel} aria-hidden="true">
-        <Bone className={skeleton.back} />
+      <section className={pageStyles.formPanel} aria-label="Дані замовлення" aria-busy="true">
+        <Link href="/cart" className={styles.back}><Icon name="chevronLeft" />Повернутися до кошика</Link>
         <div className={styles.form}>
           <fieldset className={styles.fieldset} disabled>
-            <StepLegend />
+            <CheckoutStepLegend step={1} />
             <div className={`${styles.row} ${styles.rowTwo}`}>
-              <FieldBone />
-              <FieldBone />
+              <Field label="Ім’я" autoComplete="given-name" disabled />
+              <Field label="Прізвище" autoComplete="family-name" disabled />
             </div>
             <div className={`${styles.row} ${styles.rowTwo}`}>
-              <FieldBone />
-              <FieldBone />
+              <Field label="Телефон" type="tel" autoComplete="tel" disabled />
+              <Field label="Email" type="email" autoComplete="email" disabled />
             </div>
           </fieldset>
           <fieldset className={styles.fieldset} disabled>
-            <StepLegend />
+            <CheckoutStepLegend step={2} />
             <OptionsBone options={deliveryOptions} />
             <FieldBone hint />
             <div className={styles.field}>
-              <Bone line className={`${styles.label} ${skeleton.label}`} />
+              <span className={styles.label}>Коментар <span className={styles.optional}>— необов’язково</span></span>
               <Bone className={skeleton.textarea} />
             </div>
           </fieldset>
           <fieldset className={styles.fieldset} disabled>
-            <StepLegend />
+            <CheckoutStepLegend step={3} />
             <OptionsBone options={paymentOptions} />
           </fieldset>
           <fieldset className={styles.fieldset} disabled>
-            <legend className={styles.legend}>
-              <Bone line className={skeleton.legendText} />
-            </legend>
-            <Bone line className={`${styles.label} ${skeleton.label}`} />
+            <legend className={styles.legend}>Є промокод?</legend>
+            <span className={styles.label}>Промокод</span>
             <div className={styles.promoRow}>
               <Bone className={`${skeleton.input} ${skeleton.promoInput}`} />
               <Bone className={skeleton.promoButton} />
@@ -108,11 +99,9 @@ export function CheckoutSkeleton() {
             <Bone line className={skeleton.consentEnd} />
           </div>
         </div>
-      </div>
-      <div className={cartStyles.summary} aria-hidden="true">
-        <div className={cartStyles.summaryTitle}>
-          <Bone line className={skeleton.summaryTitle} />
-        </div>
+      </section>
+      <aside className={cartStyles.summary} aria-label="Підсумок замовлення" aria-busy="true">
+        <h2 className={cartStyles.summaryTitle}>Разом</h2>
         <div className={pageStyles.items}>
           {Array.from({ length: lines }, (_, index) => (
             <Bone line className={pageStyles.item} key={index} />
@@ -123,7 +112,7 @@ export function CheckoutSkeleton() {
         <div className={cartStyles.summaryTotal}>
           <Bone line className={skeleton.total} />
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

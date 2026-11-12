@@ -25,15 +25,22 @@
   color: #fffaf5;
   box-shadow: var(--shadow-md);
   font-size: 14px;
+  transition: background-color var(--transition), box-shadow var(--transition), translate var(--transition);
 }
 .trigger:hover {
   background: #603b2c;
+  box-shadow: var(--shadow-lg);
+}
+.trigger:active {
+  translate: 0 1px;
 }
 .trigger svg {
   width: 22px;
   height: 22px;
 }
 .panel {
+  --surface-y: 10px;
+  --surface-origin: bottom right;
   position: fixed;
   inset: auto clamp(16px, 3vw, 36px) 86px auto;
   margin: 0;
@@ -71,6 +78,10 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: #f2e5db;
+  transition: background-color var(--transition);
+}
+.heading button:hover {
+  background: #e9d6c8;
 }
 .panel > p {
   margin-top: 12px;
@@ -93,6 +104,7 @@
   border-radius: 12px;
   background: #f5ece3;
   font-size: 13px;
+  transition: background-color var(--transition);
 }
 .links a:hover {
   background: #f1ddd5;

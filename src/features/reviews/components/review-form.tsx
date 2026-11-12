@@ -8,8 +8,8 @@ import { submitReviewAction } from "../actions";
 import styles from "../reviews.module.css";
 
 /**
- * Without `requestId` the form stands in the static shell while the reviews
- * stream: the same fields, disabled until the page's own request id arrives.
+ * Without `requestId` the same fields stand disabled in the shell. The id
+ * streams separately, so published reviews never delay the submission form.
  */
 export function ReviewForm({ productId, requestId }: { productId: string; requestId?: string }) {
   const [state, action, pending] = useActionState(

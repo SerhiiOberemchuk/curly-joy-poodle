@@ -350,6 +350,10 @@
   overflow-wrap: anywhere;
 }
 
+.selectOption {
+  transition: background-color 120ms ease;
+}
+
 .selectOptionActive {
   background: var(--color-sand);
 }

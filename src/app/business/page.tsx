@@ -7,6 +7,7 @@ import { openGraph } from "@/lib/metadata";
 import { site } from "@/lib/site";
 
 import styles from "./business.module.css";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   title: "Для бізнесу (B2B)",
@@ -71,99 +72,101 @@ const STEPS = [
 
 export default function Page() {
   return (
-    <div className={styles.page}>
-      <header className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Для бізнесу (B2B)</p>
-          <h1>Співпраця з Curly Joy</h1>
-          <p>
-            Для зоомагазинів, грумінг-салонів, ветклінік, розплідників та
-            інтернет-магазинів. Залиште запит, і ми зв’яжемося з вами, щоб
-            обговорити умови співпраці.
-          </p>
-          <a className={styles.heroButton} href="#b2b-request">
-            Залишити заявку <Icon name="arrow" />
-          </a>
-        </div>
-        <div className={styles.heroImage}>
-          <Image
-            src="/images/home/hero.webp"
-            alt="Кучеряві пуделі разом у м’якій лежанці"
-            fill
-            sizes="(max-width: 900px) 100vw, 560px"
-          />
-        </div>
-      </header>
+    <PageTransition>
+      <div className={styles.page}>
+        <header className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>Для бізнесу (B2B)</p>
+            <h1>Співпраця з Curly Joy</h1>
+            <p>
+              Для зоомагазинів, грумінг-салонів, ветклінік, розплідників та
+              інтернет-магазинів. Залиште запит, і ми зв’яжемося з вами, щоб
+              обговорити умови співпраці.
+            </p>
+            <a className={styles.heroButton} href="#b2b-request">
+              Залишити заявку <Icon name="arrow" />
+            </a>
+          </div>
+          <div className={styles.heroImage}>
+            <Image
+              src="/images/home/hero.webp"
+              alt="Кучеряві пуделі разом у м’якій лежанці"
+              fill
+              sizes="(max-width: 900px) 100vw, 560px"
+            />
+          </div>
+        </header>
 
-      <section className={styles.section} aria-labelledby="b2b-benefits">
-        <h2 id="b2b-benefits" className={styles.sectionTitle}>
-          Що отримують партнери
-        </h2>
-        <ul className={styles.benefits}>
-          {BENEFITS.map((benefit) => (
-            <li key={benefit.title}>
-              <span className={styles.benefitIcon} aria-hidden="true">
-                <Icon name={benefit.icon} />
-              </span>
-              <strong>{benefit.title}</strong>
-              <span>{benefit.text}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className={styles.section} aria-labelledby="b2b-steps">
-        <h2 id="b2b-steps" className={styles.sectionTitle}>
-          Як це працює
-        </h2>
-        <ol className={styles.steps}>
-          {STEPS.map((step, index) => (
-            <li key={step.title}>
-              <span className={styles.stepNumber} aria-hidden="true">
-                {index + 1}
-              </span>
-              <strong>{step.title}</strong>
-              <span>{step.text}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <div className={styles.layout}>
-        <section className={styles.panel} aria-labelledby="b2b-request">
-          <h2 id="b2b-request" className={styles.panelTitle}>
-            Запит на оптовий доступ
+        <section className={styles.section} aria-labelledby="b2b-benefits">
+          <h2 id="b2b-benefits" className={styles.sectionTitle}>
+            Що отримують партнери
           </h2>
-          <B2bRequestForm />
+          <ul className={styles.benefits}>
+            {BENEFITS.map((benefit) => (
+              <li key={benefit.title}>
+                <span className={styles.benefitIcon} aria-hidden="true">
+                  <Icon name={benefit.icon} />
+                </span>
+                <strong>{benefit.title}</strong>
+                <span>{benefit.text}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
-        <div className={styles.aside}>
-          <section aria-labelledby="b2b-partners" className={styles.panel}>
-            <h2 id="b2b-partners" className={styles.panelTitle}>
-              Вже партнер?
+        <section className={styles.section} aria-labelledby="b2b-steps">
+          <h2 id="b2b-steps" className={styles.sectionTitle}>
+            Як це працює
+          </h2>
+          <ol className={styles.steps}>
+            {STEPS.map((step, index) => (
+              <li key={step.title}>
+                <span className={styles.stepNumber} aria-hidden="true">
+                  {index + 1}
+                </span>
+                <strong>{step.title}</strong>
+                <span>{step.text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <div className={styles.layout}>
+          <section className={styles.panel} aria-labelledby="b2b-request">
+            <h2 id="b2b-request" className={styles.panelTitle}>
+              Запит на оптовий доступ
             </h2>
-            <p className={styles.muted}>
-              Вхід до кабінету партнера — за кодом, який приходить на email,
-              вказаний у договорі.
-            </p>
-            <a className={styles.link} href={partnerPortalUrl}>
-              Увійти до кабінету партнера
-            </a>
-            <p className={styles.muted}>
-              Отримали від нас код підключення?{" "}
-              <a className={styles.link} href={`${partnerPortalUrl}/join`}>
-                Ввести код
-              </a>
-            </p>
+            <B2bRequestForm />
           </section>
 
-          <address className={styles.contacts}>
-            <span>Питання щодо співпраці:</span>
-            <a href={site.phoneHref}>{site.phone}</a>
-            <a href={`mailto:${site.email}`}>{site.email}</a>
-          </address>
+          <div className={styles.aside}>
+            <section aria-labelledby="b2b-partners" className={styles.panel}>
+              <h2 id="b2b-partners" className={styles.panelTitle}>
+                Вже партнер?
+              </h2>
+              <p className={styles.muted}>
+                Вхід до кабінету партнера — за кодом, який приходить на email,
+                вказаний у договорі.
+              </p>
+              <a className={styles.link} href={partnerPortalUrl}>
+                Увійти до кабінету партнера
+              </a>
+              <p className={styles.muted}>
+                Отримали від нас код підключення?{" "}
+                <a className={styles.link} href={`${partnerPortalUrl}/join`}>
+                  Ввести код
+                </a>
+              </p>
+            </section>
+
+            <address className={styles.contacts}>
+              <span>Питання щодо співпраці:</span>
+              <a href={site.phoneHref}>{site.phone}</a>
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+            </address>
+          </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

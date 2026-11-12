@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -9,123 +10,96 @@ import {
   useQueryState,
   useQueryStates,
 } from "nuqs";
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/icon";
 import { Bone } from "@/components/ui/skeleton";
 
 import {
   CATALOG_PAGE_SIZE,
-  filterFacets,
+  activeFilterCount,
   filterProductList,
+  filterSections,
+  type FilterFacets,
   type ProductFilters,
 } from "../filtering";
+import { readSearchQuery } from "../search";
 import { defaultSort, sortProductList, sortValues } from "../sorting";
 import type { ProductListItem } from "../types";
-import { CatalogFilters, type CategoryLink } from "./catalog-filters";
+import { CatalogFilters } from "./catalog-filters";
 import styles from "./catalog-toolbar.module.css";
 import type { ProductCardShape } from "./product-card";
 import { ProductGrid, ProductGridSkeleton } from "./product-grid";
 import { SortSelect } from "./sort-select";
 
-/** The rows the filter column will hold, counted from the cached list. */
-export interface FilterOutline {
-  /** Category links, «Усі товари» included. */
-  categories: number;
-  /** Brand checkboxes; 0 when the section is hidden. */
-  brands: number;
-  price: boolean;
-  /** «Лише в наявності» and «Зі знижкою», as shown. */
-  checks: number;
+export function CatalogFiltersSkeleton({ facets }: { facets: FilterFacets }) {
+  const sections = filterSections(facets);
+  return (
+    <>
+      <p className="visually-hidden" role="status">Завантажуємо фільтри…</p>
+      {sections.brands ? (
+        <fieldset className={styles.filterGroup} disabled>
+          <legend className={styles.filterTitle}>Бренд</legend>
+          {facets.brands.map((brand) => (
+            <span className={styles.check} key={brand.name}><Bone line className={styles.rowBone} /></span>
+          ))}
+        </fieldset>
+      ) : null}
+      {sections.price ? (
+        <div className={styles.filterGroup}>
+          <fieldset disabled>
+            <legend className={styles.filterTitle}>Ціна, ₴</legend>
+            <div className={styles.priceRow}><Bone className={styles.priceFieldBone} /></div>
+          </fieldset>
+        </div>
+      ) : null}
+      {sections.inStock || sections.sale ? (
+        <fieldset className={styles.filterGroup} disabled>
+          <legend className={styles.filterTitle}>Наявність і ціни</legend>
+          {sections.inStock ? <span className={styles.check}><Bone className={styles.checkBone} />Лише в наявності</span> : null}
+          {sections.sale ? <span className={styles.check}><Bone className={styles.checkBone} />Зі знижкою</span> : null}
+        </fieldset>
+      ) : null}
+    </>
+  );
 }
 
-function RowBones({ count, className }: { count: number; className: string }) {
-  return Array.from({ length: count }, (_, index) => (
-    <span className={className} key={index}>
-      <Bone line className={styles.rowBone} />
-    </span>
-  ));
-}
-
-function TitleBone() {
-  return <Bone line className={styles.filterTitleBone} />;
-}
-
-/**
- * The list's layout while it streams: the filter column with its sections,
- * the toolbar, one card per product of the first page (`shapes`) and the
- * pager when the list runs past it. The same elements and classes as the
- * list, so nothing moves on arrival.
- */
-export function CatalogResultsSkeleton({
-  shapes,
-  paged,
-  filters,
-}: {
+interface ResultsOutline {
   shapes: readonly ProductCardShape[];
   paged: boolean;
-  filters: FilterOutline;
-}) {
+}
+
+function ResultsPlaceholder({ shapes, paged, compact = false }: ResultsOutline & { compact?: boolean }) {
   return (
-    <div className={styles.layout}>
-      <p className="visually-hidden" role="status">
-        Завантажуємо товари…
-      </p>
-      <div className={styles.filters} aria-hidden="true">
-        <Bone className={styles.filtersToggleBone} />
-        <div className={styles.filtersPanel}>
-          <div className={styles.filterGroup}>
-            <p className={styles.filterTitle}>
-              <TitleBone />
-            </p>
-            <div className={styles.categoryList}>
-              <RowBones count={filters.categories} className={styles.category} />
-            </div>
-          </div>
-          {filters.brands > 0 ? (
-            <fieldset className={styles.filterGroup} disabled>
-              <legend className={styles.filterTitle}>
-                <TitleBone />
-              </legend>
-              <RowBones count={filters.brands} className={styles.check} />
-            </fieldset>
-          ) : null}
-          {filters.price ? (
-            <div className={styles.filterGroup}>
-              <fieldset disabled>
-                <legend className={styles.filterTitle}>
-                  <TitleBone />
-                </legend>
-                <div className={styles.priceRow}>
-                  <Bone className={styles.priceFieldBone} />
-                </div>
-              </fieldset>
-            </div>
-          ) : null}
-          {filters.checks > 0 ? (
-            <fieldset className={styles.filterGroup} disabled>
-              <legend className={styles.filterTitle}>
-                <TitleBone />
-              </legend>
-              <RowBones count={filters.checks} className={styles.check} />
-            </fieldset>
-          ) : null}
-        </div>
+    <div className={styles.results}>
+      <p className="visually-hidden" role="status">Завантажуємо товари…</p>
+      <div className={styles.toolbar}>
+        <Bone line className={`${styles.count} ${styles.countBone}`} />
+        <div className={styles.loadingSort}>Сортування <Bone className={styles.sortBone} /></div>
       </div>
-      <div className={styles.results} aria-hidden="true">
-        <div className={styles.toolbar}>
-          <Bone line className={`${styles.count} ${styles.countBone}`} />
-          <Bone className={styles.sortBone} />
+      {shapes.length > 0 ? <ProductGridSkeleton cards={shapes} singleRow={compact} /> : null}
+      {paged && !compact ? (
+        <div className={styles.pagination} aria-hidden="true">
+          <Bone className={styles.moreBone} />
+          <Bone className={styles.pagesBone} />
         </div>
-        {shapes.length > 0 ? <ProductGridSkeleton cards={shapes} /> : null}
-        {paged ? (
-          <div className={styles.pagination}>
-            <Bone className={styles.moreBone} />
-            <Bone className={styles.pagesBone} />
-          </div>
-        ) : null}
-      </div>
+      ) : null}
     </div>
+  );
+}
+
+function UrlResultsPlaceholder(props: ResultsOutline) {
+  // The shared shell cannot know a search's size. Once the browser knows the
+  // URL, reserve one responsive row rather than six rows of unrelated cards.
+  const query = readSearchQuery(useSearchParams().get("q") ?? undefined);
+  return <ResultsPlaceholder {...props} compact={Boolean(query)} />;
+}
+
+export function CatalogResultsSkeleton(props: ResultsOutline) {
+  return (
+    <Suspense fallback={<ResultsPlaceholder {...props} />}>
+      <UrlResultsPlaceholder {...props} />
+    </Suspense>
   );
 }
 
@@ -147,6 +121,49 @@ function pluralize(count: number): string {
   return "товарів";
 }
 
+/** Both regions read the same URL state through nuqs; no mirrored filter store. */
+function useCatalogFilters() {
+  const [state, setState] = useQueryStates(filterParsers, urlOptions);
+  const filters = useMemo<ProductFilters>(() => ({
+    brands: state.brand,
+    minPrice: state.from,
+    maxPrice: state.to,
+    inStockOnly: state.stock,
+    saleOnly: state.sale,
+  }), [state.brand, state.from, state.to, state.stock, state.sale]);
+
+  function changeFilters(next: Partial<ProductFilters>) {
+    void setState({
+      ...(next.brands && { brand: next.brands.length ? [...next.brands] : null }),
+      ...("minPrice" in next && { from: next.minPrice }),
+      ...("maxPrice" in next && { to: next.maxPrice }),
+      ...(next.inStockOnly !== undefined && { stock: next.inStockOnly || null }),
+      ...(next.saleOnly !== undefined && { sale: next.saleOnly || null }),
+      page: null,
+    });
+  }
+
+  return { state, setState, filters, changeFilters };
+}
+
+export function CatalogFilterCount() {
+  const { filters } = useCatalogFilters();
+  const active = activeFilterCount(filters);
+  return active ? ` (${active})` : null;
+}
+
+export function CatalogFilterControls({ facets }: { facets: FilterFacets }) {
+  const { filters, changeFilters } = useCatalogFilters();
+  return (
+    <CatalogFilters
+      facets={facets}
+      filters={filters}
+      onChange={changeFilters}
+      onReset={() => changeFilters({ brands: [], minPrice: null, maxPrice: null, inStockOnly: false, saleOnly: false })}
+    />
+  );
+}
+
 /**
  * Filters, sorting and pages of the catalog list. All of it lives in the URL
  * (shareable, survives Back) and runs on the products already on the page, so
@@ -155,29 +172,16 @@ function pluralize(count: number): string {
 export function CatalogResults({
   products,
   query,
-  categories = [],
 }: {
   products: readonly ProductListItem[];
   /** The search the list answers, if any. */
   query?: string;
-  categories?: readonly CategoryLink[];
 }) {
   const [sort, setSort] = useQueryState(
     "sort",
     parseAsStringLiteral(sortValues).withDefault(defaultSort).withOptions(urlOptions),
   );
-  const [state, setState] = useQueryStates(filterParsers, urlOptions);
-  const filters = useMemo<ProductFilters>(
-    () => ({
-      brands: state.brand,
-      minPrice: state.from,
-      maxPrice: state.to,
-      inStockOnly: state.stock,
-      saleOnly: state.sale,
-    }),
-    [state.brand, state.from, state.to, state.stock, state.sale],
-  );
-  const facets = useMemo(() => filterFacets(products), [products]);
+  const { state, setState, filters } = useCatalogFilters();
   const visible = useMemo(
     () => sortProductList(filterProductList(products, filters), sort),
     [products, filters, sort],
@@ -191,18 +195,6 @@ export function CatalogResults({
   const shown = visible.slice((first - 1) * CATALOG_PAGE_SIZE, page * CATALOG_PAGE_SIZE);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  function changeFilters(next: Partial<ProductFilters>) {
-    setRunStart(1);
-    void setState({
-      ...(next.brands && { brand: next.brands.length ? [...next.brands] : null }),
-      ...("minPrice" in next && { from: next.minPrice }),
-      ...("maxPrice" in next && { to: next.maxPrice }),
-      ...(next.inStockOnly !== undefined && { stock: next.inStockOnly || null }),
-      ...(next.saleOnly !== undefined && { sale: next.saleOnly || null }),
-      page: null,
-    });
-  }
-
   function goToPage(next: number) {
     setRunStart(next);
     void setState({ page: next === 1 ? null : next });
@@ -210,24 +202,7 @@ export function CatalogResults({
   }
 
   return (
-    <div className={styles.layout}>
-      <CatalogFilters
-        facets={facets}
-        filters={filters}
-        categories={categories}
-        onChange={changeFilters}
-        onReset={() =>
-          changeFilters({
-            brands: [],
-            minPrice: null,
-            maxPrice: null,
-            inStockOnly: false,
-            saleOnly: false,
-          })
-        }
-      />
-
-      <div className={styles.results} ref={resultsRef}>
+    <div className={styles.results} ref={resultsRef}>
         <div className={styles.toolbar}>
           <p className={styles.count} role="status">
             {visible.length} {pluralize(visible.length)}
@@ -235,7 +210,6 @@ export function CatalogResults({
           <SortSelect
             value={sort}
             onChange={(value) => {
-              setRunStart(1);
               void setSort(value);
               void setState({ page: null });
             }}
@@ -258,7 +232,12 @@ export function CatalogResults({
               <button
                 type="button"
                 className={styles.more}
-                onClick={() => void setState({ page: page + 1 })}
+                onClick={() => {
+                  // A filter in the other region may have reset the page.
+                  // Extend the range that is on screen now, not an older run.
+                  setRunStart(first);
+                  void setState({ page: page + 1 });
+                }}
               >
                 Показати ще {Math.min(CATALOG_PAGE_SIZE, visible.length - page * CATALOG_PAGE_SIZE)}
               </button>
@@ -301,7 +280,6 @@ export function CatalogResults({
             </ul>
           </nav>
         ) : null}
-      </div>
     </div>
   );
 }

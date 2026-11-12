@@ -1,25 +1,5 @@
 /* Sizes of the order form's own controls, for the bones that stand in for them. */
 
-/* «Повернутися до кошика»: a 40 px link above the form. */
-.back {
-  width: 190px;
-  height: 40px;
-  margin-bottom: var(--space-3);
-  padding-block: 11px;
-  background-clip: content-box;
-}
-
-.step {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  --bone-radius: 50%;
-}
-
-.legendText {
-  width: 160px;
-}
-
 .label {
   width: 30%;
 }
@@ -86,12 +66,6 @@
 
 .consentEnd {
   width: 60%;
-}
-
-.summaryTitle {
-  width: 40%;
-  font-size: 36px;
-  line-height: 1;
 }
 
 .total {

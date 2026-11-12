@@ -137,6 +137,20 @@ const load = createLoader({
 const { CheckoutForm } = load(
   "src/features/checkout/components/checkout-form.tsx",
 );
+const { CheckoutSkeleton } = load("src/features/checkout/components/checkout-skeleton.tsx");
+
+test("pending checkout exposes its steps and contact fields without offering unverified payment methods", () => {
+  render(React.createElement(CheckoutSkeleton));
+  for (const label of ["Ім’я", "Прізвище", "Телефон", "Email"]) {
+    assert.equal(screen.getByLabelText(label).disabled, true);
+  }
+  for (const name of ["1 Контактні дані", "2 Доставка", "3 Оплата"]) {
+    assert.ok(screen.getByRole("group", { name }));
+  }
+  assert.ok(screen.getByRole("heading", { name: "Разом", level: 2 }));
+  assert.ok(screen.getByRole("link", { name: "Повернутися до кошика" }));
+  assert.equal(screen.queryByRole("radio"), null);
+});
 const capabilities = {
   cart: {
     currency: "UAH",

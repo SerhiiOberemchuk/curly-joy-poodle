@@ -4,6 +4,7 @@ import { useId } from "react";
 import Select from "react-select";
 
 import styles from "./choice-select.module.css";
+import motion from "./surface-motion.module.css";
 
 interface ChoiceOption<Value extends string> {
   value: Value;
@@ -69,7 +70,7 @@ export function ChoiceSelect<Value extends string>({
           valueContainer: () => styles.value,
           indicatorsContainer: () => styles.indicators,
           indicatorSeparator: () => styles.separator,
-          menu: () => styles.menu,
+          menu: ({ placement }) => `${styles.menu} ${motion.dropdown} ${placement === "top" ? motion.above : ""}`,
           menuList: () => styles.menuList,
           option: ({ isFocused, isSelected }) =>
             `${styles.option} ${isFocused ? styles.optionFocused : ""} ${isSelected ? styles.optionSelected : ""}`,

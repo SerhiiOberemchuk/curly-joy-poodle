@@ -12,6 +12,20 @@ function absolute(path: string): string {
   return new URL(path, site.url).toString();
 }
 
+/**
+ * The returns page's policy: a fixed window from receipt, by post, within
+ * Ukraine. Who pays the return postage is not stated there, so it is not
+ * claimed here either.
+ */
+const returnPolicy = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "UA",
+  returnPolicyCountry: "UA",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: site.returnDays,
+  returnMethod: "https://schema.org/ReturnByMail",
+} as const;
+
 export function productJsonLd(
   product: Product,
   category: Category | null,
@@ -27,6 +41,7 @@ export function productJsonLd(
     availability: variant.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     itemCondition: "https://schema.org/NewCondition",
     url,
+    hasMerchantReturnPolicy: returnPolicy,
   }));
 
   const breadcrumbs = [
@@ -47,7 +62,8 @@ export function productJsonLd(
       image: images,
       ...(product.variants.length === 1 ? { sku: product.variants[0].sku } : {}),
       ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
-      ...(category ? { category: category.title } : {}),
+      // No `category`: Google reads it as its own product taxonomy, and the
+      // shop's category names are not that. The breadcrumbs name the category.
       ...(rating
         ? {
             aggregateRating: {
@@ -93,6 +109,7 @@ export function storeJsonLd() {
       email: site.email,
       address: site.address,
       sameAs: site.socials.map((social) => social.href),
+      hasMerchantReturnPolicy: returnPolicy,
     },
     {
       "@context": "https://schema.org",

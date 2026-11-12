@@ -30,6 +30,12 @@ export const site = {
    */
   address: "02005, м. Київ, вул. Каховська, 62",
   workingHours: "Пн–Пт, 9:00–18:00",
+  /**
+   * Days from receipt to exchange or return an unused item (Закон України
+   * «Про захист прав споживачів», ст. 9). One figure for the returns page,
+   * the offer, the product page and the search engines' return policy.
+   */
+  returnDays: 14,
   /** Add the merchant's real Telegram/Viber/WhatsApp links when supplied. */
   messengers: [] as readonly MessengerLink[],
   socials: [

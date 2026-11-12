@@ -73,6 +73,11 @@
   --sticky-header-offset: var(--header-height);
 
   --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-enter: 320ms;
+  --motion-exit: 200ms;
+  --motion-dropdown: 220ms;
+  --motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 /* ---------------------------------------------------------------------------
@@ -88,6 +93,7 @@
 }
 
 html {
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-block-start: calc(var(--sticky-header-offset) + var(--space-4));
@@ -245,7 +251,7 @@ ol {
   }
 }
 
-/* React scopes this class to pathname changes; same-page updates stay instant. */
+/* Pages cross-fade as they replace each other; same-page updates stay instant. */
 ::view-transition {
   pointer-events: none;
 }

@@ -26,6 +26,16 @@ test("a product with a photo gets Product and BreadcrumbList data with its price
   assert.deepEqual(item.image, ["https://example.com/1.jpg"]);
   assert.equal(item.offers.price, "1200.00");
   assert.equal(item.offers.availability, "https://schema.org/InStock");
+  // Google reads `category` as its own taxonomy; the breadcrumbs name it instead.
+  assert.equal("category" in item, false);
+  assert.deepEqual(item.offers.hasMerchantReturnPolicy, {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "UA",
+    returnPolicyCountry: "UA",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 14,
+    returnMethod: "https://schema.org/ReturnByMail",
+  });
   assert.equal(crumbs["@type"], "BreadcrumbList");
   assert.equal(crumbs.itemListElement.at(-1).item, "https://curly-joy.com/product/shleika-curly-myw-1");
 });
@@ -75,6 +85,7 @@ test("the home page describes the shop with its real contacts and profiles", () 
   assert.equal(store.logo, "https://curly-joy.com/images/brand/logo-brand-clean.png");
   assert.ok(store.sameAs.includes("https://www.instagram.com/curly_joy_poodle"));
   assert.equal(website["@type"], "WebSite");
+  assert.equal(store.hasMerchantReturnPolicy.merchantReturnDays, 14);
 });
 
 test("category and collection pages always describe themselves, from the CRM or a fallback", async () => {

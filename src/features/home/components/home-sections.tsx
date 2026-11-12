@@ -32,9 +32,9 @@ export function HomeHero() {
       />
       <div className={styles.heroCopy}>
         <h1 id="hero-title">
-          Усе для
+          Усе для{" "}
           <br />
-          щасливого життя
+          щасливого життя{" "}
           <br />
           із собакою <Heart />
         </h1>
@@ -242,7 +242,7 @@ export async function HomePromotions() {
         />
         <div className={styles.promoCopy}>
           <h2 lang="en">
-            New
+            New{" "}
             <br />
             <span>in</span>
           </h2>
@@ -265,7 +265,7 @@ export async function HomePromotions() {
         <div className={styles.promoCopy}>
           <h2>Сезонні добірки</h2>
           <p>
-            Літо, зима, дощовий сезон,
+            Літо, зима, дощовий сезон,{" "}
             <br />
             сезон кліщів
           </p>
@@ -287,12 +287,12 @@ export async function HomePromotions() {
         />
         <div className={styles.promoCopy}>
           <h2>
-            Одягаємось
+            Одягаємось{" "}
             <br />
             разом
           </h2>
           <p>
-            Стиль для собаки
+            Стиль для собаки{" "}
             <br />
             та її людини
           </p>

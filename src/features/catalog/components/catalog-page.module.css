@@ -52,6 +52,12 @@
   overflow-wrap: anywhere;
 }
 
+/* A search's heading (`data-catalog-search`) takes the place of the page's
+   heading and its category tiles. */
+.content:has([data-catalog-search]) .browsing {
+  display: none;
+}
+
 .searchHeading {
   grid-template-columns: 1fr;
   border-bottom: 0;

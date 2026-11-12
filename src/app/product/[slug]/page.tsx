@@ -12,7 +12,11 @@ import {
   ProductReviews,
   ProductReviewsSection,
   ProductReviewsSkeleton,
+  ProductReviewSummary,
+  ProductReviewSummarySkeleton,
 } from "@/features/reviews/components/product-reviews";
+import { ReviewForm } from "@/features/reviews/components/review-form";
+import { getReviewCountsForShell } from "@/features/reviews/catalog-ratings.server";
 import { ReviewStars } from "@/features/reviews/components/review-stars";
 import {
   getPublishedReviews,
@@ -24,6 +28,7 @@ import {
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 import { openGraph } from "@/lib/metadata";
 import { formatMoney } from "@/lib/money";
+import { site } from "@/lib/site";
 
 import {
   AddToCartForm,
@@ -47,6 +52,7 @@ import {
 import type { Product } from "@/features/catalog/types";
 
 import styles from "./product.module.css";
+import { PageTransition } from "@/components/layout/page-transition";
 
 /** Cache Components needs at least one param; an empty catalog prerenders a 404. */
 const EMPTY_CATALOG_SLUG = "__empty__";
@@ -140,7 +146,7 @@ function ReviewLinkPlaceholder() {
 }
 
 async function ProductReviewLink({ productId }: { productId: string }) {
-  const summary = await getReviewSummary(modelKeyOf(productId)).catch(() => null);
+  const summary = await readProductReviewSummary(productId);
   if (!summary?.count) {
     return (
       <a href="#review-form" className={styles.reviewLink}>
@@ -157,6 +163,19 @@ async function ProductReviewLink({ productId }: { productId: string }) {
       </span>
     </a>
   );
+}
+
+const readProductReviewSummary = cache((productId: string) =>
+  getReviewSummary(modelKeyOf(productId)).catch(() => null),
+);
+
+async function ReviewSummary({ productId }: { productId: string }) {
+  return <ProductReviewSummary summary={await readProductReviewSummary(productId)} />;
+}
+
+async function ReviewSubmission({ productId }: { productId: string }) {
+  await connection();
+  return <ReviewForm key={productId} productId={productId} requestId={crypto.randomUUID()} />;
 }
 
 const reviewCount = (count: number) => {
@@ -180,7 +199,7 @@ async function ProductStructuredData({ slug }: { slug: string }) {
   const product = await getLiveProduct(slug);
   const [category, summary] = await Promise.all([
     getProductCategory(product),
-    getReviewSummary(modelKeyOf(product.id)).catch(() => null),
+    readProductReviewSummary(product.id),
   ]);
   const rating = summary ? ratingFromSummaries([summary]) : null;
   return (
@@ -210,7 +229,7 @@ function TrustList({ freeFrom }: { freeFrom: number | null }) {
       <li>
         <Link href="/info/returns">
           <Icon name="heart" />
-          <strong>14 днів на обмін</strong>
+          <strong>{site.returnDays} днів на обмін</strong>
           <span>Умови повернення</span>
         </Link>
       </li>
@@ -258,23 +277,22 @@ async function Reviews({ product, searchParams }: {
   const rawPage = (await searchParams).reviewsPage;
   const requestedPage = typeof rawPage === "string" ? Number(rawPage) : 1;
   const modelKey = modelKeyOf(product.id);
-  const summary = await getReviewSummary(modelKey).catch(() => null);
+  const summary = await readProductReviewSummary(product.id);
   // Only pages that exist reach the CRM: each page is a separate cached read.
   const pages = Math.max(1, Math.ceil((summary?.count ?? 0) / REVIEWS_PER_PAGE));
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0
     ? Math.min(requestedPage, pages)
     : 1;
-  const reviews = await getPublishedReviews(modelKey, page).catch(() => null);
+  const reviews = summary?.count === 0
+    ? null
+    : await getPublishedReviews(modelKey, page).catch(() => null);
   return (
     <ProductReviews
-      productId={product.id}
       productSlug={product.slug}
-      requestId={crypto.randomUUID()}
       reviews={reviews?.data ?? []}
       page={page}
       total={reviews?.pagination.total ?? 0}
-      summary={summary}
-      unavailable={reviews === null || summary === null}
+      unavailable={reviews === null && summary?.count !== 0}
     />
   );
 }
@@ -356,64 +374,79 @@ export default async function Page({ params, searchParams }: PageProps<"/product
   const product = await getProduct(slug);
   if (!product) notFound();
   if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`);
-  const category = await getProductCategory(product);
+  const [category, reviewCounts] = await Promise.all([
+    getProductCategory(product),
+    getReviewCountsForShell(),
+  ]);
+  const reviewCountForShell = reviewCounts?.[modelKeyOf(product.id)] ?? null;
   return (
-    <div className={styles.page}>
-      <RecordViewedProduct productId={product.id} />
-      <Suspense fallback={null}>
-        <ProductStructuredData slug={product.slug} />
-      </Suspense>
-      <div className={styles.crumbs}>
-        <Breadcrumbs
-          trail={[
-            { href: "/catalog", label: "Каталог" },
-            ...(category
-              ? [{ href: `/catalog/${category.slug}` as const, label: category.title }]
-              : []),
-          ]}
-          current={product.title}
-        />
-      </div>
-      <div className={styles.layout}>
-        <div className={styles.galleryColumn}>
-          <ProductPhotos product={product} />
-        </div>
-        <div className={styles.buyColumn}>
-          <section className={styles.info} aria-labelledby="product-title">
-            {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
-            <h1 className={styles.title} id="product-title">
-              {product.title}
-            </h1>
-            <Suspense fallback={<ReviewLinkPlaceholder />}>
-              <ProductReviewLink productId={product.id} />
-            </Suspense>
-            {product.summary ? <p className={styles.summary}>{product.summary}</p> : null}
-            <Suspense
-              fallback={
-                <AddToCartFormSkeleton
-                  optionName={product.optionName}
-                  variants={product.variants}
-                />
-              }
-            >
-              <ProductPurchase slug={product.slug} />
-            </Suspense>
-            <Suspense fallback={<TrustList freeFrom={null} />}>
-              <ProductTrust />
-            </Suspense>
-          </section>
-          <ProductAttributes product={product} />
-        </div>
-      </div>
-      <ProductOverview product={product} />
-      {product.type === "bundle" ? <ProductBundle product={product} /> : null}
-      <ProductReviewsSection>
-        <Suspense fallback={<ProductReviewsSkeleton productId={product.id} />}>
-          <Reviews product={product} searchParams={searchParams} />
+    <PageTransition>
+      <div className={styles.page}>
+        <RecordViewedProduct productId={product.id} />
+        <Suspense fallback={null}>
+          <ProductStructuredData slug={product.slug} />
         </Suspense>
-      </ProductReviewsSection>
-      <RelatedProducts product={product} />
-      <RecentlyViewedProducts currentProductId={product.id} />
-    </div>
+        <div className={styles.crumbs}>
+          <Breadcrumbs
+            trail={[
+              { href: "/catalog", label: "Каталог" },
+              ...(category
+                ? [{ href: `/catalog/${category.slug}` as const, label: category.title }]
+                : []),
+            ]}
+            current={product.title}
+          />
+        </div>
+        <div className={styles.layout}>
+          <div className={styles.galleryColumn}>
+            <ProductPhotos product={product} />
+          </div>
+          <div className={styles.buyColumn}>
+            <section className={styles.info} aria-labelledby="product-title">
+              {product.brand ? <p className={styles.line}>{product.brand}</p> : null}
+              <h1 className={styles.title} id="product-title">
+                {product.title}
+              </h1>
+              <Suspense fallback={<ReviewLinkPlaceholder />}>
+                <ProductReviewLink productId={product.id} />
+              </Suspense>
+              {product.summary ? <p className={styles.summary}>{product.summary}</p> : null}
+              <Suspense
+                fallback={
+                  <AddToCartFormSkeleton
+                    optionName={product.optionName}
+                    variants={product.variants}
+                  />
+                }
+              >
+                <ProductPurchase slug={product.slug} />
+              </Suspense>
+              <Suspense fallback={<TrustList freeFrom={null} />}>
+                <ProductTrust />
+              </Suspense>
+            </section>
+            <ProductAttributes product={product} />
+          </div>
+        </div>
+        <ProductOverview product={product} />
+        {product.type === "bundle" ? <ProductBundle product={product} /> : null}
+        <ProductReviewsSection
+          form={
+            <Suspense fallback={<ReviewForm key={product.id} productId={product.id} />}>
+              <ReviewSubmission productId={product.id} />
+            </Suspense>
+          }
+        >
+          <Suspense fallback={<ProductReviewSummarySkeleton count={reviewCountForShell} />}>
+            <ReviewSummary productId={product.id} />
+          </Suspense>
+          <Suspense fallback={<ProductReviewsSkeleton count={reviewCountForShell} />}>
+            <Reviews product={product} searchParams={searchParams} />
+          </Suspense>
+        </ProductReviewsSection>
+        <RelatedProducts product={product} />
+        <RecentlyViewedProducts currentProductId={product.id} />
+      </div>
+    </PageTransition>
   );
 }

@@ -8,6 +8,7 @@ import {
   Suspense,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -18,6 +19,7 @@ import useSWR from "swr";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 
 import { Icon } from "@/components/ui/icon";
+import motion from "@/components/ui/surface-motion.module.css";
 import {
   searchSuggestionsAction,
   type SearchSuggestion,
@@ -40,6 +42,31 @@ export function SiteSearch() {
   const panelId = useId();
   const areaRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel || typeof window.matchMedia !== "function") return;
+    // CSS controls the responsive layout. Mirror only its focus boundary:
+    // a fading-out phone panel must stop accepting input immediately, while
+    // the same search remains interactive on desktop.
+    const mobile = window.matchMedia("(width <= 1100px)");
+    function syncInteraction() {
+      if (!panel) return;
+      const inactive = mobile.matches && !open;
+      const restoreFocus = inactive && panel.contains(document.activeElement);
+      panel.toggleAttribute("inert", inactive);
+      if (inactive) {
+        panel.setAttribute("aria-hidden", "true");
+        if (restoreFocus) toggleRef.current?.focus();
+      } else {
+        panel.removeAttribute("aria-hidden");
+      }
+    }
+    syncInteraction();
+    mobile.addEventListener("change", syncInteraction);
+    return () => mobile.removeEventListener("change", syncInteraction);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -71,7 +98,12 @@ export function SiteSearch() {
       >
         <Icon name={open ? "close" : "search"} />
       </button>
-      <div id={panelId} className={styles.searchPanel}>
+      <div
+        id={panelId}
+        ref={panelRef}
+        className={`${styles.searchPanel} ${motion.responsive}`}
+        data-open={open || undefined}
+      >
         <Suspense fallback={<SearchForm />}>
           <LiveSearch onEscape={close} onLeave={() => setOpen(false)} />
         </Suspense>
@@ -148,6 +180,7 @@ function SearchControls({
       return;
     }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    if (!showSuggestions) return;
     const links = [...(suggestionsRef.current?.querySelectorAll("a") ?? [])];
     if (links.length === 0) return;
     event.preventDefault();
@@ -206,17 +239,16 @@ function SearchControls({
         },
       }}
     >
-      {showSuggestions ? (
-        <Suggestions
-          ref={suggestionsRef}
-          term={term}
-          statusId={statusId}
-          onPick={() => {
-            setSuggesting(false);
-            onLeave();
-          }}
-        />
-      ) : null}
+      <Suggestions
+        ref={suggestionsRef}
+        term={term}
+        statusId={statusId}
+        open={showSuggestions}
+        onPick={() => {
+          setSuggesting(false);
+          onLeave();
+        }}
+      />
     </SearchForm>
   );
 }
@@ -226,16 +258,18 @@ function Suggestions({
   term,
   statusId,
   onPick,
+  open,
 }: {
   ref: Ref<HTMLDivElement>;
   term: string;
   statusId: string;
   onPick: () => void;
+  open: boolean;
 }) {
   const [settled] = useDebounce(term, 300);
   const waiting = settled !== term;
   const { data, error, isLoading } = useSWR(
-    waiting ? null : ["site-search", settled],
+    !open || waiting || settled.length < MIN_QUERY ? null : ["site-search", settled],
     async ([, query]) => {
       const result = await searchSuggestionsAction(query);
       if (!result.ok) throw new Error(result.error);
@@ -246,7 +280,13 @@ function Suggestions({
   const loading = waiting || isLoading;
 
   return (
-    <div ref={ref} className={styles.suggestions}>
+    <div
+      ref={ref}
+      className={`${styles.suggestions} ${motion.disclosure}`}
+      hidden={!open}
+      inert={!open}
+      aria-hidden={!open || undefined}
+    >
       <p id={statusId} className="visually-hidden" role="status">
         {loading
           ? "Шукаємо…"

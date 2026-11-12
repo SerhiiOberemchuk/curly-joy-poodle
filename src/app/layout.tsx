@@ -7,7 +7,6 @@ import { AttributionCapture } from "@/components/attribution/attribution-capture
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { QuickContact } from "@/components/layout/quick-contact";
-import { PageTransition } from "@/components/layout/page-transition";
 import styles from "@/components/layout/site-layout.module.css";
 import { FavoritesProvider } from "@/features/favorites/favorites";
 import { ViewedProductsProvider } from "@/features/recently-viewed/viewed-products";
@@ -81,7 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <CartStoreProvider>
                   <SiteHeader />
                   <main id="main-content" className={styles.main}>
-                    <PageTransition>{children}</PageTransition>
+                    {children}
                   </main>
                   <SiteFooter />
                   <QuickContact />

@@ -5,6 +5,7 @@ import Select, { type Props } from "react-select";
 import { useController, useFormContext } from "react-hook-form";
 import type { CheckoutFormValues } from "../validation";
 import styles from "./checkout-form.module.css";
+import motion from "@/components/ui/surface-motion.module.css";
 
 type LookupOption = { ref: string; label: string };
 
@@ -79,7 +80,7 @@ export function LookupSelect<T extends LookupOption>({
           placeholder: () => styles.selectPlaceholder,
           singleValue: () => styles.selectSingleValue,
           indicatorsContainer: () => styles.selectIndicators,
-          menu: () => styles.selectMenu,
+          menu: ({ placement }) => `${styles.selectMenu} ${motion.dropdown} ${placement === "top" ? motion.above : ""}`,
           option: ({ isFocused, isSelected }) =>
             `${styles.selectOption} ${isFocused || isSelected ? styles.selectOptionActive : ""}`,
           noOptionsMessage: () => styles.selectMessage,

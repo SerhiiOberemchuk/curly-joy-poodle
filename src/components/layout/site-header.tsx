@@ -8,6 +8,7 @@ import {
   CartIndicator,
   CartIndicatorFallback,
 } from "@/features/cart/components/cart-indicator";
+import { CATALOG_MENU_ID, CatalogMenu } from "@/features/catalog/components/catalog-menu";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
 import { getCustomerAccountUrl } from "@/features/customer-account/queries";
 import { formatMoney } from "@/lib/money";
@@ -105,9 +106,14 @@ export function SiteHeader() {
         </Suspense>
       </div>
       <nav className={styles.navigation} aria-label="Головне меню">
-        <Link className={styles.catalogButton} href="/catalog">
+        <button
+          type="button"
+          className={styles.catalogButton}
+          popoverTarget={CATALOG_MENU_ID}
+        >
           Каталог
-        </Link>
+          <Icon name="chevronDown" />
+        </button>
         {headerNav.map((item) => (
           <Link key={item.href} href={item.href}>
             {item.label}
@@ -141,10 +147,15 @@ export function SiteHeader() {
           <CartIndicator />
         </Suspense>
       </div>
-      <Link className={styles.mobileCatalog} href="/catalog">
+      <button
+        type="button"
+        className={styles.mobileCatalog}
+        popoverTarget={CATALOG_MENU_ID}
+      >
         Каталог товарів
-        <Icon name="arrow" />
-      </Link>
+        <Icon name="chevronDown" />
+      </button>
+      <CatalogMenu />
     </StickyHeader>
   );
 }

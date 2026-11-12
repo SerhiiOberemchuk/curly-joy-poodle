@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 import { site } from "@/lib/site";
 
 import styles from "./info.module.css";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export function generateStaticParams() {
   return infoPages.map(({ slug }) => ({ slug }));
@@ -64,13 +65,17 @@ function InfoBlocks({ page }: { page: InfoPage }) {
 
   const content = (
     <>
-      {page.blocks.map((block) => {
+      {page.blocks.map((block, index) => {
         const paragraphs = block.paragraphs?.map((paragraph) => (
           <p className={styles.paragraph} key={paragraph}>{paragraph}</p>
         ));
         return (
-          <section className={styles.block} key={block.heading}>
-            <h2 className={styles.heading}>{block.heading}</h2>
+          <section
+            className={styles.block}
+            key={block.heading}
+            aria-labelledby={`info-block-${index}`}
+          >
+            <h2 id={`info-block-${index}`} className={styles.heading}>{block.heading}</h2>
             {page.slug === "delivery" && block.heading === "Безкоштовна доставка" ? (
               // The general wording until the CRM's figures arrive.
               <Suspense fallback={paragraphs}>
@@ -84,8 +89,8 @@ function InfoBlocks({ page }: { page: InfoPage }) {
         );
       })}
       {sizes.length > 0 ? (
-        <section className={styles.block}>
-          <h2 className={styles.heading}>Таблиця розмірів GF Pet</h2>
+        <section className={styles.block} aria-labelledby="info-size-table">
+          <h2 id="info-size-table" className={styles.heading}>Таблиця розмірів GF Pet</h2>
           <p className={styles.paragraph}>Орієнтуйтеся насамперед на обхват грудей. Порода в таблиці — лише підказка.</p>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -118,22 +123,24 @@ export default async function Page({ params }: PageProps<"/info/[slug]">) {
   const page = findInfoPage((await params).slug);
   if (!page) notFound();
   return (
-    <article className={`container ${styles.article}`}>
-      <header className={styles.hero}>
-        <p className={styles.eyebrow}>Curly Joy підказує</p>
-        <h1 className={styles.title}>{page.title}</h1>
-        <p className={styles.intro}>{page.intro}</p>
-      </header>
-      <div className={styles.content}>
-        <InfoBlocks page={page} />
-        <aside className={styles.help}>
-          <div><strong>Залишилися запитання?</strong><p className={styles.helpText}>{site.workingHours}</p></div>
-          <div className={styles.helpLinks}>
-            <a href={site.phoneHref}>{site.phone}</a><a href={`mailto:${site.email}`}>{site.email}</a>
-            {page.slug !== "contacts" ? <Link href="/info/contacts">Усі контакти</Link> : null}
-          </div>
-        </aside>
-      </div>
-    </article>
+    <PageTransition>
+      <article className={`container ${styles.article}`}>
+        <header className={styles.hero}>
+          <p className={styles.eyebrow}>Curly Joy підказує</p>
+          <h1 className={styles.title}>{page.title}</h1>
+          <p className={styles.intro}>{page.intro}</p>
+        </header>
+        <div className={styles.content}>
+          <InfoBlocks page={page} />
+          <aside className={styles.help} aria-labelledby="info-help-title">
+            <div><strong id="info-help-title">Залишилися запитання?</strong><p className={styles.helpText}>{site.workingHours}</p></div>
+            <div className={styles.helpLinks}>
+              <a href={site.phoneHref}>{site.phone}</a><a href={`mailto:${site.email}`}>{site.email}</a>
+              {page.slug !== "contacts" ? <Link href="/info/contacts">Усі контакти</Link> : null}
+            </div>
+          </aside>
+        </div>
+      </article>
+    </PageTransition>
   );
 }

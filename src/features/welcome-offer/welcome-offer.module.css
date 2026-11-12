@@ -87,6 +87,8 @@
   flex-shrink: 0;
 }
 .dialog {
+  --surface-y: 14px;
+  --surface-origin: center;
   position: fixed;
   inset: 0;
   margin: auto;
@@ -100,10 +102,10 @@
   color: #38271f;
   box-shadow: var(--shadow-lg);
   font-family: Arial, sans-serif;
+  grid-template-columns: 0.65fr 1fr;
 }
 .dialog[open] {
   display: grid;
-  grid-template-columns: 0.65fr 1fr;
 }
 .dialog::backdrop {
   background: rgb(43 29 21 / 45%);
@@ -120,6 +122,10 @@
   border-radius: 50%;
   background: #f5ece3;
   z-index: 1;
+  transition: background-color var(--transition);
+}
+.close:hover {
+  background: #e9d6c8;
 }
 .dialogArt {
   display: grid;
@@ -211,7 +217,7 @@
   .art {
     display: none;
   }
-  .dialog[open] {
+  .dialog {
     grid-template-columns: 1fr;
   }
   .dialogArt {

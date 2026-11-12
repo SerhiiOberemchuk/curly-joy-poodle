@@ -1,6 +1,24 @@
 import type { PublishedReview } from "../crm-reviews";
+import { Bone } from "@/components/ui/skeleton";
 import styles from "../reviews.module.css";
 import { ReviewStars } from "./review-stars";
+
+export function ReviewCardSkeleton() {
+  return (
+    <div className={styles.card} aria-hidden="true">
+      <div className={styles.cardTop}><Bone line>★★★★★</Bone></div>
+      <div className={styles.quote}>
+        <Bone line />
+        <Bone line />
+        <Bone line />
+      </div>
+      <div className={styles.author}>
+        <Bone className={styles.avatar} />
+        <div><Bone line>Ім’я покупця</Bone><Bone line>Дата відгуку</Bone></div>
+      </div>
+    </div>
+  );
+}
 
 export function ReviewCard({ review }: { review: PublishedReview }) {
   return (

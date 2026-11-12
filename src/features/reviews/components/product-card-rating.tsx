@@ -3,6 +3,7 @@
 import useSWR from "swr";
 
 import { Icon } from "@/components/ui/icon";
+import { Bone } from "@/components/ui/skeleton";
 import styles from "@/features/catalog/components/product-card.module.css";
 
 import { getCardRatingsAction } from "../card-ratings.actions";
@@ -17,20 +18,20 @@ const averageFormat = new Intl.NumberFormat("uk", { minimumFractionDigits: 1, ma
 
 export function ProductCardRating({ productId }: { productId: string }) {
   // All cards share this SWR key: one action, never one request per card.
-  const { data } = useSWR("catalog-published-ratings", loadRatings, {
+  const { data, isLoading } = useSWR("catalog-published-ratings", loadRatings, {
     dedupingInterval: 60_000,
     revalidateOnFocus: false,
     errorRetryCount: 1,
   });
   const rating = data?.[productId];
   return (
-    <div className={styles.rating}>
+    <div className={styles.rating} aria-busy={isLoading}>
       {rating ? (
         <span role="img" aria-label={`Оцінка ${averageFormat.format(rating.average)} із 5. Відгуків: ${rating.count}`}>
           <Icon name="star" />
           {averageFormat.format(rating.average)} <span>({rating.count})</span>
         </span>
-      ) : null}
+      ) : isLoading ? <Bone line className={styles.ratingBone} /> : null}
     </div>
   );
 }

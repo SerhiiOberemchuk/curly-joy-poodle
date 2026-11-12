@@ -1,4 +1,8 @@
+import Link from "next/link";
+import { Suspense } from "react";
+
 import { buttonStyles } from "@/components/ui/button";
+import { ProductShelf, ProductShelfSkeleton } from "@/features/catalog/components/product-shelf";
 import { getProducts } from "@/features/catalog/queries";
 import type { ProductListItem } from "@/features/catalog/types";
 import { getDisplayCartTerms } from "@/features/checkout/cart-terms.server";
@@ -18,6 +22,15 @@ async function suggestionsFor(variantIds: readonly string[]): Promise<ProductLis
     .filter((product) => product.inStock && !(product.variantId && inCart.has(product.variantId)))
     .sort((a, b) => a.priceFrom - b.priceFrom)
     .slice(0, CART_SUGGESTION_LIMIT);
+}
+
+async function CartSuggestions({ variantIds }: { variantIds: readonly string[] }) {
+  const suggestions = await suggestionsFor(variantIds);
+  return suggestions.length > 0 ? (
+    <ProductShelf products={suggestions} label="Товари, які можна додати" />
+  ) : (
+    <p>Більше товарів для вашого улюбленця — у <Link href="/catalog">каталозі</Link>.</p>
+  );
 }
 
 export async function CartEmpty() {
@@ -53,6 +66,15 @@ export async function CartView() {
 
   if (cart.isEmpty) return <CartEmpty />;
 
-  const suggestions = await suggestionsFor(cart.lines.map((line) => line.variantId));
-  return <CartClient initialCart={cart} suggestions={suggestions} />;
+  return (
+    <CartClient initialCart={cart}>
+      <section className={styles.suggestions} aria-labelledby="cart-suggestions-title">
+        <h2 id="cart-suggestions-title">Додайте до замовлення</h2>
+        <p>Приємні дрібниці, які легко додати до кошика.</p>
+        <Suspense fallback={<ProductShelfSkeleton count={CART_SUGGESTION_LIMIT} />}>
+          <CartSuggestions variantIds={cart.lines.map((line) => line.variantId)} />
+        </Suspense>
+      </section>
+    </CartClient>
+  );
 }

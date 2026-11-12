@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 
 import { NotFoundContent } from "@/components/layout/not-found-content";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   title: "Сторінку не знайдено",
-  robots: { index: false, follow: false },
 };
 
 export default function NotFound() {
-  return <NotFoundContent />;
+  return (
+    <PageTransition>
+      <NotFoundContent />
+    </PageTransition>
+  );
 }

@@ -19,6 +19,7 @@ import {
   HomePromotions,
   HomeRecommendations,
 } from "@/features/home/components/home-sections";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata: Metadata = {
   title: { absolute: "Curly Joy — усе для щасливого життя із собакою" },
@@ -41,29 +42,31 @@ export const metadata: Metadata = {
  */
 export default function HomePage() {
   return (
-    <div className={styles.page}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeJsonLd()) }}
-      />
-      <HomeHero />
-      <HomeCategories />
-      <HomePromotions />
-      <div id="recommendations" className={styles.recommendationsAnchor}>
-        <HomeRecommendations />
+    <PageTransition>
+      <div className={styles.page}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeJsonLd()) }}
+        />
+        <HomeHero />
+        <HomeCategories />
+        <HomePromotions />
+        <div id="recommendations" className={styles.recommendationsAnchor}>
+          <HomeRecommendations />
+        </div>
+        <Suspense fallback={<HomeBenefits />}>
+          <HomeBenefitsWithTerms />
+        </Suspense>
+        <HomeSocialStats locale={defaultLocale} />
+        <SocialProofPart>
+          <HomeReviews locale={defaultLocale} />
+        </SocialProofPart>
+        <SocialProofPart>
+          <HomeInstagramShots locale={defaultLocale} />
+        </SocialProofPart>
+        <HomeBusiness />
+        <HomeWelcomeOffer locale={defaultLocale} />
       </div>
-      <Suspense fallback={<HomeBenefits />}>
-        <HomeBenefitsWithTerms />
-      </Suspense>
-      <HomeSocialStats locale={defaultLocale} />
-      <SocialProofPart>
-        <HomeReviews locale={defaultLocale} />
-      </SocialProofPart>
-      <SocialProofPart>
-        <HomeInstagramShots locale={defaultLocale} />
-      </SocialProofPart>
-      <HomeBusiness />
-      <HomeWelcomeOffer locale={defaultLocale} />
-    </div>
+    </PageTransition>
   );
 }

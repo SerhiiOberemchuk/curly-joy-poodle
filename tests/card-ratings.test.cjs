@@ -22,7 +22,7 @@ const load = createLoader({
   },
   "@/lib/crm-errors": { crmFailureDetails: () => ({ message: "unavailable" }) },
 });
-const { getCatalogReviewSummaries } = load("src/features/reviews/catalog-ratings.server.ts");
+const { getCatalogReviewSummaries, getReviewCountsForShell } = load("src/features/reviews/catalog-ratings.server.ts");
 const { getCardRatingsAction } = load("src/features/reviews/card-ratings.actions.ts");
 afterEach(() => { mock.restoreAll(); unavailable = false; });
 
@@ -51,4 +51,15 @@ test("a review service outage yields an unavailable result rather than fake rati
   unavailable = true;
   mock.method(console, "error", () => {});
   assert.deepEqual(await getCardRatingsAction(), { ok: false });
+  assert.equal(await getReviewCountsForShell(), null);
+});
+
+test("shell geometry uses the shared catalog summary batch and exposes counts only", async () => {
+  products = [{ id: "single" }, { id: "empty" }];
+  summaries = new Map([
+    ["single", { ...empty("single"), count: 2, average: 5, distribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 2 } }],
+  ]);
+  batches = [];
+  assert.deepEqual(await getReviewCountsForShell(), { single: 2, empty: 0 });
+  assert.deepEqual(batches, [["single", "empty"]]);
 });

@@ -30,3 +30,11 @@ export async function getCatalogReviewSummaries(): Promise<ReviewSummary[] | nul
     return null;
   }
 }
+
+/** Geometry only, from the shared batch read; review contents keep their short cache. */
+export async function getReviewCountsForShell(): Promise<Record<string, number> | null> {
+  "use cache: remote";
+  cacheLife("minutes");
+  const summaries = await getCatalogReviewSummaries();
+  return summaries ? Object.fromEntries(summaries.map((summary) => [summary.modelKey, summary.count])) : null;
+}

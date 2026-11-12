@@ -33,6 +33,7 @@ export function RecordViewedProduct({ productId }: { productId: string }) {
 
 export function RecentlyViewedProducts({ currentProductId }: { currentProductId?: string }) {
   const headingId = useId();
+  const isHydrated = useViewedProducts((state) => state.isHydrated);
   const ids = useViewedProducts((state) => state.ids);
   const clear = useViewedProducts((state) => state.clear);
   const requested = useMemo(() => ids.filter((id) => id !== currentProductId), [ids, currentProductId]);
@@ -43,19 +44,19 @@ export function RecentlyViewedProducts({ currentProductId }: { currentProductId?
     return result.items;
   }, { revalidateOnFocus: false, errorRetryCount: 1 });
 
-  if (requested.length === 0 || error || data?.length === 0) return null;
+  if (isHydrated && (requested.length === 0 || error || data?.length === 0)) return null;
   return (
     <section className={styles.section} aria-labelledby={headingId} aria-busy={!data}>
       <header className={styles.heading}>
         <h2 id={headingId}>Ви переглядали</h2>
-        <button type="button" onClick={clear} className={styles.clear}>Очистити історію</button>
+        <button type="button" onClick={clear} disabled={!isHydrated} className={styles.clear}>Очистити історію</button>
       </header>
-      {/* The history is known once the tab's storage is read: hold the shelf's
-          room while today's catalog resolves it. */}
+      {!data ? <p className="visually-hidden" role="status">Завантажуємо переглянуті товари…</p> : null}
+      {/* One row before storage is read, then the known number of cards. */}
       {data ? (
         <ProductShelf products={data} label="Переглянуті товари" />
       ) : (
-        <ProductShelfSkeleton count={requested.length} />
+        <ProductShelfSkeleton count={isHydrated ? requested.length : 4} />
       )}
     </section>
   );

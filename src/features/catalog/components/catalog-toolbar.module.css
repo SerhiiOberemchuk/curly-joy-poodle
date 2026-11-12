@@ -58,7 +58,7 @@
   border: 0;
 }
 
-.filterGroup + .filterGroup {
+.filterGroup ~ .filterGroup {
   border-top: 1px solid #f1e7e0;
 }
 
@@ -292,20 +292,19 @@
 }
 
 /* ---- Skeleton: the list's layout while it streams ------------------------ */
-.filtersToggleBone {
-  --bone-display: none;
-  width: 132px;
-  height: 44px;
-  --bone-radius: 999px;
-}
-
-.filterTitleBone {
-  width: 45%;
+.filterCountBone {
+  width: 3ch;
+  --bone-display: inline-block;
 }
 
 /* A category link or a checkbox line: the bone fills its text line. */
 .rowBone {
   width: 62%;
+}
+
+.checkBone {
+  width: 18px;
+  height: 18px;
 }
 
 /* The «from — to» inputs and the apply button, 40 px tall, as one bar. */
@@ -321,8 +320,17 @@
 
 /* «Сортування» and its 230 px field: 10 px padding around a 14 px line
    (line height 1.4) inside a 1 px border. */
+.loadingSort {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-sm);
+  max-width: 100%;
+}
+
 .sortBone {
-  width: min(100%, 319px);
+  width: 230px;
+  max-width: 100%;
   height: calc(2 * 10px + var(--text-sm) * 1.4 + 2px);
   --bone-radius: 999px;
 }
@@ -336,10 +344,4 @@
 .pagesBone {
   width: min(100%, 260px);
   height: 42px;
-}
-
-@media (width < 1024px) {
-  .filtersToggleBone {
-    --bone-display: block;
-  }
 }

@@ -1,0 +1,41 @@
+name: Bing IndexNow after production deployment
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Check the deployed key and sitemap without submitting to Bing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bing-indexnow-production
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production' &&
+       github.event.deployment.creator.login == 'vercel[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Keep the automation available when an older deployment is restored.
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies without build hooks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Submit the live production sitemap to Bing
+        run: npm run indexnow:submit -- --site=https://curly-joy.com ${{ inputs.dry_run && '--dry-run' || '' }}

@@ -13,6 +13,7 @@ import { initialCartActionState } from "../action-state";
 import { addToCartAction } from "../actions";
 import { maxQuantityForVariant } from "../quantity";
 import styles from "./add-to-cart-form.module.css";
+import { useCartAddMotion } from "./cart-add-motion";
 
 /**
  * The form's rows while today's price and stock stream in. The variant names
@@ -74,6 +75,7 @@ export function AddToCartForm({
   variants: readonly ProductVariant[];
 }) {
   const [state, formAction, isPending] = useActionState(addToCartAction, initialCartActionState);
+  const rememberCartAdd = useCartAddMotion(state);
   const [variantId, setVariantId] = useState<string | null>(
     () => variants.find((variant) => variant.inStock)?.id ?? null,
   );
@@ -105,7 +107,10 @@ export function AddToCartForm({
     <form
       action={formAction}
       className={styles.form}
-      onSubmit={() => setSentVariant(selected?.id ?? null)}
+      onSubmit={(event) => {
+        rememberCartAdd(event);
+        setSentVariant(selected?.id ?? null);
+      }}
     >
       <input type="hidden" name="variantId" value={selected?.id ?? ""} />
       <input type="hidden" name="quantity" value={quantity} />

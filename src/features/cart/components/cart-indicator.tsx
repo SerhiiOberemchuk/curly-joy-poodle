@@ -8,7 +8,7 @@ import styles from "./cart-indicator.module.css";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <Link href="/cart" className={styles.link}>
+    <Link href="/cart" className={styles.link} data-cart-delivery-target="">
       <Icon name="cart" />
       <span className={styles.label}>Кошик</span>
       {children}

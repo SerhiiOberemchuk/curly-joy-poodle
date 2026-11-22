@@ -381,7 +381,7 @@ export default async function Page({ params, searchParams }: PageProps<"/product
   const reviewCountForShell = reviewCounts?.[modelKeyOf(product.id)] ?? null;
   return (
     <PageTransition>
-      <div className={styles.page}>
+      <div className={styles.page} data-product-page="">
         <RecordViewedProduct productId={product.id} />
         <Suspense fallback={null}>
           <ProductStructuredData slug={product.slug} />

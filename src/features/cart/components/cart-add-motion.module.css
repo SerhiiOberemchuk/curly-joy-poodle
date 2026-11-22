@@ -1,0 +1,56 @@
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scene > div {
+  position: absolute;
+  translate: -50% -50%;
+  opacity: 0;
+}
+
+.tile {
+  width: clamp(50px, 8vw, 72px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid #ecded3;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgb(74 44 33 / 16%);
+}
+
+.tile img {
+  width: 100%;
+  height: 100%;
+  padding: 5%;
+  object-fit: contain;
+}
+
+.poodle {
+  width: 42px;
+  height: 32px;
+  background-position: center 48%;
+  background-size: 152% auto;
+  background-repeat: no-repeat;
+  clip-path: polygon(27% 12%, 45% 0, 66% 2%, 79% 17%, 88% 35%, 100% 44%, 100% 100%, 0 100%, 0 49%, 14% 32%);
+}
+
+.spark {
+  width: 8px;
+  height: 8px;
+  background: #bd8852;
+  clip-path: polygon(50% 0, 63% 35%, 100% 50%, 63% 64%, 50% 100%, 36% 64%, 0 50%, 36% 35%);
+}
+
+.spark:last-child {
+  width: 6px;
+  height: 6px;
+  background: #bc8274;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene { display: none; }
+}

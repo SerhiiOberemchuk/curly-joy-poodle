@@ -283,6 +283,30 @@ ol {
   from { opacity: 0; }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  /* A product can appear in several lists. Capture the link's own thumbnail. */
+  :root:active-view-transition-type(open-product) article:has([data-product-photo-link]:focus) [data-product-thumbnail] > :has(> img),
+  :root:active-view-transition-type(open-product) [data-product-page]:not(:has([data-product-photo-link]:focus)) [data-product-gallery-photo] > [data-gallery-photos]:has(img) {
+    view-transition-name: product-photo;
+  }
+}
+
+::view-transition-group(product-photo) {
+  z-index: 1;
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(product-photo):not(:only-child) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(product-photo):not(:only-child) {
+  animation: page-fade-in 360ms ease-out both;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),

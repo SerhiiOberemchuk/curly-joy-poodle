@@ -6,6 +6,8 @@ import { useActionState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { initialCartActionState } from "@/features/cart/action-state";
 import { addToCartAction } from "@/features/cart/actions";
+import { useCartAddMotion } from "@/features/cart/components/cart-add-motion";
+import { ProductCardLink } from "./product-card-link";
 
 import styles from "./product-card.module.css";
 
@@ -25,9 +27,9 @@ export function CardCartButton({
 }) {
   if (!variantId) {
     return (
-      <Link href={href} className={styles.cartButton} aria-label={`Обрати варіант: ${title}`}>
+      <ProductCardLink href={href} className={styles.cartButton} aria-label={`Обрати варіант: ${title}`}>
         <Icon name="cartAdd" />
-      </Link>
+      </ProductCardLink>
     );
   }
   return <QuickAdd variantId={variantId} title={title} />;
@@ -38,6 +40,7 @@ function QuickAdd({ variantId, title }: { variantId: string; title: string }) {
     addToCartAction,
     initialCartActionState,
   );
+  const rememberCartAdd = useCartAddMotion(state);
 
   return (
     <div className={styles.cartAction}>
@@ -52,7 +55,7 @@ function QuickAdd({ variantId, title }: { variantId: string; title: string }) {
           <Icon name="check" />
         </Link>
       ) : (
-        <form action={formAction}>
+        <form action={formAction} onSubmit={rememberCartAdd}>
           <input type="hidden" name="variantId" value={variantId} />
           <input type="hidden" name="quantity" value="1" />
           <button

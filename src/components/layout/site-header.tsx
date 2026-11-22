@@ -127,15 +127,18 @@ export function SiteHeader() {
         ))}
       </nav>
       <Link className={styles.logo} href="/" aria-label="Curly Joy — головна">
-        <Image
-          src="/images/brand/logo-brand-clean.png"
-          alt=""
-          width={1024}
-          height={1024}
-          className={styles.logoArtwork}
-          loading="eager"
-          sizes="(width <= 1100px) 56px, 120px"
-        />
+        <span className={styles.logoFrame} aria-hidden="true">
+          <Image
+            src="/images/brand/logo-brand-clean.png"
+            data-cart-mascot-source=""
+            alt=""
+            width={1024}
+            height={1024}
+            className={styles.logoArtwork}
+            loading="eager"
+            sizes="(width <= 1100px) 56px, 120px"
+          />
+        </span>
       </Link>
       <div className={styles.headerActions}>
         <SiteSearch />

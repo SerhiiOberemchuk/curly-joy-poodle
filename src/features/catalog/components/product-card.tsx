@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Price } from "@/components/ui/price";
 import { Bone } from "@/components/ui/skeleton";
 import { FavoriteToggle } from "@/features/favorites/favorites";
@@ -10,6 +8,7 @@ import type { ProductListItem } from "../types";
 import { discountPercent } from "../pricing";
 import { CardCartButton } from "./card-cart-button";
 import { ProductArtwork } from "./product-artwork";
+import { ProductCardLink } from "./product-card-link";
 import styles from "./product-card.module.css";
 
 /** Variant chips that fit a card; the rest is summed up as «+N». */
@@ -96,7 +95,7 @@ export function ProductCard({
       className={styles.card}
       data-sold-out={product.inStock ? undefined : true}
     >
-      <div className={styles.media}>
+      <div className={styles.media} data-product-thumbnail={product.image.src}>
         <ProductArtwork image={product.image} decorative />
         {discount || !product.inStock ? (
           <ul className={styles.badges} aria-label="Позначки товару">
@@ -118,7 +117,7 @@ export function ProductCard({
       <div className={styles.body}>
         {product.brand ? <p className={styles.brand}>{product.brand}</p> : null}
         <Heading className={styles.title}>
-          <Link href={`/product/${product.slug}`}>{product.title}</Link>
+          <ProductCardLink href={`/product/${product.slug}`}>{product.title}</ProductCardLink>
         </Heading>
         <ProductCardRating productId={product.id} />
         {options.length > 0 ? (
